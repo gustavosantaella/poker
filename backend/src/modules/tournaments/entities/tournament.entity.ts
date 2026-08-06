@@ -43,6 +43,18 @@ export class Tournament extends BaseEntity {
   @Column({ type: 'int', nullable: true })
   maxPlayers: number | null;
 
+  @Column({ type: 'int', default: 0 })
+  currentPlayers: number = 0;
+
+  @Column({ type: 'int', default: 0 })
+  currentReEntries: number = 0;
+
+  @Column({ type: 'int', default: 0 })
+  currentAddOns: number = 0;
+
+  @Column({ type: 'int', default: 0 })
+  reservedPlayers: number = 0;
+
   @Column({ default: true })
   registrationOpen: boolean;
 
