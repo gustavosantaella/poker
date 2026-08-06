@@ -13,6 +13,7 @@ import { loginSchema, LoginValues } from '@/schemas/auth.schema';
 import { useTheme } from '@/theme';
 import { layout } from '@/theme/spacing';
 import { getErrorMessage } from '@/utils/error';
+import { log } from '@/utils/logger';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -22,10 +23,13 @@ export default function LoginScreen() {
 
   const onSubmit = async (values: LoginValues) => {
     setServerError(null);
+    log.info(`Login submitted for ${values.email.trim()}`);
     try {
       await login(values.email.trim(), values.password);
+      log.info('Login ok - navigating to tabs');
       router.replace('/(tabs)');
     } catch (error) {
+      log.error('Login screen error:', error);
       setServerError(getErrorMessage(error));
     }
   };

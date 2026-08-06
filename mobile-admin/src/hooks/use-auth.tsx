@@ -8,6 +8,7 @@ import {
 } from '@/api/auth';
 import { getStoredToken, setAuthToken, setUnauthorizedHandler } from '@/api/client';
 import { User } from '@/api/types';
+import { log } from '@/utils/logger';
 
 export interface AuthContextValue {
   user: User | null;
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
+      log.warn('Unauthorized response received - logging out');
       void logout();
     });
 
@@ -43,12 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const stored = await getStoredToken();
         if (stored) {
+          log.info('Restoring session from stored token');
           await setAuthToken(stored);
           setToken(stored);
           const me = await fetchMe();
           setUser(me);
+          log.info(`Session restored for ${me.email}`);
+        } else {
+          log.info('No stored token - starting signed out');
         }
-      } catch {
+      } catch (error) {
+        log.error('Failed to restore session', error);
         await logout();
       } finally {
         setIsLoading(false);
@@ -57,17 +64,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const result = await apiLogin(email, password);
-    await setAuthToken(result.accessToken);
-    setToken(result.accessToken);
-    setUser(result.user);
+    log.info(`Login attempt: ${email}`);
+    try {
+      const result = await apiLogin(email, password);
+      await setAuthToken(result.accessToken);
+      setToken(result.accessToken);
+      setUser(result.user);
+      log.info(`Login success: ${email} (id=${result.user.id})`);
+    } catch (error) {
+      log.error(`Login failed: ${email}`, error);
+      throw error;
+    }
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string) => {
-    const result = await apiRegister(name, email, password);
-    await setAuthToken(result.accessToken);
-    setToken(result.accessToken);
-    setUser(result.user);
+    log.info(`Register attempt: ${email}`);
+    try {
+      const result = await apiRegister(name, email, password);
+      await setAuthToken(result.accessToken);
+      setToken(result.accessToken);
+      setUser(result.user);
+      log.info(`Register success: ${email} (id=${result.user.id})`);
+    } catch (error) {
+      log.error(`Register failed: ${email}`, error);
+      throw error;
+    }
   }, []);
 
   const updateProfile = useCallback(async (payload: UpdateProfilePayload) => {
