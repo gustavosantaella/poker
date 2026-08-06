@@ -109,7 +109,7 @@ export interface Tournament {
   buyIn: number;
   fee: number;
   startingStack: number;
-  maxPlayers: number;
+  maxPlayers: number | null;
   registrationOpen: boolean;
   reEntryEnabled: boolean;
   maxReEntries: number | null;
@@ -187,7 +187,7 @@ export interface TournamentPayload {
   buyIn: number;
   fee?: number;
   startingStack: number;
-  maxPlayers?: number;
+  maxPlayers?: number | null;
   registrationOpen?: boolean;
   reEntryEnabled?: boolean;
   maxReEntries?: number;

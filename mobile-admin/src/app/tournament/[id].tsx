@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useDeleteTournament, useTournament } from '@/hooks/use-queries';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 
 export default function TournamentDetailScreen() {
@@ -14,6 +15,7 @@ export default function TournamentDetailScreen() {
   const tournamentId = Number(id);
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: tournament } = useTournament(tournamentId);
   const deleteTournament = useDeleteTournament();
   const [confirm, setConfirm] = useState(false);
@@ -26,7 +28,7 @@ export default function TournamentDetailScreen() {
   return (
     <AppScreen>
       <AppHeader
-        title="Edit tournament"
+        title={t('tournament.edit')}
         subtitle={tournament?.name}
         showBack
         right={
@@ -38,9 +40,9 @@ export default function TournamentDetailScreen() {
       <TournamentForm tournamentId={tournamentId} />
       <ConfirmModal
         visible={confirm}
-        title="Delete tournament"
-        message={`Delete “${tournament?.name ?? 'this tournament'}”? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('tournament.deleteTitle')}
+        message={t('tournament.deleteMessage', { name: tournament?.name ?? t('tournament.new') })}
+        confirmLabel={t('common.delete')}
         destructive
         loading={deleteTournament.isPending}
         onConfirm={handleDelete}

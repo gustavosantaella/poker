@@ -6,26 +6,28 @@ import { AppScreen } from '@/components/ui/AppScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FAB } from '@/components/ui/FAB';
 import { LoadingView } from '@/components/ui/LoadingView';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTournaments } from '@/hooks/use-queries';
 
 export default function TournamentsScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { data, isLoading, isRefetching, refetch } = useTournaments();
   const tournaments = data?.items ?? [];
 
   return (
     <View style={styles.flex}>
       <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-        <AppHeader title="Tournaments" subtitle={`${data?.total ?? 0} tournaments`} />
+        <AppHeader title={t('tournaments.title')} subtitle={t('tournaments.count', { count: data?.total ?? 0 })} />
 
         {isLoading ? (
           <LoadingView />
         ) : tournaments.length === 0 ? (
           <EmptyState
             icon="trophy-outline"
-            title="No tournaments"
-            subtitle="Schedule a tournament with automatic blind levels"
-            actionLabel="New tournament"
+            title={t('tournaments.emptyTitle')}
+            subtitle={t('tournaments.emptySubtitle')}
+            actionLabel={t('tournaments.new')}
             onAction={() => router.push('/tournament/new')}
           />
         ) : (

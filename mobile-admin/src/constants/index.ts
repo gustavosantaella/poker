@@ -5,33 +5,20 @@ export interface Option<T extends string = string> {
   value: T;
 }
 
-export const TABLE_STATUS_OPTIONS: Option<TableStatus>[] = [
-  { label: 'Open', value: 'open' },
-  { label: 'Running', value: 'running' },
-  { label: 'Paused', value: 'paused' },
-  { label: 'Closed', value: 'closed' },
+export const TABLE_STATUS_VALUES: TableStatus[] = ['open', 'running', 'paused', 'closed'];
+
+export const TOURNAMENT_STATUS_VALUES: TournamentStatus[] = [
+  'scheduled',
+  'registering',
+  'running',
+  'paused',
+  'completed',
+  'cancelled',
 ];
 
-export const TOURNAMENT_STATUS_OPTIONS: Option<TournamentStatus>[] = [
-  { label: 'Scheduled', value: 'scheduled' },
-  { label: 'Registering', value: 'registering' },
-  { label: 'Running', value: 'running' },
-  { label: 'Paused', value: 'paused' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Cancelled', value: 'cancelled' },
-];
+export const GROWTH_VALUES: BlindGrowth[] = ['slow', 'normal', 'fast'];
 
-export const GROWTH_OPTIONS: Option<BlindGrowth>[] = [
-  { label: 'Slow', value: 'slow' },
-  { label: 'Normal', value: 'normal' },
-  { label: 'Fast', value: 'fast' },
-];
-
-export const ANTE_MODE_OPTIONS: Option<AnteMode>[] = [
-  { label: 'None', value: 'none' },
-  { label: 'Per player', value: 'per_player' },
-  { label: 'BB ante', value: 'bb_ante' },
-];
+export const ANTE_MODE_VALUES: AnteMode[] = ['none', 'per_player', 'bb_ante'];
 
 export interface ColorPreset {
   name: string;
@@ -60,7 +47,3 @@ export const GAME_TYPE_PRESETS = [
   { name: 'Short Deck', holeCards: 2, communityCards: 5, description: 'Six-plus hold-em played with a 36-card deck.' },
   { name: '2-7 Triple Draw', holeCards: 5, communityCards: 0, description: 'Lowball draw game; lowest five-card hand wins.' },
 ];
-
-export function labelFor(options: Option[], value?: string | null): string {
-  return options.find((o) => o.value === value)?.label ?? '—';
-}

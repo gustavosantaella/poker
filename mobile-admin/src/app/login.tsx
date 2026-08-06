@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { AppForm } from '@/components/forms/AppForm';
 import { FormTextField } from '@/components/forms/FormTextField';
@@ -9,7 +9,8 @@ import { AppCard } from '@/components/ui/AppCard';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { AppText } from '@/components/ui/AppText';
 import { useAuth } from '@/hooks/use-auth';
-import { loginSchema, LoginValues } from '@/schemas/auth.schema';
+import { useI18n } from '@/i18n/I18nProvider';
+import { createLoginSchema, LoginValues } from '@/schemas/auth.schema';
 import { useTheme } from '@/theme';
 import { layout } from '@/theme/spacing';
 import { getErrorMessage } from '@/utils/error';
@@ -19,7 +20,10 @@ export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const schema = useMemo(() => createLoginSchema(t), [t]);
 
   const onSubmit = async (values: LoginValues) => {
     setServerError(null);
@@ -45,25 +49,25 @@ export default function LoginScreen() {
             <Ionicons name="diamond" size={40} color={colors.onPrimary} />
           </View>
           <AppText variant="h1">PokeLAP Admin</AppText>
-          <AppText variant="caption">Manage cash tables and tournaments</AppText>
+          <AppText variant="caption">{t('auth.loginSubtitle')}</AppText>
         </View>
 
-        <AppForm schema={loginSchema} defaultValues={{ email: '', password: '' }} onSubmit={onSubmit}>
+        <AppForm schema={schema} defaultValues={{ email: '', password: '' }} onSubmit={onSubmit}>
           {({ handleSubmit, formState }) => (
             <View style={styles.form}>
               <AppCard>
                 <FormTextField
                   name="email"
-                  label="Email"
-                  placeholder="you@pokelap.com"
+                  label={t('auth.email')}
+                  placeholder={t('auth.emailPlaceholder')}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
                 />
                 <FormTextField
                   name="password"
-                  label="Password"
-                  placeholder="Your password"
+                  label={t('auth.password')}
+                  placeholder={t('auth.passwordPlaceholder')}
                   secureTextEntry
                 />
               </AppCard>
@@ -74,9 +78,9 @@ export default function LoginScreen() {
                 </AppText>
               ) : null}
 
-              <AppButton title="Sign in" onPress={handleSubmit(onSubmit)} loading={formState.isSubmitting} fullWidth />
+              <AppButton title={t('auth.signIn')} onPress={handleSubmit(onSubmit)} loading={formState.isSubmitting} fullWidth />
               <AppButton
-                title="Create an account"
+                title={t('auth.createAccount')}
                 variant="ghost"
                 icon="person-add-outline"
                 onPress={() => router.push('/register')}

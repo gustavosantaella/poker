@@ -6,26 +6,28 @@ import { AppScreen } from '@/components/ui/AppScreen';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FAB } from '@/components/ui/FAB';
 import { LoadingView } from '@/components/ui/LoadingView';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTables } from '@/hooks/use-queries';
 
 export default function TablesScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { data, isLoading, isRefetching, refetch } = useTables();
   const tables = data?.items ?? [];
 
   return (
     <View style={styles.flex}>
       <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-        <AppHeader title="Cash tables" subtitle={`${data?.total ?? 0} tables`} />
+        <AppHeader title={t('tables.title')} subtitle={t('tables.count', { count: data?.total ?? 0 })} />
 
         {isLoading ? (
           <LoadingView />
         ) : tables.length === 0 ? (
           <EmptyState
             icon="grid-outline"
-            title="No cash tables"
-            subtitle="Create a table to start tracking cash games"
-            actionLabel="New table"
+            title={t('tables.emptyTitle')}
+            subtitle={t('tables.emptySubtitle')}
+            actionLabel={t('tables.new')}
             onAction={() => router.push('/table/new')}
           />
         ) : (

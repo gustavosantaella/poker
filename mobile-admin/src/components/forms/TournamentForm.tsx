@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GenerateStructureResult } from '@/api/tournaments';
 import { AppButton } from '@/components/ui/AppButton';
@@ -7,9 +7,11 @@ import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { TOURNAMENT_STATUS_OPTIONS } from '@/constants';
+import { TOURNAMENT_STATUS_VALUES } from '@/constants';
 import { useCreateTournament, useGameTypes, useTournament, useUpdateTournament } from '@/hooks/use-queries';
-import { tournamentSchema, TournamentFormValues } from '@/schemas/tournament.schema';
+import { TranslationKey } from '@/i18n';
+import { useI18n } from '@/i18n/I18nProvider';
+import { createTournamentSchema, TournamentFormValues } from '@/schemas/tournament.schema';
 import { useTheme } from '@/theme';
 import { summarizeStructure } from '@/utils/blind-structure';
 import { getErrorMessage } from '@/utils/error';
@@ -37,21 +39,29 @@ function defaultStartDate(): string {
 export function TournamentForm({ tournamentId }: TournamentFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: gameTypes, isLoading: gameTypesLoading } = useGameTypes();
   const { data: tournament, isLoading: tournamentLoading } = useTournament(tournamentId ?? 0);
   const createTournament = useCreateTournament();
   const updateTournament = useUpdateTournament();
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const schema = useMemo(() => createTournamentSchema(t), [t]);
+
   if (gameTypesLoading || (tournamentId && tournamentLoading) || (tournamentId && !tournament)) {
     return (
       <AppCard>
-        <LoadingView label="Loading tournament..." />
+        <LoadingView label={t('tournament.loading')} />
       </AppCard>
     );
   }
 
   const gameTypeOptions = (gameTypes ?? []).map((g) => ({ label: g.name, value: String(g.id) }));
+
+  const statusOptions = TOURNAMENT_STATUS_VALUES.map((value) => ({
+    label: t(`status.${value}` as TranslationKey),
+    value,
+  }));
 
   const initialStructure: GenerateStructureResult | null = tournament?.blindStructure
     ? { items: tournament.blindStructure, summary: summarizeStructure(tournament.blindStructure)! }
@@ -67,7 +77,8 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         buyIn: tournament.buyIn,
         fee: tournament.fee,
         startingStack: tournament.startingStack,
-        maxPlayers: tournament.maxPlayers,
+        maxPlayers: tournament.maxPlayers ?? undefined,
+        maxPlayersUnlimited: tournament.maxPlayers == null,
         registrationOpen: tournament.registrationOpen,
         reEntryEnabled: tournament.reEntryEnabled,
         maxReEntries: tournament.maxReEntries ?? undefined,
@@ -95,6 +106,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         fee: 5,
         startingStack: 10000,
         maxPlayers: 9,
+        maxPlayersUnlimited: false,
         registrationOpen: true,
         reEntryEnabled: true,
         maxReEntries: 1,
@@ -124,7 +136,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       buyIn: Number(values.buyIn),
       fee: Number(values.fee ?? 0),
       startingStack: Number(values.startingStack),
-      maxPlayers: values.maxPlayers == null ? 9 : Number(values.maxPlayers),
+      maxPlayers: values.maxPlayersUnlimited ? null : values.maxPlayers == null ? 9 : Number(values.maxPlayers),
       registrationOpen: values.registrationOpen,
       reEntryEnabled: values.reEntryEnabled,
       maxReEntries: values.reEntryEnabled && values.maxReEntries != null ? Number(values.maxReEntries) : 0,
@@ -163,78 +175,83 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
   };
 
   return (
-    <AppForm schema={tournamentSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
-      {({ handleSubmit, formState }) => (
+    <AppForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit}>
+      {({ handleSubmit, formState, watch }) => {
+        const unlimited = watch('maxPlayersUnlimited');
+        return (
         <View>
-          <SectionHeader title="Details" />
+          <SectionHeader title={t('tournament.details')} />
           <AppCard>
-            <FormTextField name="name" label="Tournament name" placeholder="e.g. Sunday Special" />
-            <FormSelect name="gameTypeId" label="Game type" placeholder="Select a game type" options={gameTypeOptions} />
-            <FormDateField name="startDate" label="Start date & time" />
-            <FormSegmented name="status" label="Status" options={TOURNAMENT_STATUS_OPTIONS} />
-            <View style={styles.row}>
-              <View style={styles.col}>
-                <FormNumberField name="maxPlayers" label="Max players" />
-              </View>
-            </View>
-            <FormSwitch name="registrationOpen" label="Registration open" description="Players can register" />
+            <FormTextField name="name" label={t('tournament.name')} placeholder={t('tournament.namePlaceholder')} />
+            <FormSelect name="gameTypeId" label={t('tournament.gameType')} placeholder={t('tournament.gameTypePlaceholder')} options={gameTypeOptions} />
+            <FormDateField name="startDate" label={t('tournament.startDate')} />
+            <FormSegmented name="status" label={t('tournament.status')} options={statusOptions} />
+            <FormSwitch
+              name="maxPlayersUnlimited"
+              label={t('tournament.unlimitedPlayers')}
+              description={t('tournament.unlimitedPlayersDesc')}
+            />
+            {!unlimited ? (
+              <FormNumberField name="maxPlayers" label={t('tournament.maxPlayers')} />
+            ) : null}
+            <FormSwitch name="registrationOpen" label={t('tournament.registrationOpen')} description={t('tournament.registrationOpenDesc')} />
           </AppCard>
 
-          <SectionHeader title="Cost" />
+          <SectionHeader title={t('tournament.cost')} />
           <AppCard>
             <View style={styles.row}>
               <View style={styles.col}>
-                <FormNumberField name="buyIn" label="Buy-in" />
+                <FormNumberField name="buyIn" label={t('tournament.buyIn')} />
               </View>
               <View style={styles.col}>
-                <FormNumberField name="fee" label="Entry fee" />
+                <FormNumberField name="fee" label={t('tournament.entryFee')} />
               </View>
             </View>
           </AppCard>
 
-          <TournamentStructureSection initialStructure={initialStructure} />
-
-          <SectionHeader title="Re-entry (rebuy)" />
+          <SectionHeader title={t('tournament.reEntry')} />
           <AppCard>
             <FormSwitch
               name="reEntryEnabled"
-              label="Re-entry available"
-              description="Allow players to buy back in after busting"
+              label={t('tournament.reEntryEnabled')}
+              description={t('tournament.reEntryDesc')}
             />
-            <FormNumberField name="maxReEntries" label="Max re-entries per player" />
+            <FormNumberField name="maxReEntries" label={t('tournament.maxReEntries')} />
           </AppCard>
 
-          <SectionHeader title="Late registration" />
+          <SectionHeader title={t('tournament.lateRegistration')} />
           <AppCard>
             <FormSwitch
               name="lateRegistrationEnabled"
-              label="Late registration available"
-              description="Players can join after the start"
+              label={t('tournament.lateRegistrationEnabled')}
+              description={t('tournament.lateRegistrationDesc')}
             />
-            <FormNumberField name="lateRegistrationUntilLevel" label="Available until level" />
+            <FormNumberField name="lateRegistrationUntilLevel" label={t('tournament.availableUntilLevel')} />
           </AppCard>
 
-          <SectionHeader title="Add-on" />
+          <SectionHeader title={t('tournament.addOn')} />
           <AppCard>
             <FormSwitch
               name="addOnEnabled"
-              label="Add-on available"
-              description="Optional extra chips for an additional cost"
+              label={t('tournament.addOnEnabled')}
+              description={t('tournament.addOnDesc')}
             />
             <View style={styles.row}>
               <View style={styles.col}>
-                <FormNumberField name="addOnAmount" label="Add-on cost" />
+                <FormNumberField name="addOnAmount" label={t('tournament.addOnCost')} />
               </View>
               <View style={styles.col}>
-                <FormNumberField name="addOnStack" label="Add-on chips" />
+                <FormNumberField name="addOnStack" label={t('tournament.addOnChips')} />
               </View>
             </View>
             <FormNumberField
               name="addOnUntilLevel"
-              label="Add-on available until level"
-              helper="Usually the end of late registration"
+              label={t('tournament.addOnUntilLevel')}
+              helper={t('tournament.addOnUntilLevelHelper')}
             />
           </AppCard>
+
+          <TournamentStructureSection initialStructure={initialStructure} />
 
           {serverError ? (
             <AppText variant="caption" color={colors.danger} style={styles.error}>
@@ -243,14 +260,15 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
           ) : null}
 
           <AppButton
-            title={tournamentId ? 'Save changes' : 'Create tournament'}
+            title={tournamentId ? t('common.saveChanges') : t('tournament.create')}
             onPress={handleSubmit(onSubmit)}
             loading={formState.isSubmitting || createTournament.isPending || updateTournament.isPending}
             fullWidth
             style={styles.submit}
           />
         </View>
-      )}
+        );
+      }}
     </AppForm>
   );
 }

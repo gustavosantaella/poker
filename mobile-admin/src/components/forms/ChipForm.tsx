@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
@@ -7,7 +7,8 @@ import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useChips, useCreateChip, useUpdateChip } from '@/hooks/use-queries';
-import { chipSchema, ChipFormValues } from '@/schemas/chip.schema';
+import { useI18n } from '@/i18n/I18nProvider';
+import { createChipSchema, ChipFormValues } from '@/schemas/chip.schema';
 import { useTheme } from '@/theme';
 import { getErrorMessage } from '@/utils/error';
 import { AppForm } from './AppForm';
@@ -24,17 +25,20 @@ interface ChipFormProps {
 export function ChipForm({ chipId }: ChipFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: chips, isLoading } = useChips();
   const createChip = useCreateChip();
   const updateChip = useUpdateChip();
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const schema = useMemo(() => createChipSchema(t), [t]);
 
   const chip = chipId ? chips?.items.find((c) => c.id === chipId) : undefined;
 
   if (isLoading || (chipId && !chip)) {
     return (
       <AppCard>
-        <LoadingView label="Loading chip..." />
+        <LoadingView label={t('chip.loading')} />
       </AppCard>
     );
   }
@@ -80,17 +84,22 @@ export function ChipForm({ chipId }: ChipFormProps) {
   };
 
   return (
-    <AppForm schema={chipSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
+    <AppForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit}>
       {({ handleSubmit, formState }) => (
         <View>
-          <SectionHeader title="Chip" />
+          <SectionHeader title={t('chip.section')} />
           <AppCard>
-            <FormNumberField name="value" label="Value (denomination)" />
-            <FormTextField name="color" label="Color name" placeholder="e.g. White" autoCapitalize="words" />
+            <FormNumberField name="value" label={t('chip.value')} />
+            <FormTextField
+              name="color"
+              label={t('chip.colorName')}
+              placeholder={t('chip.colorNamePlaceholder')}
+              autoCapitalize="words"
+            />
             <ColorPickerField name="hexColor" colorNameField="color" />
-            <FormNumberField name="quantity" label="Quantity in stock (optional)" />
-            <FormTextField name="notes" label="Notes" placeholder="Optional" multiline numberOfLines={2} />
-            <FormSwitch name="isActive" label="Active" description="Show this chip in the app" />
+            <FormNumberField name="quantity" label={t('chip.quantity')} />
+            <FormTextField name="notes" label={t('chip.notes')} placeholder={t('common.optional')} multiline numberOfLines={2} />
+            <FormSwitch name="isActive" label={t('chip.active')} description={t('chip.activeDesc')} />
           </AppCard>
 
           {serverError ? (
@@ -100,7 +109,7 @@ export function ChipForm({ chipId }: ChipFormProps) {
           ) : null}
 
           <AppButton
-            title={chipId ? 'Save changes' : 'Create chip'}
+            title={chipId ? t('common.saveChanges') : t('chip.create')}
             onPress={handleSubmit(onSubmit)}
             loading={formState.isSubmitting || createChip.isPending || updateChip.isPending}
             fullWidth

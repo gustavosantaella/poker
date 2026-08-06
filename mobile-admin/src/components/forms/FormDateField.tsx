@@ -5,6 +5,7 @@ import { useController } from 'react-hook-form';
 import { AppModal } from '@/components/ui/AppModal';
 import { AppText } from '@/components/ui/AppText';
 import { AppTextField } from '@/components/ui/AppTextField';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { radius } from '@/theme/radius';
 import { spacing } from '@/theme/spacing';
@@ -17,6 +18,7 @@ export interface FormDateFieldProps {
 
 /** Campo de fecha/hora conectado a react-hook-form (datepicker nativo). */
 export function FormDateField({ name, label }: FormDateFieldProps) {
+  const { t } = useI18n();
   const { field, fieldState } = useController({ name });
   const { colors } = useTheme();
   const [show, setShow] = useState(false);
@@ -67,7 +69,7 @@ export function FormDateField({ name, label }: FormDateFieldProps) {
             ]}
           >
             <AppText variant="body" color={isoValue ? colors.textPrimary : colors.textMuted}>
-              {isoValue ? formatDateTime(isoValue) : 'Select date and time'}
+              {isoValue ? formatDateTime(isoValue) : t('common.selectDate')}
             </AppText>
           </Pressable>
           {fieldState.error ? (

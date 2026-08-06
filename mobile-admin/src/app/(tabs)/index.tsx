@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { StatCard } from '@/components/features/StatCard';
 import { TableListItem } from '@/components/features/TableListItem';
 import { TournamentListItem } from '@/components/features/TournamentListItem';
@@ -11,16 +11,18 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAuth } from '@/hooks/use-auth';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useDashboardStats, useTables, useTournaments } from '@/hooks/use-queries';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: tables } = useTables();
   const { data: tournaments } = useTournaments();
 
-  const greeting = user ? `Hi, ${user.name.split(' ')[0]}` : 'Dashboard';
+  const greeting = user ? t('home.hello', { name: user.name.split(' ')[0] }) : t('home.dashboard');
   const recentTables = tables?.items.slice(0, 3) ?? [];
   const recentTournaments = tournaments?.items.slice(0, 3) ?? [];
 
@@ -31,21 +33,27 @@ export default function DashboardScreen() {
       {statsLoading ? (
         <LoadingView />
       ) : (
-        <View style={styles.statsGrid}>
-          <StatCard label="Open tables" value={stats?.openTables ?? 0} icon="pulse" tone="success" />
-          <StatCard label="Active tournaments" value={stats?.activeTournaments ?? 0} icon="trophy" tone="warning" />
-          <StatCard label="Total tables" value={stats?.tables ?? 0} icon="grid" />
-          <StatCard label="Total tournaments" value={stats?.tournaments ?? 0} icon="calendar" tone="accent" />
-          <StatCard label="Chips" value={stats?.chips ?? 0} icon="albums" tone="info" />
-          <StatCard label="Game types" value={stats?.gameTypes ?? 0} icon="layers" tone="muted" />
-        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={230}
+          decelerationRate="fast"
+          contentContainerStyle={styles.statsSlider}
+        >
+          <StatCard label={t('home.openTables')} value={stats?.openTables ?? 0} icon="pulse" tone="success" />
+          <StatCard label={t('home.activeTournaments')} value={stats?.activeTournaments ?? 0} icon="trophy" tone="warning" />
+          <StatCard label={t('home.totalTables')} value={stats?.tables ?? 0} icon="grid" />
+          <StatCard label={t('home.totalTournaments')} value={stats?.tournaments ?? 0} icon="calendar" tone="accent" />
+          <StatCard label={t('home.chips')} value={stats?.chips ?? 0} icon="albums" tone="info" />
+          <StatCard label={t('home.gameTypes')} value={stats?.gameTypes ?? 0} icon="layers" tone="muted" />
+        </ScrollView>
       )}
 
-      <SectionHeader title="Quick actions" />
+      <SectionHeader title={t('home.quickActions')} />
       <View style={styles.actions}>
-        <AppButton title="Table" icon="add" size="sm" style={styles.action} onPress={() => router.push('/table/new')} />
+        <AppButton title={t('home.table')} icon="add" size="sm" style={styles.action} onPress={() => router.push('/table/new')} />
         <AppButton
-          title="Tournament"
+          title={t('home.tournament')}
           icon="add"
           size="sm"
           variant="secondary"
@@ -53,7 +61,7 @@ export default function DashboardScreen() {
           onPress={() => router.push('/tournament/new')}
         />
         <AppButton
-          title="Chip"
+          title={t('home.chip')}
           icon="add"
           size="sm"
           variant="ghost"
@@ -62,13 +70,13 @@ export default function DashboardScreen() {
         />
       </View>
 
-      <SectionHeader title="Recent tables" actionLabel="See all" onAction={() => router.push('/tables')} />
+      <SectionHeader title={t('home.recentTables')} actionLabel={t('common.seeAll')} onAction={() => router.push('/tables')} />
       {recentTables.length === 0 ? (
         <EmptyState
           icon="grid-outline"
-          title="No tables yet"
-          subtitle="Create your first cash table"
-          actionLabel="New table"
+          title={t('home.noTablesYet')}
+          subtitle={t('home.createFirstTable')}
+          actionLabel={t('home.newTable')}
           onAction={() => router.push('/table/new')}
         />
       ) : (
@@ -78,16 +86,16 @@ export default function DashboardScreen() {
       )}
 
       <SectionHeader
-        title="Upcoming tournaments"
-        actionLabel="See all"
+        title={t('home.upcomingTournaments')}
+        actionLabel={t('common.seeAll')}
         onAction={() => router.push('/tournaments')}
       />
       {recentTournaments.length === 0 ? (
         <EmptyState
           icon="trophy-outline"
-          title="No tournaments yet"
-          subtitle="Schedule your first tournament"
-          actionLabel="New tournament"
+          title={t('home.noTournamentsYet')}
+          subtitle={t('home.scheduleFirstTournament')}
+          actionLabel={t('home.newTournament')}
           onAction={() => router.push('/tournament/new')}
         />
       ) : (
@@ -104,7 +112,7 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  statsSlider: { gap: 10, paddingRight: 8 },
   actions: { flexDirection: 'row', gap: 8 },
   action: { flex: 1 },
 });

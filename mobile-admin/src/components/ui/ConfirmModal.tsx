@@ -1,4 +1,5 @@
 import { useTheme } from '@/theme';
+import { translate } from '@/i18n';
 import { AppButton } from './AppButton';
 import { AppModal } from './AppModal';
 import { AppText } from './AppText';
@@ -20,8 +21,8 @@ export function ConfirmModal({
   visible,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel = translate('common.confirm'),
+  cancelLabel = translate('common.cancel'),
   destructive = false,
   loading = false,
   onConfirm,

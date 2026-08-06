@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { AppForm } from '@/components/forms/AppForm';
 import { FormTextField } from '@/components/forms/FormTextField';
@@ -10,7 +10,8 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { AppText } from '@/components/ui/AppText';
 import { useAuth } from '@/hooks/use-auth';
-import { registerSchema, RegisterValues } from '@/schemas/auth.schema';
+import { useI18n } from '@/i18n/I18nProvider';
+import { createRegisterSchema, RegisterValues } from '@/schemas/auth.schema';
 import { useTheme } from '@/theme';
 import { layout } from '@/theme/spacing';
 import { getErrorMessage } from '@/utils/error';
@@ -19,7 +20,10 @@ export default function RegisterScreen() {
   const router = useRouter();
   const { register } = useAuth();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const schema = useMemo(() => createRegisterSchema(t), [t]);
 
   const onSubmit = async (values: RegisterValues) => {
     setServerError(null);
@@ -33,7 +37,7 @@ export default function RegisterScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="Create account" showBack />
+      <AppHeader title={t('auth.createAccount')} showBack />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -43,11 +47,11 @@ export default function RegisterScreen() {
             <Ionicons name="diamond" size={36} color={colors.onPrimary} />
           </View>
           <AppText variant="title">PokeLAP Admin</AppText>
-          <AppText variant="caption">Register with email and password</AppText>
+          <AppText variant="caption">{t('auth.registerSubtitle')}</AppText>
         </View>
 
         <AppForm
-          schema={registerSchema}
+          schema={schema}
           defaultValues={{ name: '', email: '', password: '', confirmPassword: '' }}
           onSubmit={onSubmit}
         >
@@ -56,28 +60,28 @@ export default function RegisterScreen() {
               <AppCard>
                 <FormTextField
                   name="name"
-                  label="Name"
-                  placeholder="Your full name"
+                  label={t('auth.name')}
+                  placeholder={t('auth.namePlaceholder')}
                   autoCapitalize="words"
                 />
                 <FormTextField
                   name="email"
-                  label="Email"
-                  placeholder="you@pokelap.com"
+                  label={t('auth.email')}
+                  placeholder={t('auth.emailPlaceholder')}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
                 />
                 <FormTextField
                   name="password"
-                  label="Password"
-                  placeholder="At least 8 characters"
+                  label={t('auth.password')}
+                  placeholder={t('auth.passwordHint')}
                   secureTextEntry
                 />
                 <FormTextField
                   name="confirmPassword"
-                  label="Confirm password"
-                  placeholder="Repeat your password"
+                  label={t('auth.confirmPassword')}
+                  placeholder={t('auth.confirmPasswordPlaceholder')}
                   secureTextEntry
                 />
               </AppCard>
@@ -88,7 +92,7 @@ export default function RegisterScreen() {
                 </AppText>
               ) : null}
 
-              <AppButton title="Create account" onPress={handleSubmit(onSubmit)} loading={formState.isSubmitting} fullWidth />
+              <AppButton title={t('auth.createAccount')} onPress={handleSubmit(onSubmit)} loading={formState.isSubmitting} fullWidth />
             </View>
           )}
         </AppForm>

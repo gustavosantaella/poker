@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useChips, useDeleteChip } from '@/hooks/use-queries';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 
 export default function ChipDetailScreen() {
@@ -14,6 +15,7 @@ export default function ChipDetailScreen() {
   const chipId = Number(id);
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: chips } = useChips();
   const chip = chips?.items.find((c) => c.id === chipId);
   const deleteChip = useDeleteChip();
@@ -27,7 +29,7 @@ export default function ChipDetailScreen() {
   return (
     <AppScreen>
       <AppHeader
-        title="Edit chip"
+        title={t('chip.edit')}
         subtitle={chip ? `${chip.color} • ${chip.value}` : undefined}
         showBack
         right={
@@ -39,9 +41,9 @@ export default function ChipDetailScreen() {
       <ChipForm chipId={chipId} />
       <ConfirmModal
         visible={confirm}
-        title="Delete chip"
-        message={`Delete the ${chip?.color ?? ''} chip (${chip?.value ?? ''})? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('chip.deleteTitle')}
+        message={t('chip.deleteMessage', { color: chip?.color ?? '', value: chip?.value ?? '' })}
+        confirmLabel={t('common.delete')}
         destructive
         loading={deleteChip.isPending}
         onConfirm={handleDelete}

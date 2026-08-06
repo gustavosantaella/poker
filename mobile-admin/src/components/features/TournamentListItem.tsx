@@ -2,6 +2,7 @@ import { Tournament } from '@/api/types';
 import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { TournamentStatusBadge } from '@/components/ui/StatusBadge';
+import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatDateTime, formatNumber } from '@/utils/format';
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from '@/theme';
@@ -14,6 +15,7 @@ export function TournamentListItem({
   onPress: () => void;
 }) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   return (
     <AppCard onPress={onPress} style={styles.card}>
       <View style={styles.header}>
@@ -22,7 +24,7 @@ export function TournamentListItem({
             {tournament.name}
           </AppText>
           <AppText variant="caption">
-            {tournament.gameType?.name ?? 'No game type'} • {formatDateTime(tournament.startDate)}
+            {tournament.gameType?.name ?? t('table.noGameType')} • {formatDateTime(tournament.startDate)}
           </AppText>
         </View>
         <TournamentStatusBadge status={tournament.status} />
@@ -30,7 +32,7 @@ export function TournamentListItem({
       <View style={styles.meta}>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>
-            Buy-in
+            {t('table.buyIn')}
           </AppText>
           <AppText variant="body" weight="semibold">
             {formatCurrency(tournament.buyIn)}
@@ -39,7 +41,7 @@ export function TournamentListItem({
         </View>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>
-            Stack
+            {t('tournament.stack')}
           </AppText>
           <AppText variant="body" weight="semibold">
             {formatNumber(tournament.startingStack)}
@@ -47,10 +49,10 @@ export function TournamentListItem({
         </View>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>
-            Players
+            {t('tournament.players')}
           </AppText>
           <AppText variant="body" weight="semibold">
-            {tournament.maxPlayers}
+            {tournament.maxPlayers == null ? t('tournament.unlimited') : formatNumber(tournament.maxPlayers)}
           </AppText>
         </View>
       </View>

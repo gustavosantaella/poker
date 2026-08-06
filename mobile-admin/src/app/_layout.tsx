@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from '@/hooks/use-auth';
+import { I18nProvider } from '@/i18n/I18nProvider';
 import { ThemeProvider, useTheme } from '@/theme';
 
 const queryClient = new QueryClient({
@@ -30,13 +31,15 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <RootNavigator />
+            </AuthProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </I18nProvider>
     </GestureHandlerRootView>
   );
 }

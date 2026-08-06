@@ -44,7 +44,7 @@ export function StatCard({ label, value, icon, tone = 'primary' }: StatCardProps
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
+    width: 220,
     borderRadius: radius.lg,
     borderWidth: 1,
     padding: spacing.md,

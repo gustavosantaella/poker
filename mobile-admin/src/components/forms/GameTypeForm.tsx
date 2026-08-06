@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
@@ -8,7 +9,8 @@ import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { GAME_TYPE_PRESETS } from '@/constants';
 import { useAllGameTypes, useCreateGameType, useUpdateGameType } from '@/hooks/use-queries';
-import { gameTypeSchema, GameTypeFormValues } from '@/schemas/gameType.schema';
+import { useI18n } from '@/i18n/I18nProvider';
+import { createGameTypeSchema, GameTypeFormValues } from '@/schemas/gameType.schema';
 import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
 import { getErrorMessage } from '@/utils/error';
@@ -16,7 +18,6 @@ import { AppForm } from './AppForm';
 import { FormNumberField } from './FormNumberField';
 import { FormSwitch } from './FormSwitch';
 import { FormTextField } from './FormTextField';
-import { useFormContext } from 'react-hook-form';
 
 interface GameTypeFormProps {
   gameTypeId?: number;
@@ -59,17 +60,20 @@ function PresetFiller() {
 export function GameTypeForm({ gameTypeId }: GameTypeFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: all, isLoading } = useAllGameTypes();
   const createGameType = useCreateGameType();
   const updateGameType = useUpdateGameType();
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const schema = useMemo(() => createGameTypeSchema(t), [t]);
 
   const gameType = gameTypeId ? all?.items.find((g) => g.id === gameTypeId) : undefined;
 
   if (isLoading || (gameTypeId && !gameType)) {
     return (
       <AppCard>
-        <LoadingView label="Loading game type..." />
+        <LoadingView label={t('gameType.loading')} />
       </AppCard>
     );
   }
@@ -112,29 +116,29 @@ export function GameTypeForm({ gameTypeId }: GameTypeFormProps) {
   };
 
   return (
-    <AppForm schema={gameTypeSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
+    <AppForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit}>
       {({ handleSubmit, formState }) => (
         <View>
           {!gameTypeId ? (
             <>
-              <SectionHeader title="Quick presets" />
+              <SectionHeader title={t('gameType.quickPresets')} />
               <PresetFiller />
             </>
           ) : null}
 
-          <SectionHeader title="Game type" />
+          <SectionHeader title={t('gameType.section')} />
           <AppCard>
-            <FormTextField name="name" label="Name" placeholder="e.g. Texas Hold'em" autoCapitalize="words" />
-            <FormTextField name="description" label="Description" placeholder="Optional" multiline numberOfLines={3} />
+            <FormTextField name="name" label={t('gameType.name')} placeholder={t('gameType.namePlaceholder')} autoCapitalize="words" />
+            <FormTextField name="description" label={t('gameType.description')} placeholder={t('common.optional')} multiline numberOfLines={3} />
             <View style={styles.row}>
               <View style={styles.col}>
-                <FormNumberField name="holeCards" label="Hole cards" />
+                <FormNumberField name="holeCards" label={t('gameType.holeCards')} />
               </View>
               <View style={styles.col}>
-                <FormNumberField name="communityCards" label="Community cards" />
+                <FormNumberField name="communityCards" label={t('gameType.communityCards')} />
               </View>
             </View>
-            <FormSwitch name="isActive" label="Active" description="Available for new tables and tournaments" />
+            <FormSwitch name="isActive" label={t('gameType.active')} description={t('gameType.activeDesc')} />
           </AppCard>
 
           {serverError ? (
@@ -144,7 +148,7 @@ export function GameTypeForm({ gameTypeId }: GameTypeFormProps) {
           ) : null}
 
           <AppButton
-            title={gameTypeId ? 'Save changes' : 'Create game type'}
+            title={gameTypeId ? t('common.saveChanges') : t('gameType.create')}
             onPress={handleSubmit(onSubmit)}
             loading={formState.isSubmitting || createGameType.isPending || updateGameType.isPending}
             fullWidth

@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useAllGameTypes, useDeleteGameType } from '@/hooks/use-queries';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 
 export default function GameTypeDetailScreen() {
@@ -14,6 +15,7 @@ export default function GameTypeDetailScreen() {
   const gameTypeId = Number(id);
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: all } = useAllGameTypes();
   const gameType = all?.items.find((g) => g.id === gameTypeId);
   const deleteGameType = useDeleteGameType();
@@ -27,7 +29,7 @@ export default function GameTypeDetailScreen() {
   return (
     <AppScreen>
       <AppHeader
-        title="Edit game type"
+        title={t('gameType.edit')}
         subtitle={gameType?.name}
         showBack
         right={
@@ -39,9 +41,9 @@ export default function GameTypeDetailScreen() {
       <GameTypeForm gameTypeId={gameTypeId} />
       <ConfirmModal
         visible={confirm}
-        title="Delete game type"
-        message={`Delete “${gameType?.name ?? 'this game type'}”? Tables using it will keep their data.`}
-        confirmLabel="Delete"
+        title={t('gameType.deleteTitle')}
+        message={t('gameType.deleteMessage', { name: gameType?.name ?? t('gameType.new') })}
+        confirmLabel={t('common.delete')}
         destructive
         loading={deleteGameType.isPending}
         onConfirm={handleDelete}

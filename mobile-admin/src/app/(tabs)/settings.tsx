@@ -16,6 +16,8 @@ import { ListItem } from '@/components/ui/ListItem';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAllGameTypes } from '@/hooks/use-queries';
 import { useAuth } from '@/hooks/use-auth';
+import { Language } from '@/i18n';
+import { useI18n } from '@/i18n/I18nProvider';
 import { ThemeMode, useTheme } from '@/theme';
 import { getErrorMessage } from '@/utils/error';
 
@@ -27,20 +29,26 @@ const profileSchema = z.object({
 
 type ProfileValues = z.infer<typeof profileSchema>;
 
-const THEME_OPTIONS = [
-  { label: 'Light', value: 'light' },
-  { label: 'Dark', value: 'dark' },
-  { label: 'System', value: 'system' },
+const LANGUAGE_OPTIONS: { label: string; value: Language }[] = [
+  { label: 'English', value: 'en' },
+  { label: 'Español', value: 'es' },
 ];
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, logout, updateProfile } = useAuth();
   const { colors, mode, setMode } = useTheme();
+  const { t, language, setLanguage } = useI18n();
   const { data: gameTypes } = useAllGameTypes();
   const [profileOpen, setProfileOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const themeOptions = [
+    { label: t('settings.themeLight'), value: 'light' },
+    { label: t('settings.themeDark'), value: 'dark' },
+    { label: t('settings.themeSystem'), value: 'system' },
+  ];
 
   const handleUpdateProfile = async (values: ProfileValues) => {
     setServerError(null);
@@ -63,9 +71,9 @@ export default function SettingsScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="Settings" />
+      <AppHeader title={t('settings.title')} />
 
-      <SectionHeader title="Profile" />
+      <SectionHeader title={t('settings.profile')} />
       <AppCard>
         <ListItem
           title={user?.name ?? 'Admin'}
@@ -75,25 +83,37 @@ export default function SettingsScreen() {
           onPress={() => setProfileOpen(true)}
         />
         <AppText variant="caption" style={styles.role}>
-          Role: {user?.role ?? 'admin'}
+          {t('settings.role', { role: user?.role ?? 'admin' })}
         </AppText>
       </AppCard>
 
-      <SectionHeader title="Appearance" />
+      <SectionHeader title={t('settings.appearance')} />
       <AppCard padded={false}>
         <View style={styles.cardBody}>
           <AppSegmentedControl
-            label="Theme"
+            label={t('settings.theme')}
             value={mode}
-            options={THEME_OPTIONS}
+            options={themeOptions}
             onChange={(value) => setMode(value as ThemeMode)}
           />
         </View>
       </AppCard>
 
+      <SectionHeader title={t('settings.language')} />
+      <AppCard padded={false}>
+        <View style={styles.cardBody}>
+          <AppSegmentedControl
+            label={t('settings.language')}
+            value={language}
+            options={LANGUAGE_OPTIONS}
+            onChange={(value) => setLanguage(value as Language)}
+          />
+        </View>
+      </AppCard>
+
       <SectionHeader
-        title="Game types"
-        actionLabel="Add"
+        title={t('settings.gameTypes')}
+        actionLabel={t('common.add')}
         onAction={() => router.push('/game-type/new')}
       />
       <AppCard padded={false}>
@@ -109,9 +129,9 @@ export default function SettingsScreen() {
         ))}
       </AppCard>
 
-      <SectionHeader title="Session" />
+      <SectionHeader title={t('settings.session')} />
       <AppButton
-        title="Sign out"
+        title={t('settings.signOut')}
         variant="danger"
         icon="log-out-outline"
         fullWidth
@@ -119,16 +139,16 @@ export default function SettingsScreen() {
       />
 
       <AppText variant="caption" center style={styles.version}>
-        PokeLAP Admin v1.0.0
+        {t('settings.version')}
       </AppText>
 
       <AppModal
         visible={profileOpen}
-        title="Edit profile"
+        title={t('settings.editProfile')}
         onClose={() => setProfileOpen(false)}
         footer={
           <AppButton
-            title="Close"
+            title={t('common.close')}
             variant="secondary"
             fullWidth
             onPress={() => setProfileOpen(false)}
@@ -147,18 +167,18 @@ export default function SettingsScreen() {
           >
             {({ handleSubmit, formState }) => (
               <View>
-                <FormTextField name="name" label="Name" />
+                <FormTextField name="name" label={t('settings.name')} />
                 <FormTextField
                   name="email"
-                  label="Email"
+                  label={t('settings.email')}
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
                 <FormTextField
                   name="password"
-                  label="New password (optional)"
+                  label={t('settings.newPassword')}
                   secureTextEntry
-                  placeholder="Leave empty to keep current"
+                  placeholder={t('settings.passwordHint')}
                 />
                 {serverError ? (
                   <AppText variant="caption" color={colors.danger}>
@@ -166,7 +186,7 @@ export default function SettingsScreen() {
                   </AppText>
                 ) : null}
                 <AppButton
-                  title="Save changes"
+                  title={t('common.saveChanges')}
                   onPress={handleSubmit(handleUpdateProfile)}
                   loading={formState.isSubmitting}
                   fullWidth
@@ -179,9 +199,9 @@ export default function SettingsScreen() {
 
       <ConfirmModal
         visible={confirmLogout}
-        title="Sign out"
-        message="Are you sure you want to sign out?"
-        confirmLabel="Sign out"
+        title={t('settings.signOut')}
+        message={t('settings.confirmSignOut')}
+        confirmLabel={t('settings.signOut')}
         destructive
         onConfirm={handleLogout}
         onCancel={() => setConfirmLogout(false)}

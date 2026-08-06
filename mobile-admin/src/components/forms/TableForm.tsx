@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { TABLE_STATUS_OPTIONS } from '@/constants';
+import { TABLE_STATUS_VALUES } from '@/constants';
 import { useCreateTable, useGameTypes, useTable, useUpdateTable } from '@/hooks/use-queries';
-import { tableSchema, TableFormValues } from '@/schemas/table.schema';
+import { useI18n } from '@/i18n/I18nProvider';
+import { TranslationKey } from '@/i18n';
+import { createTableSchema, TableFormValues } from '@/schemas/table.schema';
 import { useTheme } from '@/theme';
 import { getErrorMessage } from '@/utils/error';
 import { AppForm } from './AppForm';
@@ -25,16 +27,24 @@ interface TableFormProps {
 export function TableForm({ tableId }: TableFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: gameTypes, isLoading: gameTypesLoading } = useGameTypes();
   const { data: table, isLoading: tableLoading } = useTable(tableId);
   const createTable = useCreateTable();
   const updateTable = useUpdateTable();
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const schema = useMemo(() => createTableSchema(t), [t]);
+
+  const statusOptions = TABLE_STATUS_VALUES.map((value) => ({
+    label: t(`status.${value}` as TranslationKey),
+    value,
+  }));
+
   if (gameTypesLoading || (tableId && tableLoading) || (tableId && !table)) {
     return (
       <AppCard>
-        <LoadingView label="Loading table..." />
+        <LoadingView label={t('table.loading')} />
       </AppCard>
     );
   }
@@ -80,46 +90,46 @@ export function TableForm({ tableId }: TableFormProps) {
   };
 
   return (
-    <AppForm schema={tableSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
+    <AppForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit}>
       {({ handleSubmit, formState }) => (
         <View>
-          <SectionHeader title="Details" />
+          <SectionHeader title={t('table.details')} />
           <AppCard>
-            <FormTextField name="name" label="Table name" placeholder="e.g. Cash Game A" autoCapitalize="words" />
+            <FormTextField name="name" label={t('table.name')} placeholder={t('table.namePlaceholder')} autoCapitalize="words" />
             <FormSelect
               name="gameTypeId"
-              label="Game type"
-              placeholder="Select a game type"
+              label={t('table.gameType')}
+              placeholder={t('table.gameTypePlaceholder')}
               options={gameTypeOptions}
             />
-            <FormNumberField name="seats" label="Seats" />
-            <FormTextField name="notes" label="Notes" placeholder="Optional" multiline numberOfLines={3} />
+            <FormNumberField name="seats" label={t('table.seats')} />
+            <FormTextField name="notes" label={t('table.notes')} placeholder={t('common.optional')} multiline numberOfLines={3} />
           </AppCard>
 
-          <SectionHeader title="Blinds & buy-in" />
+          <SectionHeader title={t('table.blinds')} />
           <AppCard>
             <View style={styles.row}>
               <View style={styles.col}>
-                <FormNumberField name="smallBlind" label="Small blind" />
+                <FormNumberField name="smallBlind" label={t('table.smallBlind')} />
               </View>
               <View style={styles.col}>
-                <FormNumberField name="bigBlind" label="Big blind" />
+                <FormNumberField name="bigBlind" label={t('table.bigBlind')} />
               </View>
             </View>
             <View style={styles.row}>
               <View style={styles.col}>
-                <FormNumberField name="minBuyIn" label="Min buy-in" />
+                <FormNumberField name="minBuyIn" label={t('table.minBuyIn')} />
               </View>
               <View style={styles.col}>
-                <FormNumberField name="maxBuyIn" label="Max buy-in" />
+                <FormNumberField name="maxBuyIn" label={t('table.maxBuyIn')} />
               </View>
             </View>
           </AppCard>
 
-          <SectionHeader title="Status" />
+          <SectionHeader title={t('table.status')} />
           <AppCard padded={false}>
             <View style={styles.statusPad}>
-              <FormSegmented name="status" options={TABLE_STATUS_OPTIONS} />
+              <FormSegmented name="status" options={statusOptions} />
             </View>
           </AppCard>
 
@@ -130,7 +140,7 @@ export function TableForm({ tableId }: TableFormProps) {
           ) : null}
 
           <AppButton
-            title={tableId ? 'Save changes' : 'Create table'}
+            title={tableId ? t('common.saveChanges') : t('table.create')}
             onPress={handleSubmit(onSubmit)}
             loading={formState.isSubmitting || createTable.isPending || updateTable.isPending}
             fullWidth

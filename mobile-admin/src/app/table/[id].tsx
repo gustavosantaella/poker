@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useDeleteTable, useTable } from '@/hooks/use-queries';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 
 export default function TableDetailScreen() {
@@ -14,6 +15,7 @@ export default function TableDetailScreen() {
   const tableId = Number(id);
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: table } = useTable(tableId);
   const deleteTable = useDeleteTable();
   const [confirm, setConfirm] = useState(false);
@@ -26,7 +28,7 @@ export default function TableDetailScreen() {
   return (
     <AppScreen>
       <AppHeader
-        title="Edit table"
+        title={t('table.edit')}
         subtitle={table?.name}
         showBack
         right={
@@ -38,9 +40,9 @@ export default function TableDetailScreen() {
       <TableForm tableId={tableId} />
       <ConfirmModal
         visible={confirm}
-        title="Delete table"
-        message={`Delete “${table?.name ?? 'this table'}”? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('table.deleteTitle')}
+        message={t('table.deleteMessage', { name: table?.name ?? t('table.new') })}
+        confirmLabel={t('common.delete')}
         destructive
         loading={deleteTable.isPending}
         onConfirm={handleDelete}
