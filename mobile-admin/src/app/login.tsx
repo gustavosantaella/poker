@@ -20,7 +20,7 @@ export default function LoginScreen() {
   const { colors } = useTheme();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const handleSubmit = async (values: LoginValues) => {
+  const onSubmit = async (values: LoginValues) => {
     setServerError(null);
     try {
       await login(values.email.trim(), values.password);
@@ -44,7 +44,7 @@ export default function LoginScreen() {
           <AppText variant="caption">Manage cash tables and tournaments</AppText>
         </View>
 
-        <AppForm schema={loginSchema} defaultValues={{ email: '', password: '' }} onSubmit={handleSubmit}>
+        <AppForm schema={loginSchema} defaultValues={{ email: '', password: '' }} onSubmit={onSubmit}>
           {({ handleSubmit, formState }) => (
             <View style={styles.form}>
               <AppCard>
@@ -70,7 +70,7 @@ export default function LoginScreen() {
                 </AppText>
               ) : null}
 
-              <AppButton title="Sign in" onPress={handleSubmit} loading={formState.isSubmitting} fullWidth />
+              <AppButton title="Sign in" onPress={handleSubmit(onSubmit)} loading={formState.isSubmitting} fullWidth />
               <AppButton
                 title="Create an account"
                 variant="ghost"

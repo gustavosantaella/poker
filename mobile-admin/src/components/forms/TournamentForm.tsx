@@ -114,7 +114,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         breakDurationMin: 10,
       };
 
-  const handleSubmit = async (values: TournamentFormValues) => {
+  const onSubmit = async (values: TournamentFormValues) => {
     setServerError(null);
     const payload = {
       name: values.name,
@@ -163,7 +163,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
   };
 
   return (
-    <AppForm schema={tournamentSchema} defaultValues={defaultValues} onSubmit={handleSubmit}>
+    <AppForm schema={tournamentSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
       {({ handleSubmit, formState }) => (
         <View>
           <SectionHeader title="Details" />
@@ -244,7 +244,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
 
           <AppButton
             title={tournamentId ? 'Save changes' : 'Create tournament'}
-            onPress={handleSubmit}
+            onPress={handleSubmit(onSubmit)}
             loading={formState.isSubmitting || createTournament.isPending || updateTournament.isPending}
             fullWidth
             style={styles.submit}

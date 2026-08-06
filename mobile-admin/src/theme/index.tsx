@@ -35,7 +35,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isDark = mode === 'system' ? systemScheme === 'dark' : mode === 'dark';
-  const colors = isDark ? palette.dark : palette.light;
+  const colors = (isDark ? palette.dark : palette.light) as ColorTokens;
 
   const value = useMemo<Theme>(
     () => ({
@@ -46,7 +46,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setModeState(next);
         AsyncStorage.setItem(STORAGE_KEY, next).catch(() => undefined);
       },
-      toggle: () => setMode(isDark ? 'light' : 'dark'),
+      toggle: () => setModeState(isDark ? 'light' : 'dark'),
     }),
     [colors, isDark, mode],
   );

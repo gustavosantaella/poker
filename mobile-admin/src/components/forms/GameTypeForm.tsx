@@ -90,7 +90,7 @@ export function GameTypeForm({ gameTypeId }: GameTypeFormProps) {
         isActive: true,
       };
 
-  const handleSubmit = async (values: GameTypeFormValues) => {
+  const onSubmit = async (values: GameTypeFormValues) => {
     setServerError(null);
     const payload = {
       name: values.name,
@@ -112,7 +112,7 @@ export function GameTypeForm({ gameTypeId }: GameTypeFormProps) {
   };
 
   return (
-    <AppForm schema={gameTypeSchema} defaultValues={defaultValues} onSubmit={handleSubmit}>
+    <AppForm schema={gameTypeSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
       {({ handleSubmit, formState }) => (
         <View>
           {!gameTypeId ? (
@@ -145,7 +145,7 @@ export function GameTypeForm({ gameTypeId }: GameTypeFormProps) {
 
           <AppButton
             title={gameTypeId ? 'Save changes' : 'Create game type'}
-            onPress={handleSubmit}
+            onPress={handleSubmit(onSubmit)}
             loading={formState.isSubmitting || createGameType.isPending || updateGameType.isPending}
             fullWidth
             style={styles.submit}

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ReactNode, StyleSheet, View } from 'react-native';
+import { ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
 import { AppButton } from './AppButton';

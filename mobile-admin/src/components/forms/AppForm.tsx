@@ -1,6 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ReactNode } from 'react';
-import { FieldValues, FormProvider, useForm, UseFormReturn } from 'react-hook-form';
+import {
+  DefaultValues,
+  FieldValues,
+  FormProvider,
+  Resolver,
+  useForm,
+  UseFormReturn,
+} from 'react-hook-form';
 import { z } from 'zod';
 
 export interface AppFormProps<T extends FieldValues> {
@@ -23,8 +30,8 @@ export function AppForm<T extends FieldValues>({
   mode = 'onBlur',
 }: AppFormProps<T>) {
   const form = useForm<T>({
-    resolver: zodResolver(schema),
-    defaultValues,
+    resolver: zodResolver(schema) as Resolver<T>,
+    defaultValues: defaultValues as DefaultValues<T>,
     mode,
   });
 

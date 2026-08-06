@@ -65,7 +65,7 @@ export function TableForm({ tableId }: TableFormProps) {
         notes: '',
       };
 
-  const handleSubmit = async (values: TableFormValues) => {
+  const onSubmit = async (values: TableFormValues) => {
     setServerError(null);
     try {
       if (tableId) {
@@ -80,7 +80,7 @@ export function TableForm({ tableId }: TableFormProps) {
   };
 
   return (
-    <AppForm schema={tableSchema} defaultValues={defaultValues} onSubmit={handleSubmit}>
+    <AppForm schema={tableSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
       {({ handleSubmit, formState }) => (
         <View>
           <SectionHeader title="Details" />
@@ -131,7 +131,7 @@ export function TableForm({ tableId }: TableFormProps) {
 
           <AppButton
             title={tableId ? 'Save changes' : 'Create table'}
-            onPress={handleSubmit}
+            onPress={handleSubmit(onSubmit)}
             loading={formState.isSubmitting || createTable.isPending || updateTable.isPending}
             fullWidth
             style={styles.submit}

@@ -21,7 +21,7 @@ export default function RegisterScreen() {
   const { colors } = useTheme();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const handleSubmit = async (values: RegisterValues) => {
+  const onSubmit = async (values: RegisterValues) => {
     setServerError(null);
     try {
       await register(values.name.trim(), values.email.trim(), values.password);
@@ -49,7 +49,7 @@ export default function RegisterScreen() {
         <AppForm
           schema={registerSchema}
           defaultValues={{ name: '', email: '', password: '', confirmPassword: '' }}
-          onSubmit={handleSubmit}
+          onSubmit={onSubmit}
         >
           {({ handleSubmit, formState }) => (
             <View style={styles.form}>
@@ -88,7 +88,7 @@ export default function RegisterScreen() {
                 </AppText>
               ) : null}
 
-              <AppButton title="Create account" onPress={handleSubmit} loading={formState.isSubmitting} fullWidth />
+              <AppButton title="Create account" onPress={handleSubmit(onSubmit)} loading={formState.isSubmitting} fullWidth />
             </View>
           )}
         </AppForm>

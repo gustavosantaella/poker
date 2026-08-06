@@ -57,7 +57,7 @@ export function ChipForm({ chipId }: ChipFormProps) {
         isActive: true,
       };
 
-  const handleSubmit = async (values: ChipFormValues) => {
+  const onSubmit = async (values: ChipFormValues) => {
     setServerError(null);
     const payload = {
       value: Number(values.value),
@@ -80,7 +80,7 @@ export function ChipForm({ chipId }: ChipFormProps) {
   };
 
   return (
-    <AppForm schema={chipSchema} defaultValues={defaultValues} onSubmit={handleSubmit}>
+    <AppForm schema={chipSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
       {({ handleSubmit, formState }) => (
         <View>
           <SectionHeader title="Chip" />
@@ -101,7 +101,7 @@ export function ChipForm({ chipId }: ChipFormProps) {
 
           <AppButton
             title={chipId ? 'Save changes' : 'Create chip'}
-            onPress={handleSubmit}
+            onPress={handleSubmit(onSubmit)}
             loading={formState.isSubmitting || createChip.isPending || updateChip.isPending}
             fullWidth
             style={styles.submit}

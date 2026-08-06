@@ -167,7 +167,7 @@ export default function SettingsScreen() {
                 ) : null}
                 <AppButton
                   title="Save changes"
-                  onPress={handleSubmit}
+                  onPress={handleSubmit(handleUpdateProfile)}
                   loading={formState.isSubmitting}
                   fullWidth
                 />
