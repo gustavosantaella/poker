@@ -9,6 +9,10 @@ export interface TournamentCountdown {
   remainingSec: number;
   time: string;
   advancing: boolean;
+  elapsedLevelSec: number;
+  elapsedLevel: string;
+  elapsedTotalSec: number;
+  elapsedTotal: string;
 }
 
 function formatTime(totalSec: number): string {
@@ -18,10 +22,21 @@ function formatTime(totalSec: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
+function formatDuration(totalSec: number): string {
+  const safe = Math.max(0, Math.floor(totalSec));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
 /**
  * Cuenta regresiva del torneo en vivo: calcula el tiempo restante del item
- * actual (nivel o descanso) y avanza automaticamente al siguiente cuando
- * se agota, respetando la duracion definida para cada item.
+ * actual (nivel o descanso), el tiempo transcurrido y avanza automaticamente
+ * al siguiente item cuando se agota, respetando los descansos.
  */
 export function useTournamentCountdown(
   tournament: Tournament | undefined,
@@ -29,27 +44,36 @@ export function useTournamentCountdown(
 ): TournamentCountdown {
   const nextLevel = useNextTournamentLevel();
   const [remainingSec, setRemainingSec] = useState(0);
+  const [elapsedLevelSec, setElapsedLevelSec] = useState(0);
 
   const items = tournament?.blindStructure ?? [];
   const currentIndex = tournament?.currentLevel ?? null;
   const currentItem = currentIndex != null ? (items[currentIndex] ?? null) : null;
   const isRunning = tournament?.status === 'running';
+  const startedAtMs = useMemo(
+    () => (tournament?.startedAt ? new Date(tournament.startedAt).getTime() : null),
+    [tournament?.startedAt],
+  );
+  const levelStartedAtMs = useMemo(
+    () => (tournament?.levelStartedAt ? new Date(tournament.levelStartedAt).getTime() : null),
+    [tournament?.levelStartedAt],
+  );
 
   useEffect(() => {
-    if (!isRunning || !tournament?.levelStartedAt || !currentItem) {
+    if (!isRunning || !levelStartedAtMs || !currentItem) {
       setRemainingSec(0);
       return;
     }
-    const startedAt = new Date(tournament.levelStartedAt).getTime();
     const durationMs = (currentItem.durationMin ?? 0) * 60_000;
     const update = () => {
-      const remaining = Math.ceil((startedAt + durationMs - Date.now()) / 1000);
-      setRemainingSec(Math.max(0, remaining));
+      const now = Date.now();
+      setRemainingSec(Math.max(0, Math.ceil((levelStartedAtMs + durationMs - now) / 1000)));
+      setElapsedLevelSec(Math.max(0, Math.floor((now - levelStartedAtMs) / 1000)));
     };
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [isRunning, tournament?.levelStartedAt, currentItem, currentIndex]);
+  }, [isRunning, levelStartedAtMs, currentItem, currentIndex]);
 
   // Avanza automaticamente cuando el tiempo del item actual se agota.
   useEffect(() => {
@@ -62,6 +86,18 @@ export function useTournamentCountdown(
     }
   }, [autoAdvance, isRunning, currentItem, remainingSec, tournament, currentIndex, nextLevel]);
 
+  // Tiempo total transcurrido: items completados + lo corrido del item actual.
+  const elapsedTotalSec = useMemo(() => {
+    if (tournament?.status === 'completed') {
+      return items.reduce((sum, item) => sum + (item.durationMin ?? 0) * 60, 0);
+    }
+    if (currentIndex == null) return 0;
+    const completedSec = items
+      .slice(0, currentIndex)
+      .reduce((sum, item) => sum + (item.durationMin ?? 0) * 60, 0);
+    return completedSec + elapsedLevelSec;
+  }, [items, currentIndex, elapsedLevelSec, tournament?.status]);
+
   return useMemo(
     () => ({
       currentItem,
@@ -70,7 +106,19 @@ export function useTournamentCountdown(
       remainingSec,
       time: formatTime(remainingSec),
       advancing: nextLevel.isPending,
+      elapsedLevelSec,
+      elapsedLevel: formatTime(elapsedLevelSec),
+      elapsedTotalSec,
+      elapsedTotal: formatDuration(elapsedTotalSec),
     }),
-    [currentItem, currentIndex, isRunning, remainingSec, nextLevel.isPending],
+    [
+      currentItem,
+      currentIndex,
+      isRunning,
+      remainingSec,
+      nextLevel.isPending,
+      elapsedLevelSec,
+      elapsedTotalSec,
+    ],
   );
 }

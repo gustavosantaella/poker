@@ -60,6 +60,9 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
               ▶ {currentLabel}
               {running ? ` • ${countdown.time}` : ''}
             </AppText>
+            <AppText variant="caption" color={colors.primary}>
+              {t('tournament.elapsed')}: {countdown.elapsedTotal}
+            </AppText>
           </View>
         ) : null}
 
