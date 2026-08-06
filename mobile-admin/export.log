@@ -3,10 +3,9 @@ env: export EXPO_PUBLIC_API_URL
 Using src/app as the root directory for Expo Router.
 React Compiler enabled
 Starting Metro Bundler
-Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.1% (1136/1165)
-Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1609/1609)
-Android Bundled 7929ms node_modules\expo-router\entry.js (1609 modules)
-Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1609/1609)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1610/1610)
+Android Bundled 6942ms node_modules\expo-router\entry.js (1610 modules)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1610/1610)
 
 › Assets (43):
 node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\AntDesign.ttf (130 kB)
@@ -42,7 +41,7 @@ node_modules\expo-router\assets\sitemap.png (465 B)
 node_modules\expo-router\assets\unmatched.png (4.75 kB)
 
 › android bundles (1):
-_expo/static/js/android/entry-53f8b61dd4618ddd42f5ebc6c92ae382.hbc (5.03 MB)
+_expo/static/js/android/entry-0b484378221fc56cfd071b38eedebe7c.hbc (5.04 MB)
 
 › Files (1):
 metadata.json (3.03 kB)

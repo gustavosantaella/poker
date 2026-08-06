@@ -6,11 +6,14 @@ import { AnteMode, BlindConfig, BlindGrowth } from '@/api/types';
 import { BlindStructurePreview } from '@/components/features/BlindStructurePreview';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
+import { AppText } from '@/components/ui/AppText';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ANTE_MODE_VALUES, GROWTH_VALUES } from '@/constants';
 import { TranslationKey } from '@/i18n';
 import { useI18n } from '@/i18n/I18nProvider';
 import { TournamentFormValues } from '@/schemas/tournament.schema';
+import { useTheme } from '@/theme';
 import { getErrorMessage } from '@/utils/error';
 import { FormNumberField } from './FormNumberField';
 import { FormSegmented } from './FormSegmented';
@@ -24,10 +27,12 @@ export function TournamentStructureSection({
   initialStructure = null,
 }: TournamentStructureSectionProps) {
   const { t } = useI18n();
+  const { colors } = useTheme();
   const { getValues, watch } = useFormContext<TournamentFormValues>();
   const [preview, setPreview] = useState<GenerateStructureResult | null>(initialStructure);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const growthOptions = GROWTH_VALUES.map((value) => ({
     label: t(`growth.${value}` as TranslationKey),
@@ -73,12 +78,13 @@ export function TournamentStructureSection({
     maxReEntries: w.reEntryEnabled && w.maxReEntries != null ? Number(w.maxReEntries) : undefined,
   });
 
-  const handlePreview = async () => {
+  const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     try {
       const result = await generateStructure(buildConfig(getValues()));
       setPreview(result);
+      setSheetOpen(true);
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -117,24 +123,31 @@ export function TournamentStructureSection({
         <FormNumberField name="breakDurationMin" label={t('structure.breakDuration')} />
       </AppCard>
 
-      <SectionHeader title={t('structure.preview')} />
-      <BlindStructurePreview
-        items={preview?.items}
-        summary={preview?.summary}
-        loading={loading}
-        error={error ?? undefined}
-        lateRegistrationLevel={lateRegistrationLevel}
-        addOnLevel={addOnLevel}
-        reEntryUnlimited={reEntryUnlimited}
-      />
+      {error ? (
+        <AppText variant="caption" color={colors.danger} style={styles.error}>
+          {error}
+        </AppText>
+      ) : null}
       <AppButton
         title={t('structure.generate')}
         variant="secondary"
         icon="build-outline"
-        onPress={handlePreview}
+        onPress={handleGenerate}
         loading={loading}
         style={styles.previewBtn}
       />
+
+      <BottomSheet visible={sheetOpen} title={t('structure.preview')} onClose={() => setSheetOpen(false)}>
+        <BlindStructurePreview
+          items={preview?.items}
+          summary={preview?.summary}
+          loading={false}
+          error={undefined}
+          lateRegistrationLevel={lateRegistrationLevel}
+          addOnLevel={addOnLevel}
+          reEntryUnlimited={reEntryUnlimited}
+        />
+      </BottomSheet>
     </>
   );
 }
@@ -143,4 +156,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
   previewBtn: { marginTop: 12, marginBottom: 4 },
+  error: { marginBottom: 8 },
 });
