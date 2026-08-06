@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -96,6 +97,30 @@ export class CreateTournamentDto {
   @IsInt()
   @Min(1)
   addOnUntilLevel?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  guaranteedPrize?: number;
+
+  @IsOptional()
+  @IsIn(['percent', 'fixed'])
+  paidPlacesType?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1000)
+  paidPlacesValue?: number;
+
+  @IsOptional()
+  @IsIn(['percent', 'fixed'])
+  adminFeeType?: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  adminFeeValue?: number;
 
   // Blind structure (auto-generated from blindConfig, or fully manual)
   @IsOptional()

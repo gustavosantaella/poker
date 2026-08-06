@@ -37,6 +37,11 @@ export const createTournamentSchema = (t: TFunction) =>
       addOnAmount: optionalNumber(0),
       addOnStack: optionalInt(1),
       addOnUntilLevel: optionalInt(1),
+      guaranteedPrize: optionalNumber(0),
+      paidPlacesType: z.enum(['percent', 'fixed']),
+      paidPlacesValue: optionalInt(1),
+      adminFeeType: z.enum(['percent', 'fixed']),
+      adminFeeValue: optionalNumber(0),
       startingBigBlind: optionalInt(1),
       levelDurationMin: z.coerce.number().int().min(1, t('validation.levelDurationMin')).max(240),
       numberOfLevels: optionalInt(1, 60),
@@ -90,6 +95,12 @@ export const createTournamentSchema = (t: TFunction) =>
             message: t('validation.addOnUntilLevelRequired'),
           });
         }
+      }
+      if (data.paidPlacesType === 'percent' && data.paidPlacesValue != null && data.paidPlacesValue > 100) {
+        ctx.addIssue({ code: ZodIssueCode.custom, path: ['paidPlacesValue'], message: t('validation.percentMax') });
+      }
+      if (data.adminFeeType === 'percent' && data.adminFeeValue != null && data.adminFeeValue > 100) {
+        ctx.addIssue({ code: ZodIssueCode.custom, path: ['adminFeeValue'], message: t('validation.percentMax') });
       }
     });
 

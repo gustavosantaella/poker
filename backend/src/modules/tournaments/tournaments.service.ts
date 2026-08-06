@@ -60,6 +60,22 @@ export class TournamentsService extends CrudService<Tournament> {
   }
 
   private validateOptions(dto: Partial<CreateTournamentDto>): void {
+    if (
+      dto.paidPlacesType === 'percent' &&
+      dto.paidPlacesValue !== undefined &&
+      dto.paidPlacesValue !== null &&
+      dto.paidPlacesValue > 100
+    ) {
+      throw new BadRequestException('paidPlacesValue cannot exceed 100 when using percent');
+    }
+    if (
+      dto.adminFeeType === 'percent' &&
+      dto.adminFeeValue !== undefined &&
+      dto.adminFeeValue !== null &&
+      dto.adminFeeValue > 100
+    ) {
+      throw new BadRequestException('adminFeeValue cannot exceed 100 when using percent');
+    }
     if (dto.reEntryEnabled && (dto.maxReEntries === undefined || dto.maxReEntries === null || dto.maxReEntries < 0)) {
       throw new BadRequestException('maxReEntries is required when re-entry is enabled');
     }

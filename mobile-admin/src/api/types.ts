@@ -124,6 +124,11 @@ export interface Tournament {
   addOnAmount: number | null;
   addOnStack: number | null;
   addOnUntilLevel: number | null;
+  guaranteedPrize: number | null;
+  paidPlacesType: 'percent' | 'fixed' | null;
+  paidPlacesValue: number | null;
+  adminFeeType: 'percent' | 'fixed' | null;
+  adminFeeValue: number | null;
   blindStructure: BlindStructureItem[] | null;
   blindConfig: BlindConfig | null;
   isActive: boolean;
@@ -202,5 +207,10 @@ export interface TournamentPayload {
   addOnAmount?: number;
   addOnStack?: number;
   addOnUntilLevel?: number;
+  guaranteedPrize?: number | null;
+  paidPlacesType?: 'percent' | 'fixed';
+  paidPlacesValue?: number;
+  adminFeeType?: 'percent' | 'fixed';
+  adminFeeValue?: number | null;
   blindConfig: BlindConfig;
 }

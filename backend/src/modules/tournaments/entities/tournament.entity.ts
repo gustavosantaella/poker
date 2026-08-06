@@ -79,6 +79,21 @@ export class Tournament extends BaseEntity {
   @Column({ type: 'json', nullable: true })
   blindConfig: BlindConfig | null;
 
+  @Column({ type: 'decimal', precision: 14, scale: 2, transformer: DecimalTransformer, nullable: true })
+  guaranteedPrize: number | null;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  paidPlacesType: 'percent' | 'fixed' | null;
+
+  @Column({ type: 'int', nullable: true })
+  paidPlacesValue: number | null;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  adminFeeType: 'percent' | 'fixed' | null;
+
+  @Column({ type: 'decimal', precision: 14, scale: 2, transformer: DecimalTransformer, nullable: true })
+  adminFeeValue: number | null;
+
   @Column({ default: true })
   isActive: boolean;
 }

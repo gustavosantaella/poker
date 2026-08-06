@@ -41,6 +41,18 @@ function MaxReEntriesField() {
   return <FormNumberField name="maxReEntries" label={t('tournament.maxReEntries')} />;
 }
 
+/** Campo de jugadores premiados: cambia el label segun sea % o cantidad fija. */
+function PaidPlacesValueField() {
+  const { t } = useI18n();
+  const type = useWatch({ name: 'paidPlacesType' });
+  return (
+    <FormNumberField
+      name="paidPlacesValue"
+      label={type === 'fixed' ? t('tournament.paidPlacesFixed') : t('tournament.paidPlacesPercent')}
+    />
+  );
+}
+
 interface TournamentFormProps {
   tournamentId?: number;
 }
@@ -80,6 +92,15 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
     value,
   }));
 
+  const paidPlacesOptions = [
+    { label: t('tournament.percent'), value: 'percent' },
+    { label: t('tournament.fixed'), value: 'fixed' },
+  ];
+  const adminFeeOptions = [
+    { label: t('tournament.percent'), value: 'percent' },
+    { label: t('tournament.fixed'), value: 'fixed' },
+  ];
+
   const initialStructure: GenerateStructureResult | null = tournament?.blindStructure
     ? { items: tournament.blindStructure, summary: summarizeStructure(tournament.blindStructure)! }
     : null;
@@ -106,6 +127,11 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         addOnAmount: tournament.addOnAmount ?? undefined,
         addOnStack: tournament.addOnStack ?? undefined,
         addOnUntilLevel: tournament.addOnUntilLevel ?? undefined,
+        guaranteedPrize: tournament.guaranteedPrize ?? undefined,
+        paidPlacesType: tournament.paidPlacesType ?? 'percent',
+        paidPlacesValue: tournament.paidPlacesValue ?? 15,
+        adminFeeType: tournament.adminFeeType ?? 'percent',
+        adminFeeValue: tournament.adminFeeValue ?? undefined,
         startingBigBlind: bc?.startingBigBlind ?? undefined,
         levelDurationMin: bc?.levelDurationMin ?? 20,
         numberOfLevels: bc?.numberOfLevels ?? undefined,
@@ -135,6 +161,11 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         addOnAmount: 40,
         addOnStack: 15000,
         addOnUntilLevel: 6,
+        guaranteedPrize: undefined,
+        paidPlacesType: 'percent',
+        paidPlacesValue: 15,
+        adminFeeType: 'percent',
+        adminFeeValue: undefined,
         startingBigBlind: undefined,
         levelDurationMin: 20,
         numberOfLevels: undefined,
@@ -172,6 +203,11 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       addOnAmount: values.addOnEnabled && values.addOnAmount != null ? Number(values.addOnAmount) : 0,
       addOnStack: values.addOnEnabled && values.addOnStack != null ? Number(values.addOnStack) : 0,
       addOnUntilLevel: values.addOnEnabled && values.addOnUntilLevel != null ? Number(values.addOnUntilLevel) : 0,
+      guaranteedPrize: values.guaranteedPrize != null ? Number(values.guaranteedPrize) : null,
+      paidPlacesType: values.paidPlacesType,
+      paidPlacesValue: values.paidPlacesValue != null ? Number(values.paidPlacesValue) : 0,
+      adminFeeType: values.adminFeeType,
+      adminFeeValue: values.adminFeeValue != null ? Number(values.adminFeeValue) : null,
       blindConfig: {
         startingStack: Number(values.startingStack),
         startingBigBlind: values.startingBigBlind != null ? Number(values.startingBigBlind) : undefined,
@@ -238,6 +274,19 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
                 <FormNumberField name="fee" label={t('tournament.entryFee')} />
               </View>
             </View>
+          </AppCard>
+
+          <SectionHeader title={t('tournament.prize')} />
+          <AppCard>
+            <FormNumberField
+              name="guaranteedPrize"
+              label={t('tournament.guaranteedPrize')}
+              helper={t('tournament.guaranteedPrizeHelper')}
+            />
+            <FormSegmented name="paidPlacesType" label={t('tournament.paidPlaces')} options={paidPlacesOptions} />
+            <PaidPlacesValueField />
+            <FormNumberField name="adminFeeValue" label={t('tournament.adminFee')} helper={t('tournament.adminFeeHelper')} />
+            <FormSegmented name="adminFeeType" label={t('tournament.feeType')} options={adminFeeOptions} />
           </AppCard>
 
           <SectionHeader title={t('tournament.reEntry')} />
