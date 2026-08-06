@@ -58,6 +58,10 @@ export class Tournament extends BaseEntity {
   @Column({ default: true })
   registrationOpen: boolean;
 
+
+  @Column({ type: 'int', default: 0 })
+  currentDayTournament: number = 0;
+
   // Re-entry (rebuy)
   @Column({ default: false })
   reEntryEnabled: boolean;
