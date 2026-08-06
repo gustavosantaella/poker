@@ -2,6 +2,15 @@
 
 NestJS + TypeORM + MySQL backend for the PokeLAP Admin app.
 
+## Structure
+
+```
+src/
+├── modules/          # Feature modules (auth, chips, dashboard, game-types, tables, tournaments, users)
+├── common/           # Shared code (interceptors, filters, guards, decorators, generic CRUD service)
+├── config/           # Configuration (port, database, JWT)
+└── database/         # DataSource + idempotent seed
+```
 
 ## Requirements
 
@@ -25,3 +34,21 @@ NestJS + TypeORM + MySQL backend for the PokeLAP Admin app.
 ## Seed admin
 
 email: `admin@pokelap.com` / password: `Admin123!`
+
+## Logging
+
+- Every HTTP request is logged (method, route, status, duration, IP) by `LoggingInterceptor`.
+- AuthService logs register/login attempts (email + outcome, never the password).
+- `HttpExceptionFilter` logs 4xx as warnings and 5xx with stack traces.
+
+## Connect from the mobile app (Expo Go on a physical device)
+
+The API listens on port 3000 on all interfaces. To reach it from a phone on the
+same Wi-Fi, set the PC's LAN IP in the app:
+
+```
+EXPO_PUBLIC_API_URL=http://<PC-LAN-IP>:3000/api
+```
+
+On startup the backend prints every reachable URL, e.g.
+`Reachable from your device at: http://172.18.20.54:3000/api`.

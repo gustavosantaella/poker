@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+﻿import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial } from 'typeorm';
 import { Repository } from 'typeorm';
-import { CrudService } from '../common/services/crud.service';
+import { CrudService } from '../../common/services/crud.service';
 import { buildBlindStructure } from './blind-structure.builder';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { GenerateStructureDto } from './dto/blind-structure.dto';

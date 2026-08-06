@@ -1,12 +1,12 @@
-import * as bcrypt from 'bcryptjs';
+﻿import * as bcrypt from 'bcryptjs';
 import { DataSource } from 'typeorm';
 import typeormConfig from './typeorm.config';
-import { Chip } from '../chips/entities/chip.entity';
-import { GameType } from '../game-types/entities/game-type.entity';
-import { PokerTable, TableStatus } from '../tables/entities/table.entity';
-import { Tournament, TournamentStatus } from '../tournaments/entities/tournament.entity';
-import { User, UserRole } from '../users/entities/user.entity';
-import { buildBlindStructure } from '../tournaments/blind-structure.builder';
+import { Chip } from '../modules/chips/entities/chip.entity';
+import { GameType } from '../modules/game-types/entities/game-type.entity';
+import { PokerTable, TableStatus } from '../modules/tables/entities/table.entity';
+import { Tournament, TournamentStatus } from '../modules/tournaments/entities/tournament.entity';
+import { User, UserRole } from '../modules/users/entities/user.entity';
+import { buildBlindStructure } from '../modules/tournaments/blind-structure.builder';
 
 /**
  * Seed idempotente: crea un admin, tipos de juego, fichas de ejemplo,

@@ -1,8 +1,8 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+﻿import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { GameTypesService } from './game-types.service';
 import { CreateGameTypeDto } from './dto/create-game-type.dto';
 import { UpdateGameTypeDto } from './dto/update-game-type.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @Controller('game-types')
 export class GameTypesController {

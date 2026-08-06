@@ -1,6 +1,6 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { DecimalTransformer } from '../../common/entities/decimal.transformer';
+﻿import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
+import { DecimalTransformer } from '../../../common/entities/decimal.transformer';
 import { GameType } from '../../game-types/entities/game-type.entity';
 
 export enum TableStatus {
