@@ -134,6 +134,9 @@ export interface Tournament {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  startedAt: string | null;
+  currentLevel: number | null;
+  levelStartedAt: string | null;
 }
 
 export interface DashboardStats {
@@ -213,4 +216,35 @@ export interface TournamentPayload {
   adminFeeType?: 'percent' | 'fixed';
   adminFeeValue?: number | null;
   blindConfig: BlindConfig;
+}
+
+export type ReservationStatus = 'pending' | 'accepted' | 'rejected';
+
+export interface TournamentReservation {
+  id: number;
+  tournamentId: number;
+  userId: number;
+  user: User;
+  status: ReservationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TournamentChip {
+  id: number;
+  tournamentId: number;
+  chipId: number;
+  chip: Chip;
+  discardLevel: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TournamentPrize {
+  id: number;
+  tournamentId: number;
+  place: number;
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
 }

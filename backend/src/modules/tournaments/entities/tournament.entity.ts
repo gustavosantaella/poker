@@ -110,6 +110,15 @@ export class Tournament extends BaseEntity {
   @Column({ type: 'decimal', precision: 14, scale: 2, transformer: DecimalTransformer, nullable: true })
   adminFeeValue: number | null;
 
+  @Column({ type: 'datetime', nullable: true })
+  startedAt: Date | null;
+
+  @Column({ type: 'int', nullable: true })
+  currentLevel: number | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  levelStartedAt: Date | null;
+
   @Column({ default: true })
   isActive: boolean;
 }

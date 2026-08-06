@@ -16,6 +16,7 @@ export interface BlindStructurePreviewProps {
   lateRegistrationLevel?: number | null;
   addOnLevel?: number | null;
   reEntryUnlimited?: boolean;
+  currentIndex?: number | null;
 }
 
 /** Tabla de niveles + resumen de la estructura de ciegas generada. */
@@ -27,6 +28,7 @@ export function BlindStructurePreview({
   lateRegistrationLevel = null,
   addOnLevel = null,
   reEntryUnlimited = false,
+  currentIndex = null,
 }: BlindStructurePreviewProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -88,11 +90,19 @@ export function BlindStructurePreview({
         </View>
       ) : null}
 
-      {items.map((item) => {
+      {items.map((item, index) => {
+        const isCurrent = currentIndex != null && index === currentIndex;
         if (item.type === 'break') {
           return (
-            <View key={`break-${item.afterLevel}`} style={[styles.break, { backgroundColor: colors.surfaceMuted }]}>
+            <View
+              key={`break-${item.afterLevel}`}
+              style={[
+                styles.break,
+                { backgroundColor: isCurrent ? colors.primaryMuted : colors.surfaceMuted },
+              ]}
+            >
               <AppText variant="caption" weight="semibold" color={colors.warning}>
+                {isCurrent ? '▶ ' : ''}
                 {t('structure.breakLabel', { minutes: item.durationMin })}
               </AppText>
               <AppText variant="caption">{t('structure.afterLevel', { level: item.afterLevel })}</AppText>
@@ -100,10 +110,10 @@ export function BlindStructurePreview({
           );
         }
         return (
-          <View key={`level-${item.level}`}>
+          <View key={`level-${item.level}`} style={isCurrent ? { borderRadius: 8, backgroundColor: colors.primaryMuted } : undefined}>
             <View style={[styles.row, { borderBottomColor: colors.border }]}>
               <AppText variant="body" weight="semibold" style={styles.level}>
-                L{item.level}
+                {isCurrent ? '▶ ' : ''}L{item.level}
               </AppText>
               <AppText variant="body" weight="medium">
                 {formatChips(item.smallBlind)}/{formatChips(item.bigBlind)}

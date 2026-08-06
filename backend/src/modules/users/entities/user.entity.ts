@@ -1,9 +1,10 @@
-﻿import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
+  PLAYER = 'player',
 }
 
 @Entity('users')

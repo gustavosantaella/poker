@@ -4,8 +4,13 @@ import {
   BlindStructureItem,
   BlindStructureSummary,
   Paginated,
+  ReservationStatus,
   Tournament,
+  TournamentChip,
   TournamentPayload,
+  TournamentPrize,
+  TournamentReservation,
+  User,
 } from './types';
 
 export async function fetchTournaments(): Promise<Paginated<Tournament>> {
@@ -40,4 +45,86 @@ export async function updateTournament(id: number, payload: Partial<TournamentPa
 
 export async function deleteTournament(id: number): Promise<void> {
   await apiClient.delete(`/tournaments/${id}`);
+}
+
+export async function startTournament(id: number): Promise<Tournament> {
+  const res = await apiClient.post(`/tournaments/${id}/start`);
+  return res.data.data as Tournament;
+}
+
+export async function pauseTournament(id: number): Promise<Tournament> {
+  const res = await apiClient.post(`/tournaments/${id}/pause`);
+  return res.data.data as Tournament;
+}
+
+export async function resumeTournament(id: number): Promise<Tournament> {
+  const res = await apiClient.post(`/tournaments/${id}/resume`);
+  return res.data.data as Tournament;
+}
+
+export async function nextTournamentLevel(id: number): Promise<Tournament> {
+  const res = await apiClient.post(`/tournaments/${id}/next-level`);
+  return res.data.data as Tournament;
+}
+
+export async function fetchReservations(tournamentId: number): Promise<TournamentReservation[]> {
+  const res = await apiClient.get(`/tournaments/${tournamentId}/reservations`);
+  return res.data.data as TournamentReservation[];
+}
+
+export async function createReservation(
+  tournamentId: number,
+  userId: number,
+): Promise<TournamentReservation> {
+  const res = await apiClient.post(`/tournaments/${tournamentId}/reservations`, { userId });
+  return res.data.data as TournamentReservation;
+}
+
+export async function updateReservation(
+  tournamentId: number,
+  reservationId: number,
+  status: ReservationStatus,
+): Promise<TournamentReservation> {
+  const res = await apiClient.patch(`/tournaments/${tournamentId}/reservations/${reservationId}`, { status });
+  return res.data.data as TournamentReservation;
+}
+
+export async function removeReservation(tournamentId: number, reservationId: number): Promise<void> {
+  await apiClient.delete(`/tournaments/${tournamentId}/reservations/${reservationId}`);
+}
+
+export async function fetchTournamentChips(tournamentId: number): Promise<TournamentChip[]> {
+  const res = await apiClient.get(`/tournaments/${tournamentId}/chips`);
+  return res.data.data as TournamentChip[];
+}
+
+export async function addTournamentChip(
+  tournamentId: number,
+  chipId: number,
+  discardLevel?: number,
+): Promise<TournamentChip> {
+  const res = await apiClient.post(`/tournaments/${tournamentId}/chips`, { chipId, discardLevel });
+  return res.data.data as TournamentChip;
+}
+
+export async function removeTournamentChip(tournamentId: number, tournamentChipId: number): Promise<void> {
+  await apiClient.delete(`/tournaments/${tournamentId}/chips/${tournamentChipId}`);
+}
+
+export async function fetchPrizes(tournamentId: number): Promise<TournamentPrize[]> {
+  const res = await apiClient.get(`/tournaments/${tournamentId}/prizes`);
+  return res.data.data as TournamentPrize[];
+}
+
+export async function updatePrizes(
+  tournamentId: number,
+  prizes: { place: number; amount: number }[],
+): Promise<TournamentPrize[]> {
+  const res = await apiClient.put(`/tournaments/${tournamentId}/prizes`, { prizes });
+  return res.data.data as TournamentPrize[];
+}
+
+export async function fetchPlayers(): Promise<User[]> {
+  const res = await apiClient.get('/tournaments/players');
+  return res.data.data as User[];
 }

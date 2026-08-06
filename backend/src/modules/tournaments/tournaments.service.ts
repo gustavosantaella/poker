@@ -1,18 +1,35 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial } from 'typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { CrudService } from '../../common/services/crud.service';
+import { Chip } from '../chips/entities/chip.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { buildBlindStructure } from './blind-structure.builder';
+import { CreateReservationDto, UpdateReservationDto } from './dto/reservation.dto';
+import { CreateTournamentChipDto } from './dto/tournament-chip.dto';
+import { UpdatePrizesDto } from './dto/tournament-prize.dto';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { GenerateStructureDto } from './dto/blind-structure.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
-import { Tournament } from './entities/tournament.entity';
+import { Tournament, TournamentStatus } from './entities/tournament.entity';
+import { ReservationStatus, TournamentReservation } from './entities/tournament-reservation.entity';
+import { TournamentChip } from './entities/tournament-chip.entity';
+import { TournamentPrize } from './entities/tournament-prize.entity';
 import { BlindStructureItem, BuildBlindStructureParams } from './types/blind-structure';
 
 @Injectable()
 export class TournamentsService extends CrudService<Tournament> {
-  constructor(@InjectRepository(Tournament) repository: Repository<Tournament>) {
+  constructor(
+    @InjectRepository(Tournament) repository: Repository<Tournament>,
+    @InjectRepository(TournamentReservation)
+    private readonly reservationsRepo: Repository<TournamentReservation>,
+    @InjectRepository(TournamentChip)
+    private readonly tournamentChipsRepo: Repository<TournamentChip>,
+    @InjectRepository(TournamentPrize)
+    private readonly prizesRepo: Repository<TournamentPrize>,
+    @InjectRepository(Chip) private readonly chipsRepo: Repository<Chip>,
+    @InjectRepository(User) private readonly usersRepo: Repository<User>,
+  ) {
     super(repository);
   }
 
@@ -57,6 +74,160 @@ export class TournamentsService extends CrudService<Tournament> {
 
   generateStructure(params: GenerateStructureDto) {
     return buildBlindStructure(params as BuildBlindStructureParams);
+  }
+
+  // ---------------- Estado en vivo ----------------
+
+  async start(id: number): Promise<Tournament> {
+    const tournament = await this.findOne(id);
+    if (![TournamentStatus.SCHEDULED, TournamentStatus.REGISTERING, TournamentStatus.PAUSED].includes(tournament.status)) {
+      throw new BadRequestException('Tournament cannot be started from its current status');
+    }
+    const now = new Date();
+    return super.update(id, {
+      status: TournamentStatus.RUNNING,
+      startedAt: tournament.startedAt ?? now,
+      currentLevel: tournament.currentLevel ?? 0,
+      levelStartedAt: tournament.levelStartedAt ?? now,
+    } as DeepPartial<Tournament>);
+  }
+
+  async pause(id: number): Promise<Tournament> {
+    const tournament = await this.findOne(id);
+    if (tournament.status !== TournamentStatus.RUNNING) {
+      throw new BadRequestException('Tournament is not running');
+    }
+    return super.update(id, { status: TournamentStatus.PAUSED } as DeepPartial<Tournament>);
+  }
+
+  async resume(id: number): Promise<Tournament> {
+    const tournament = await this.findOne(id);
+    if (tournament.status !== TournamentStatus.PAUSED) {
+      throw new BadRequestException('Tournament is not paused');
+    }
+    return super.update(id, {
+      status: TournamentStatus.RUNNING,
+      levelStartedAt: new Date(),
+    } as DeepPartial<Tournament>);
+  }
+
+  async nextLevel(id: number): Promise<Tournament> {
+    const tournament = await this.findOne(id);
+    const items = tournament.blindStructure ?? [];
+    if (items.length === 0) {
+      throw new BadRequestException('Tournament has no blind structure');
+    }
+    const current = tournament.currentLevel ?? 0;
+    const next = current + 1;
+    if (next >= items.length) {
+      // Avance condicional: si otra peticion ya completo el torneo, no se pisa.
+      await this.repository.update(
+        { id, currentLevel: current },
+        {
+          status: TournamentStatus.COMPLETED,
+          currentLevel: null,
+          levelStartedAt: null,
+        },
+      );
+      return this.findOne(id);
+    }
+    await this.repository.update({ id, currentLevel: current }, { currentLevel: next, levelStartedAt: new Date() });
+    return this.findOne(id);
+  }
+  // ---------------- Reservas ----------------
+
+  listReservations(tournamentId: number) {
+    return this.reservationsRepo.find({ where: { tournamentId }, order: { createdAt: 'ASC' } });
+  }
+
+  async createReservation(tournamentId: number, dto: CreateReservationDto) {
+    const user = await this.usersRepo.findOne({ where: { id: dto.userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const existing = await this.reservationsRepo.findOne({ where: { tournamentId, userId: dto.userId } });
+    if (existing) {
+      throw new BadRequestException('Player already has a reservation for this tournament');
+    }
+    const reservation = this.reservationsRepo.create({
+      tournamentId,
+      userId: dto.userId,
+      status: ReservationStatus.PENDING,
+    });
+    const saved = await this.reservationsRepo.save(reservation);
+    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+  }
+
+  async updateReservation(tournamentId: number, reservationId: number, dto: UpdateReservationDto) {
+    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found');
+    }
+    reservation.status = dto.status;
+    const saved = await this.reservationsRepo.save(reservation);
+    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+  }
+
+  async removeReservation(tournamentId: number, reservationId: number) {
+    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found');
+    }
+    await this.reservationsRepo.delete(reservationId);
+  }
+
+  // ---------------- Fichas del torneo ----------------
+
+  listChips(tournamentId: number) {
+    return this.tournamentChipsRepo.find({ where: { tournamentId }, order: { id: 'ASC' } });
+  }
+
+  async addChip(tournamentId: number, dto: CreateTournamentChipDto) {
+    const chip = await this.chipsRepo.findOne({ where: { id: dto.chipId } });
+    if (!chip) {
+      throw new NotFoundException('Chip not found');
+    }
+    const existing = await this.tournamentChipsRepo.findOne({ where: { tournamentId, chipId: dto.chipId } });
+    if (existing) {
+      throw new BadRequestException('Chip already added to this tournament');
+    }
+    const tournamentChip = this.tournamentChipsRepo.create({
+      tournamentId,
+      chipId: dto.chipId,
+      discardLevel: dto.discardLevel ?? null,
+    });
+    return this.tournamentChipsRepo.save(tournamentChip);
+  }
+
+  async removeChip(tournamentId: number, tournamentChipId: number) {
+    const tournamentChip = await this.tournamentChipsRepo.findOne({
+      where: { id: tournamentChipId, tournamentId },
+    });
+    if (!tournamentChip) {
+      throw new NotFoundException('Tournament chip not found');
+    }
+    await this.tournamentChipsRepo.delete(tournamentChipId);
+  }
+
+  // ---------------- Premios ----------------
+
+  listPrizes(tournamentId: number) {
+    return this.prizesRepo.find({ where: { tournamentId }, order: { place: 'ASC' } });
+  }
+
+  async replacePrizes(tournamentId: number, dto: UpdatePrizesDto) {
+    await this.findOne(tournamentId);
+    await this.prizesRepo.delete({ tournamentId });
+    const rows = dto.prizes.map((p) =>
+      this.prizesRepo.create({ tournamentId, place: p.place, amount: p.amount }),
+    );
+    return this.prizesRepo.save(rows);
+  }
+
+  // ---------------- Jugadores ----------------
+
+  listPlayers() {
+    return this.usersRepo.find({ where: { role: UserRole.PLAYER }, order: { name: 'ASC' } });
   }
 
   private validateOptions(dto: Partial<CreateTournamentDto>): void {

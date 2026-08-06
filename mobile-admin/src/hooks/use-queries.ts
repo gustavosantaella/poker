@@ -21,15 +21,30 @@ import {
   updateTable,
 } from '@/api/tables';
 import {
+  addTournamentChip,
+  createReservation,
   createTournament,
   deleteTournament,
+  fetchPlayers,
+  fetchPrizes,
+  fetchReservations,
   fetchTournament,
+  fetchTournamentChips,
   fetchTournaments,
+  nextTournamentLevel,
+  pauseTournament,
+  removeReservation,
+  removeTournamentChip,
+  resumeTournament,
+  startTournament,
+  updatePrizes,
+  updateReservation,
   updateTournament,
 } from '@/api/tournaments';
 import {
   ChipPayload,
   GameTypePayload,
+  ReservationStatus,
   TablePayload,
   TournamentPayload,
 } from '@/api/types';
@@ -213,4 +228,144 @@ export function useDeleteGameType() {
       void qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
+}
+
+// ---- Estado en vivo del torneo ----
+
+export function useStartTournament() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => startTournament(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
+export function usePauseTournament() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => pauseTournament(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
+export function useResumeTournament() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => resumeTournament(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
+export function useNextTournamentLevel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => nextTournamentLevel(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
+// ---- Reservas ----
+
+export function useReservations(tournamentId: number) {
+  return useQuery({
+    queryKey: ['reservations', tournamentId],
+    queryFn: () => fetchReservations(tournamentId),
+    enabled: tournamentId > 0,
+  });
+}
+
+export function useCreateReservation(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => createReservation(tournamentId, userId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+    },
+  });
+}
+
+export function useUpdateReservation(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: ReservationStatus }) =>
+      updateReservation(tournamentId, id, status),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+    },
+  });
+}
+
+export function useRemoveReservation(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => removeReservation(tournamentId, id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+    },
+  });
+}
+
+// ---- Fichas del torneo ----
+
+export function useTournamentChips(tournamentId: number) {
+  return useQuery({
+    queryKey: ['tournament-chips', tournamentId],
+    queryFn: () => fetchTournamentChips(tournamentId),
+    enabled: tournamentId > 0,
+  });
+}
+
+export function useAddTournamentChip(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ chipId, discardLevel }: { chipId: number; discardLevel?: number }) =>
+      addTournamentChip(tournamentId, chipId, discardLevel),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tournament-chips', tournamentId] });
+    },
+  });
+}
+
+export function useRemoveTournamentChip(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => removeTournamentChip(tournamentId, id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tournament-chips', tournamentId] });
+    },
+  });
+}
+
+// ---- Premios ----
+
+export function usePrizes(tournamentId: number) {
+  return useQuery({
+    queryKey: ['prizes', tournamentId],
+    queryFn: () => fetchPrizes(tournamentId),
+    enabled: tournamentId > 0,
+  });
+}
+
+export function useUpdatePrizes(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (prizes: { place: number; amount: number }[]) => updatePrizes(tournamentId, prizes),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['prizes', tournamentId] });
+    },
+  });
+}
+
+// ---- Jugadores ----
+
+export function usePlayers() {
+  return useQuery({ queryKey: ['players'], queryFn: fetchPlayers });
 }
