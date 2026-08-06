@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useWatch } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
 import { GenerateStructureResult } from '@/api/tournaments';
 import { AppButton } from '@/components/ui/AppButton';
@@ -23,6 +24,22 @@ import { FormSelect } from './FormSelect';
 import { FormSwitch } from './FormSwitch';
 import { FormTextField } from './FormTextField';
 import { TournamentStructureSection } from './TournamentStructureSection';
+
+/** Campo de jugadores maximos: se oculta cuando el torneo es de jugadores ilimitados. */
+function MaxPlayersField() {
+  const { t } = useI18n();
+  const unlimited = useWatch({ name: 'maxPlayersUnlimited' });
+  if (unlimited) return null;
+  return <FormNumberField name="maxPlayers" label={t('tournament.maxPlayers')} />;
+}
+
+/** Campo de max. re-entradas: se oculta cuando la re-entrada es ilimitada. */
+function MaxReEntriesField() {
+  const { t } = useI18n();
+  const reEntryUnlimited = useWatch({ name: 'reEntryUnlimited' });
+  if (reEntryUnlimited) return null;
+  return <FormNumberField name="maxReEntries" label={t('tournament.maxReEntries')} />;
+}
 
 interface TournamentFormProps {
   tournamentId?: number;
@@ -126,9 +143,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         anteStartLevel: undefined,
         breakEveryLevels: 4,
         breakDurationMin: 10,
-      };
-
-  const onSubmit = async (values: TournamentFormValues) => {
+      };  const onSubmit = async (values: TournamentFormValues) => {
     setServerError(null);
     const payload = {
       name: values.name,
@@ -195,9 +210,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
 
   return (
     <AppForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit}>
-      {({ handleSubmit, formState, watch }) => {
-        const unlimited = watch('maxPlayersUnlimited');
-        const reEntryUnlimited = watch('reEntryUnlimited');
+      {({ handleSubmit, formState }) => {
         return (
         <View>
           <SectionHeader title={t('tournament.details')} />
@@ -211,9 +224,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
               label={t('tournament.unlimitedPlayers')}
               description={t('tournament.unlimitedPlayersDesc')}
             />
-            {!unlimited ? (
-              <FormNumberField name="maxPlayers" label={t('tournament.maxPlayers')} />
-            ) : null}
+            <MaxPlayersField />
             <FormSwitch name="registrationOpen" label={t('tournament.registrationOpen')} description={t('tournament.registrationOpenDesc')} />
           </AppCard>
 
@@ -241,13 +252,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
               label={t('tournament.reEntryUnlimited')}
               description={t('tournament.reEntryUnlimitedDesc')}
             />
-            {!reEntryUnlimited ? (
-              <FormNumberField name="maxReEntries" label={t('tournament.maxReEntries')} />
-            ) : (
-              <AppText variant="caption" color={colors.textSecondary} style={styles.unlimitedText}>
-                {t('tournament.reEntryUnlimitedNote')}
-              </AppText>
-            )}
+            <MaxReEntriesField />
           </AppCard>
 
           <SectionHeader title={t('tournament.lateRegistration')} />
@@ -309,5 +314,4 @@ const styles = StyleSheet.create({
   col: { flex: 1 },
   error: { marginBottom: 8 },
   submit: { marginTop: 8, marginBottom: 24 },
-  unlimitedText: { marginBottom: 16, marginLeft: 4 },
 });

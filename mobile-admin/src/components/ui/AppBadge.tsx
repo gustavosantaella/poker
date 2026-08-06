@@ -44,6 +44,7 @@ export function AppBadge({ label, tone = 'muted' }: AppBadgeProps) {
       variant="caption"
       weight="semibold"
       color={foreground[tone]}
+      numberOfLines={1}
       style={{ backgroundColor: background[tone], paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' }}
     >
       {label}
