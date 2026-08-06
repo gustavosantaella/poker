@@ -53,6 +53,55 @@ function PaidPlacesValueField() {
   );
 }
 
+/** Campos de add-on: se ocultan cuando el add-on esta desactivado. */
+function AddOnFields() {
+  const { t } = useI18n();
+  const enabled = useWatch({ name: 'addOnEnabled' });
+  if (!enabled) return null;
+  return (
+    <>
+      <View style={styles.row}>
+        <View style={styles.col}>
+          <FormNumberField name="addOnAmount" label={t('tournament.addOnCost')} />
+        </View>
+        <View style={styles.col}>
+          <FormNumberField name="addOnStack" label={t('tournament.addOnChips')} />
+        </View>
+      </View>
+      <FormNumberField
+        name="addOnUntilLevel"
+        label={t('tournament.addOnUntilLevel')}
+        helper={t('tournament.addOnUntilLevelHelper')}
+      />
+    </>
+  );
+}
+
+/** Campo de inscripcion tardia: se oculta cuando esta desactivada. */
+function LateRegistrationField() {
+  const { t } = useI18n();
+  const enabled = useWatch({ name: 'lateRegistrationEnabled' });
+  if (!enabled) return null;
+  return <FormNumberField name="lateRegistrationUntilLevel" label={t('tournament.availableUntilLevel')} />;
+}
+
+/** Controles de re-entrada: se ocultan cuando la re-entrada no esta disponible. */
+function ReEntryFields() {
+  const { t } = useI18n();
+  const enabled = useWatch({ name: 'reEntryEnabled' });
+  if (!enabled) return null;
+  return (
+    <>
+      <FormSwitch
+        name="reEntryUnlimited"
+        label={t('tournament.reEntryUnlimited')}
+        description={t('tournament.reEntryUnlimitedDesc')}
+      />
+      <MaxReEntriesField />
+    </>
+  );
+}
+
 interface TournamentFormProps {
   tournamentId?: number;
 }
@@ -296,12 +345,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
               label={t('tournament.reEntryEnabled')}
               description={t('tournament.reEntryDesc')}
             />
-            <FormSwitch
-              name="reEntryUnlimited"
-              label={t('tournament.reEntryUnlimited')}
-              description={t('tournament.reEntryUnlimitedDesc')}
-            />
-            <MaxReEntriesField />
+            <ReEntryFields />
           </AppCard>
 
           <SectionHeader title={t('tournament.lateRegistration')} />
@@ -311,7 +355,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
               label={t('tournament.lateRegistrationEnabled')}
               description={t('tournament.lateRegistrationDesc')}
             />
-            <FormNumberField name="lateRegistrationUntilLevel" label={t('tournament.availableUntilLevel')} />
+            <LateRegistrationField />
           </AppCard>
 
           <SectionHeader title={t('tournament.addOn')} />
@@ -321,19 +365,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
               label={t('tournament.addOnEnabled')}
               description={t('tournament.addOnDesc')}
             />
-            <View style={styles.row}>
-              <View style={styles.col}>
-                <FormNumberField name="addOnAmount" label={t('tournament.addOnCost')} />
-              </View>
-              <View style={styles.col}>
-                <FormNumberField name="addOnStack" label={t('tournament.addOnChips')} />
-              </View>
-            </View>
-            <FormNumberField
-              name="addOnUntilLevel"
-              label={t('tournament.addOnUntilLevel')}
-              helper={t('tournament.addOnUntilLevelHelper')}
-            />
+            <AddOnFields />
           </AppCard>
 
           <TournamentStructureSection initialStructure={initialStructure} />

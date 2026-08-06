@@ -3,14 +3,9 @@ env: export EXPO_PUBLIC_API_URL
 Using src/app as the root directory for Expo Router.
 React Compiler enabled
 Starting Metro Bundler
-Android node_modules\expo-router\entry.js ▓▓░░░░░░░░░░░░░░ 15.0% ( 41/106)
-Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 44.5% (365/550)
-Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 56.8% (631/851)
-Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 74.2% ( 940/1091)
-Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.6% (1226/1326)
-Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.6% (1533/1560)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.1% (1136/1165)
 Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1609/1609)
-Android Bundled 32694ms node_modules\expo-router\entry.js (1609 modules)
+Android Bundled 7929ms node_modules\expo-router\entry.js (1609 modules)
 Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1609/1609)
 
 › Assets (43):
@@ -47,7 +42,7 @@ node_modules\expo-router\assets\sitemap.png (465 B)
 node_modules\expo-router\assets\unmatched.png (4.75 kB)
 
 › android bundles (1):
-_expo/static/js/android/entry-7dd904294b0f5c8c742a0f1961467677.hbc (5.03 MB)
+_expo/static/js/android/entry-53f8b61dd4618ddd42f5ebc6c92ae382.hbc (5.03 MB)
 
 › Files (1):
 metadata.json (3.03 kB)
