@@ -1,0 +1,118 @@
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { AppButton } from '@/components/ui/AppButton';
+import { AppCard } from '@/components/ui/AppCard';
+import { AppText } from '@/components/ui/AppText';
+import { LoadingView } from '@/components/ui/LoadingView';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { useChips, useCreateChip, useUpdateChip } from '@/hooks/use-queries';
+import { chipSchema, ChipFormValues } from '@/schemas/chip.schema';
+import { useTheme } from '@/theme';
+import { getErrorMessage } from '@/utils/error';
+import { AppForm } from './AppForm';
+import { ColorPickerField } from './ColorPickerField';
+import { FormNumberField } from './FormNumberField';
+import { FormSwitch } from './FormSwitch';
+import { FormTextField } from './FormTextField';
+
+interface ChipFormProps {
+  chipId?: number;
+}
+
+/** Formulario reutilizable para crear o editar una ficha. */
+export function ChipForm({ chipId }: ChipFormProps) {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const { data: chips, isLoading } = useChips();
+  const createChip = useCreateChip();
+  const updateChip = useUpdateChip();
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const chip = chipId ? chips?.items.find((c) => c.id === chipId) : undefined;
+
+  if (isLoading || (chipId && !chip)) {
+    return (
+      <AppCard>
+        <LoadingView label="Loading chip..." />
+      </AppCard>
+    );
+  }
+
+  const defaultValues: ChipFormValues = chip
+    ? {
+        value: chip.value,
+        color: chip.color,
+        hexColor: chip.hexColor,
+        quantity: chip.quantity ?? undefined,
+        notes: chip.notes ?? '',
+        isActive: chip.isActive,
+      }
+    : {
+        value: 25,
+        color: 'White',
+        hexColor: '#F5F5F5',
+        quantity: undefined,
+        notes: '',
+        isActive: true,
+      };
+
+  const handleSubmit = async (values: ChipFormValues) => {
+    setServerError(null);
+    const payload = {
+      value: Number(values.value),
+      color: values.color,
+      hexColor: values.hexColor,
+      quantity: values.quantity == null ? undefined : Number(values.quantity),
+      notes: values.notes || undefined,
+      isActive: values.isActive,
+    };
+    try {
+      if (chipId) {
+        await updateChip.mutateAsync({ id: chipId, payload });
+      } else {
+        await createChip.mutateAsync(payload);
+      }
+      router.back();
+    } catch (error) {
+      setServerError(getErrorMessage(error));
+    }
+  };
+
+  return (
+    <AppForm schema={chipSchema} defaultValues={defaultValues} onSubmit={handleSubmit}>
+      {({ handleSubmit, formState }) => (
+        <View>
+          <SectionHeader title="Chip" />
+          <AppCard>
+            <FormNumberField name="value" label="Value (denomination)" />
+            <FormTextField name="color" label="Color name" placeholder="e.g. White" autoCapitalize="words" />
+            <ColorPickerField name="hexColor" colorNameField="color" />
+            <FormNumberField name="quantity" label="Quantity in stock (optional)" />
+            <FormTextField name="notes" label="Notes" placeholder="Optional" multiline numberOfLines={2} />
+            <FormSwitch name="isActive" label="Active" description="Show this chip in the app" />
+          </AppCard>
+
+          {serverError ? (
+            <AppText variant="caption" color={colors.danger} style={styles.error}>
+              {serverError}
+            </AppText>
+          ) : null}
+
+          <AppButton
+            title={chipId ? 'Save changes' : 'Create chip'}
+            onPress={handleSubmit}
+            loading={formState.isSubmitting || createChip.isPending || updateChip.isPending}
+            fullWidth
+            style={styles.submit}
+          />
+        </View>
+      )}
+    </AppForm>
+  );
+}
+
+const styles = StyleSheet.create({
+  error: { marginBottom: 8 },
+  submit: { marginTop: 8 },
+});
