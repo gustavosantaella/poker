@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ChipCard } from '@/components/features/ChipCard';
 import { AppHeader } from '@/components/ui/AppHeader';
 import { AppScreen } from '@/components/ui/AppScreen';
@@ -31,17 +31,11 @@ export default function ChipsScreen() {
             onAction={() => router.push('/chip/new')}
           />
         ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={210}
-            decelerationRate="fast"
-            contentContainerStyle={styles.grid}
-          >
+          <View style={styles.list}>
             {chips.map((chip) => (
               <ChipCard key={chip.id} chip={chip} onPress={() => router.push(`/chip/${chip.id}`)} />
             ))}
-          </ScrollView>
+          </View>
         )}
       </AppScreen>
       <FAB onPress={() => router.push('/chip/new')} />
@@ -51,5 +45,5 @@ export default function ChipsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  grid: { gap: 10, paddingRight: 8 },
+  list: { gap: 10 },
 });

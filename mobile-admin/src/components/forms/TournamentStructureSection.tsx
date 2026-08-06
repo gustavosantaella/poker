@@ -24,7 +24,7 @@ export function TournamentStructureSection({
   initialStructure = null,
 }: TournamentStructureSectionProps) {
   const { t } = useI18n();
-  const { watch } = useFormContext<TournamentFormValues>();
+  const { getValues, watch } = useFormContext<TournamentFormValues>();
   const [preview, setPreview] = useState<GenerateStructureResult | null>(initialStructure);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +38,20 @@ export function TournamentStructureSection({
     value,
   }));
 
-  const w = watch();
+  // Campos del torneo que se reflejan como marcadores en el preview de la estructura.
+  const lateRegistrationEnabled = !!watch('lateRegistrationEnabled');
+  const lateRegistrationUntilLevel = watch('lateRegistrationUntilLevel');
+  const addOnEnabled = !!watch('addOnEnabled');
+  const addOnUntilLevel = watch('addOnUntilLevel');
+  const lateRegistrationLevel =
+    lateRegistrationEnabled && lateRegistrationUntilLevel != null
+      ? Number(lateRegistrationUntilLevel)
+      : null;
+  const addOnLevel =
+    addOnEnabled && addOnUntilLevel != null ? Number(addOnUntilLevel) : null;
+  const reEntryUnlimited = !!watch('reEntryUnlimited');
 
-  const buildConfig = (): BlindConfig => ({
+  const buildConfig = (w: TournamentFormValues): BlindConfig => ({
     startingStack: Number(w.startingStack) || 0,
     startingBigBlind:
       w.startingBigBlind != null && String(w.startingBigBlind) !== ''
@@ -55,13 +66,18 @@ export function TournamentStructureSection({
       w.anteStartLevel != null && String(w.anteStartLevel) !== '' ? Number(w.anteStartLevel) : undefined,
     breakEveryLevels: Number(w.breakEveryLevels) || 4,
     breakDurationMin: Number(w.breakDurationMin) || 10,
+    maxPlayers: w.maxPlayersUnlimited ? null : w.maxPlayers == null ? null : Number(w.maxPlayers),
+    addOnEnabled: w.addOnEnabled,
+    addOnStack: w.addOnEnabled && w.addOnStack != null ? Number(w.addOnStack) : undefined,
+    reEntryEnabled: w.reEntryEnabled,
+    maxReEntries: w.reEntryEnabled && w.maxReEntries != null ? Number(w.maxReEntries) : undefined,
   });
 
   const handlePreview = async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await generateStructure(buildConfig());
+      const result = await generateStructure(buildConfig(getValues()));
       setPreview(result);
     } catch (e) {
       setError(getErrorMessage(e));
@@ -107,6 +123,9 @@ export function TournamentStructureSection({
         summary={preview?.summary}
         loading={loading}
         error={error ?? undefined}
+        lateRegistrationLevel={lateRegistrationLevel}
+        addOnLevel={addOnLevel}
+        reEntryUnlimited={reEntryUnlimited}
       />
       <AppButton
         title={t('structure.generate')}

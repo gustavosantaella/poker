@@ -1,4 +1,4 @@
-﻿import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { DataSource } from 'typeorm';
 import typeormConfig from './typeorm.config';
 import { Chip } from '../modules/chips/entities/chip.entity';
@@ -99,6 +99,7 @@ async function run(): Promise<void> {
       growth: 'normal' as const,
       anteMode: 'bb_ante' as const,
       breakEveryLevels: 4,
+      maxPlayers: 9,
       breakDurationMin: 10,
     };
     const structure = buildBlindStructure(blindConfig);

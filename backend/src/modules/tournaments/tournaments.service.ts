@@ -1,4 +1,4 @@
-﻿import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial } from 'typeorm';
 import { Repository } from 'typeorm';
@@ -60,7 +60,7 @@ export class TournamentsService extends CrudService<Tournament> {
   }
 
   private validateOptions(dto: Partial<CreateTournamentDto>): void {
-    if (dto.reEntryEnabled && (dto.maxReEntries === undefined || dto.maxReEntries === null || dto.maxReEntries < 1)) {
+    if (dto.reEntryEnabled && (dto.maxReEntries === undefined || dto.maxReEntries === null || dto.maxReEntries < 0)) {
       throw new BadRequestException('maxReEntries is required when re-entry is enabled');
     }
     if (

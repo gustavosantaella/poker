@@ -81,6 +81,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         maxPlayersUnlimited: tournament.maxPlayers == null,
         registrationOpen: tournament.registrationOpen,
         reEntryEnabled: tournament.reEntryEnabled,
+        reEntryUnlimited: tournament.maxReEntries === 0,
         maxReEntries: tournament.maxReEntries ?? undefined,
         lateRegistrationEnabled: tournament.lateRegistrationEnabled,
         lateRegistrationUntilLevel: tournament.lateRegistrationUntilLevel ?? undefined,
@@ -109,7 +110,8 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         maxPlayersUnlimited: false,
         registrationOpen: true,
         reEntryEnabled: true,
-        maxReEntries: 1,
+        reEntryUnlimited: false,
+        maxReEntries: 2,
         lateRegistrationEnabled: true,
         lateRegistrationUntilLevel: 6,
         addOnEnabled: true,
@@ -139,7 +141,13 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       maxPlayers: values.maxPlayersUnlimited ? null : values.maxPlayers == null ? 9 : Number(values.maxPlayers),
       registrationOpen: values.registrationOpen,
       reEntryEnabled: values.reEntryEnabled,
-      maxReEntries: values.reEntryEnabled && values.maxReEntries != null ? Number(values.maxReEntries) : 0,
+      maxReEntries: values.reEntryEnabled
+        ? values.reEntryUnlimited
+          ? 0
+          : values.maxReEntries != null
+            ? Number(values.maxReEntries)
+            : 0
+        : 0,
       lateRegistrationEnabled: values.lateRegistrationEnabled,
       lateRegistrationUntilLevel:
         values.lateRegistrationEnabled && values.lateRegistrationUntilLevel != null
@@ -159,6 +167,17 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         anteStartLevel: values.anteStartLevel != null ? Number(values.anteStartLevel) : undefined,
         breakEveryLevels: Number(values.breakEveryLevels),
         breakDurationMin: Number(values.breakDurationMin ?? 10),
+        maxPlayers: values.maxPlayersUnlimited ? null : values.maxPlayers == null ? null : Number(values.maxPlayers),
+        addOnEnabled: values.addOnEnabled,
+        addOnStack: values.addOnEnabled && values.addOnStack != null ? Number(values.addOnStack) : undefined,
+        reEntryEnabled: values.reEntryEnabled,
+        maxReEntries: values.reEntryEnabled
+          ? values.reEntryUnlimited
+            ? 0
+            : values.maxReEntries != null
+              ? Number(values.maxReEntries)
+              : 0
+          : 0,
       },
     };
 
@@ -178,6 +197,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
     <AppForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit}>
       {({ handleSubmit, formState, watch }) => {
         const unlimited = watch('maxPlayersUnlimited');
+        const reEntryUnlimited = watch('reEntryUnlimited');
         return (
         <View>
           <SectionHeader title={t('tournament.details')} />
@@ -216,7 +236,18 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
               label={t('tournament.reEntryEnabled')}
               description={t('tournament.reEntryDesc')}
             />
-            <FormNumberField name="maxReEntries" label={t('tournament.maxReEntries')} />
+            <FormSwitch
+              name="reEntryUnlimited"
+              label={t('tournament.reEntryUnlimited')}
+              description={t('tournament.reEntryUnlimitedDesc')}
+            />
+            {!reEntryUnlimited ? (
+              <FormNumberField name="maxReEntries" label={t('tournament.maxReEntries')} />
+            ) : (
+              <AppText variant="caption" color={colors.textSecondary} style={styles.unlimitedText}>
+                {t('tournament.reEntryUnlimitedNote')}
+              </AppText>
+            )}
           </AppCard>
 
           <SectionHeader title={t('tournament.lateRegistration')} />
@@ -278,4 +309,5 @@ const styles = StyleSheet.create({
   col: { flex: 1 },
   error: { marginBottom: 8 },
   submit: { marginTop: 8, marginBottom: 24 },
+  unlimitedText: { marginBottom: 16, marginLeft: 4 },
 });

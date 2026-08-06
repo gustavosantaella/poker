@@ -29,7 +29,8 @@ export const createTournamentSchema = (t: TFunction) =>
       maxPlayersUnlimited: z.boolean(),
       registrationOpen: z.boolean(),
       reEntryEnabled: z.boolean(),
-      maxReEntries: optionalInt(1),
+      reEntryUnlimited: z.boolean(),
+      maxReEntries: optionalInt(0),
       lateRegistrationEnabled: z.boolean(),
       lateRegistrationUntilLevel: optionalInt(1),
       addOnEnabled: z.boolean(),
@@ -46,7 +47,11 @@ export const createTournamentSchema = (t: TFunction) =>
       breakDurationMin: optionalInt(0),
     })
     .superRefine((data, ctx) => {
-      if (data.reEntryEnabled && (data.maxReEntries === undefined || data.maxReEntries < 1)) {
+      if (
+        data.reEntryEnabled &&
+        !data.reEntryUnlimited &&
+        (data.maxReEntries === undefined || data.maxReEntries < 1)
+      ) {
         ctx.addIssue({
           code: ZodIssueCode.custom,
           path: ['maxReEntries'],

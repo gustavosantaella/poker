@@ -97,6 +97,11 @@ export interface BlindConfig {
   anteStartLevel?: number;
   breakEveryLevels?: number;
   breakDurationMin?: number;
+  maxPlayers?: number | null;
+  addOnEnabled?: boolean;
+  addOnStack?: number;
+  reEntryEnabled?: boolean;
+  maxReEntries?: number;
 }
 
 export interface Tournament {

@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -54,6 +55,29 @@ export class GenerateStructureDto {
   @IsInt()
   @Min(0)
   breakDurationMin?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(2)
+  maxPlayers?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  addOnEnabled?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  addOnStack?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  reEntryEnabled?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxReEntries?: number;
 }
 
 export class BlindStructureItemDto {
