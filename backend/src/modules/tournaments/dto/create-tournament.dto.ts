@@ -51,7 +51,7 @@ export class CreateTournamentDto {
   @IsInt()
   @Min(2)
   @Max(1000)
-  maxPlayers?: number;
+  maxPlayers?: number | null;
 
   @IsOptional()
   @IsBoolean()

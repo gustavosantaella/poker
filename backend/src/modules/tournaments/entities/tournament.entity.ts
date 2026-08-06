@@ -1,4 +1,4 @@
-﻿import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { DecimalTransformer } from '../../../common/entities/decimal.transformer';
 import { GameType } from '../../game-types/entities/game-type.entity';
@@ -40,8 +40,8 @@ export class Tournament extends BaseEntity {
   @Column({ type: 'int' })
   startingStack: number;
 
-  @Column({ type: 'int', default: 9 })
-  maxPlayers: number;
+  @Column({ type: 'int', nullable: true })
+  maxPlayers: number | null;
 
   @Column({ default: true })
   registrationOpen: boolean;
