@@ -189,6 +189,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         anteStartLevel: bc?.anteStartLevel ?? undefined,
         breakEveryLevels: bc?.breakEveryLevels ?? 4,
         breakDurationMin: bc?.breakDurationMin ?? 10,
+        blindStructure: undefined,
       }
     : {
         name: '',
@@ -223,6 +224,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         anteStartLevel: undefined,
         breakEveryLevels: 4,
         breakDurationMin: 10,
+        blindStructure: undefined,
       };  const onSubmit = async (values: TournamentFormValues) => {
     setServerError(null);
     const payload = {
@@ -279,6 +281,8 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
               : 0
           : 0,
       },
+      blindStructure:
+        values.blindStructure && values.blindStructure.length > 0 ? values.blindStructure : undefined,
     };
 
     try {

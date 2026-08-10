@@ -15,6 +15,21 @@ const optionalNumber = (min: number) =>
     z.coerce.number().min(min).optional(),
   );
 
+const blindLevelSchema = z.object({
+  type: z.literal('level'),
+  level: z.number().int().min(1),
+  smallBlind: z.number().int().min(0),
+  bigBlind: z.number().int().min(1),
+  ante: z.number().int().min(0),
+  durationMin: z.number().int().min(0),
+});
+
+const blindBreakSchema = z.object({
+  type: z.literal('break'),
+  afterLevel: z.number().int().min(1),
+  durationMin: z.number().int().min(0),
+});
+
 export const createTournamentSchema = (t: TFunction) =>
   z
     .object({
@@ -50,6 +65,7 @@ export const createTournamentSchema = (t: TFunction) =>
       anteStartLevel: optionalInt(1),
       breakEveryLevels: z.coerce.number().int().min(0, t('validation.breakMin')).max(20),
       breakDurationMin: optionalInt(0),
+      blindStructure: z.array(z.union([blindLevelSchema, blindBreakSchema])).optional(),
     })
     .superRefine((data, ctx) => {
       if (

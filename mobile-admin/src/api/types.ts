@@ -221,6 +221,8 @@ export interface TournamentPayload {
   adminFeeType?: 'percent' | 'fixed';
   adminFeeValue?: number | null;
   blindConfig: BlindConfig;
+  /** Estructura manual (si el usuario la genero/edito en el formulario). Si se omite, el backend la regenera desde blindConfig. */
+  blindStructure?: BlindStructureItem[] | null;
 }
 
 export type ReservationStatus = 'pending' | 'accepted' | 'rejected';

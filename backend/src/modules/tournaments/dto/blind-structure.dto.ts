@@ -108,4 +108,9 @@ export class BlindStructureItemDto {
   @IsInt()
   @Min(0)
   durationMin?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  afterLevel?: number;
 }

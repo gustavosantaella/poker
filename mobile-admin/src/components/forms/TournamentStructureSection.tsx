@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useFormContext } from 'react-hook-form';
 import { generateStructure, GenerateStructureResult } from '@/api/tournaments';
-import { AnteMode, BlindConfig, BlindGrowth } from '@/api/types';
-import { BlindStructurePreview } from '@/components/features/BlindStructurePreview';
+import { AnteMode, BlindConfig, BlindGrowth, BlindStructureItem, BlindStructureSummary } from '@/api/types';
+import { BlindStructureEditor } from '@/components/forms/BlindStructureEditor';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
@@ -14,6 +14,7 @@ import { TranslationKey } from '@/i18n';
 import { useI18n } from '@/i18n/I18nProvider';
 import { TournamentFormValues } from '@/schemas/tournament.schema';
 import { useTheme } from '@/theme';
+import { summarizeStructure } from '@/utils/blind-structure';
 import { getErrorMessage } from '@/utils/error';
 import { FormNumberField } from './FormNumberField';
 import { FormSegmented } from './FormSegmented';
@@ -28,11 +29,20 @@ export function TournamentStructureSection({
 }: TournamentStructureSectionProps) {
   const { t } = useI18n();
   const { colors } = useTheme();
-  const { getValues, watch } = useFormContext<TournamentFormValues>();
-  const [preview, setPreview] = useState<GenerateStructureResult | null>(initialStructure);
+  const { getValues, setValue } = useFormContext<TournamentFormValues>();
+  const [structure, setStructure] = useState<GenerateStructureResult | null>(initialStructure);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const hasStructure = !!structure?.items?.length;
+
+  const EMPTY_SUMMARY: BlindStructureSummary = {
+    levelCount: 0,
+    breakCount: 0,
+    estimatedDurationMin: 0,
+    finalLevel: null,
+  };
 
   const growthOptions = GROWTH_VALUES.map((value) => ({
     label: t(`growth.${value}` as TranslationKey),
@@ -42,19 +52,6 @@ export function TournamentStructureSection({
     label: t(`ante.${value}` as TranslationKey),
     value,
   }));
-
-  // Campos del torneo que se reflejan como marcadores en el preview de la estructura.
-  const lateRegistrationEnabled = !!watch('lateRegistrationEnabled');
-  const lateRegistrationUntilLevel = watch('lateRegistrationUntilLevel');
-  const addOnEnabled = !!watch('addOnEnabled');
-  const addOnUntilLevel = watch('addOnUntilLevel');
-  const lateRegistrationLevel =
-    lateRegistrationEnabled && lateRegistrationUntilLevel != null
-      ? Number(lateRegistrationUntilLevel)
-      : null;
-  const addOnLevel =
-    addOnEnabled && addOnUntilLevel != null ? Number(addOnUntilLevel) : null;
-  const reEntryUnlimited = !!watch('reEntryUnlimited');
 
   const buildConfig = (w: TournamentFormValues): BlindConfig => ({
     startingStack: Number(w.startingStack) || 0,
@@ -78,18 +75,37 @@ export function TournamentStructureSection({
     maxReEntries: w.reEntryEnabled && w.maxReEntries != null ? Number(w.maxReEntries) : undefined,
   });
 
+  /** Aplica la estructura y la sincroniza al formulario para que se guarde al pulsar Guardar. */
+  const applyStructure = (next: GenerateStructureResult) => {
+    setStructure(next);
+    setValue('blindStructure', next.items.length > 0 ? next.items : undefined, { shouldDirty: true });
+  };
+
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     try {
       const result = await generateStructure(buildConfig(getValues()));
-      setPreview(result);
+      applyStructure(result);
       setSheetOpen(true);
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOpen = () => {
+    setError(null);
+    if (hasStructure) {
+      setSheetOpen(true);
+    } else {
+      void handleGenerate();
+    }
+  };
+
+  const handleChangeItems = (items: BlindStructureItem[]) => {
+    applyStructure({ items, summary: summarizeStructure(items) ?? EMPTY_SUMMARY });
   };
 
   return (
@@ -129,23 +145,27 @@ export function TournamentStructureSection({
         </AppText>
       ) : null}
       <AppButton
-        title={t('structure.generate')}
+        title={hasStructure ? t('structure.view') : t('structure.generate')}
         variant="secondary"
-        icon="build-outline"
-        onPress={handleGenerate}
+        icon={hasStructure ? 'eye-outline' : 'build-outline'}
+        onPress={handleOpen}
         loading={loading}
         style={styles.previewBtn}
       />
 
-      <BottomSheet visible={sheetOpen} title={t('structure.preview')} onClose={() => setSheetOpen(false)}>
-        <BlindStructurePreview
-          items={preview?.items}
-          summary={preview?.summary}
-          loading={false}
-          error={undefined}
-          lateRegistrationLevel={lateRegistrationLevel}
-          addOnLevel={addOnLevel}
-          reEntryUnlimited={reEntryUnlimited}
+      <BottomSheet visible={sheetOpen} title={t('structure.title')} onClose={() => setSheetOpen(false)}>
+        <BlindStructureEditor
+          items={structure?.items ?? []}
+          onChange={handleChangeItems}
+          onGenerate={handleGenerate}
+          generating={loading}
+        />
+        <AppButton
+          title={t('common.close')}
+          variant="secondary"
+          onPress={() => setSheetOpen(false)}
+          style={styles.closeBtn}
+          fullWidth
         />
       </BottomSheet>
     </>
@@ -156,5 +176,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
   previewBtn: { marginTop: 12, marginBottom: 4 },
+  closeBtn: { marginTop: 12 },
   error: { marginBottom: 8 },
 });
