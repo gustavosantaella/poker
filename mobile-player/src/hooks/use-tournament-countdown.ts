@@ -47,33 +47,49 @@ export function useTournamentCountdown(
     () => (tournament?.startedAt ? new Date(tournament.startedAt).getTime() : null),
     [tournament?.startedAt],
   );
-  const levelStartedAtMs = useMemo(
-    () => (tournament?.levelStartedAt ? new Date(tournament.levelStartedAt).getTime() : null),
-    [tournament?.levelStartedAt],
-  );
+  // Inicio efectivo del nivel actual: usa levelStartedAt si está disponible;
+  // si no, lo deriva de startedAt + duraciones de los items previos.
+  const levelStartMs = useMemo(() => {
+    if (!tournament) return null;
+    if (tournament.levelStartedAt) {
+      const ts = new Date(tournament.levelStartedAt).getTime();
+      if (!Number.isNaN(ts)) return ts;
+    }
+    if (tournament.startedAt) {
+      const base = new Date(tournament.startedAt).getTime();
+      if (Number.isNaN(base)) return null;
+      const idx = tournament.currentLevel ?? 0;
+      let acc = base;
+      for (let i = 0; i < idx; i++) {
+        acc += (tournament.blindStructure?.[i]?.durationMin ?? 0) * 60_000;
+      }
+      return acc;
+    }
+    return null;
+  }, [tournament]);
 
   useEffect(() => {
-    if (!isRunning || !levelStartedAtMs || !currentItem) {
+    if (!isRunning || !levelStartMs || !currentItem) {
       setRemainingSec(0);
       return;
     }
     const durationMs = (currentItem.durationMin ?? 0) * 60_000;
     const update = () => {
       const now = Date.now();
-      const rem = Math.max(0, Math.ceil((levelStartedAtMs + durationMs - now) / 1000));
+      const rem = Math.max(0, Math.ceil((levelStartMs + durationMs - now) / 1000));
       setRemainingSec(rem);
-      setElapsedLevelSec(Math.max(0, Math.floor((now - levelStartedAtMs) / 1000)));
+      setElapsedLevelSec(Math.max(0, Math.floor((now - levelStartMs) / 1000)));
 
-      // If timer hits exactly 0, trigger a refetch of the tournament to get the next level
-      // assuming the admin app or server is advancing it.
-      if (rem === 0 && tournament?.id) {
-         void qc.invalidateQueries({ queryKey: ['tournaments', tournament.id] });
+      // Al llegar a 0, refrescar el torneo para tomar el siguiente nivel (el
+      // backend lo avanza automáticamente). Evita loops si ya no quedan items.
+      if (rem === 0 && tournament?.id && currentIndex != null && currentIndex < items.length - 1) {
+        void qc.invalidateQueries({ queryKey: ['tournaments', tournament.id] });
       }
     };
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [isRunning, levelStartedAtMs, currentItem, currentIndex, tournament?.id, qc]);
+  }, [isRunning, levelStartMs, currentItem, currentIndex, tournament?.id, qc, items.length]);
 
   const elapsedTotalSec = useMemo(() => {
     if (tournament?.status === 'completed') {

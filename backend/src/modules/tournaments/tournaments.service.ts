@@ -39,6 +39,13 @@ export class TournamentsService extends CrudService<Tournament> {
     const result = await super.findAll(options);
     if (result.items.length === 0) return result;
 
+    // Mantener vivo el estado de los torneos en curso antes de devolverlos.
+    for (let i = 0; i < result.items.length; i++) {
+      if (result.items[i].status === TournamentStatus.RUNNING) {
+        result.items[i] = await this.syncLiveStatus(result.items[i]);
+      }
+    }
+
     const ids = result.items.map((t) => t.id);
     const rows = await this.reservationsRepo
       .createQueryBuilder('r')
@@ -68,8 +75,9 @@ export class TournamentsService extends CrudService<Tournament> {
   /** Detalle de torneo con los conteos de reservas y jugadores aceptados. */
   async findOne(id: number, relations?: string[]): Promise<Tournament> {
     const tournament = await super.findOne(id, relations);
+    const synced = await this.syncLiveStatus(tournament);
     const counts = await this.getReservationCounts(id);
-    return { ...tournament, reservedCount: counts.reserved, playersCount: counts.playing };
+    return { ...synced, reservedCount: counts.reserved, playersCount: counts.playing };
   }
 
   private async getReservationCounts(tournamentId: number): Promise<{ reserved: number; playing: number }> {
@@ -129,6 +137,70 @@ export class TournamentsService extends CrudService<Tournament> {
   }
 
   // ---------------- Estado en vivo ----------------
+
+  /**
+   * Mantiene vivo un torneo en curso: si el tiempo del nivel/descanso actual ya
+   * se agotó, avanza automáticamente al siguiente item a partir de los
+   * timestamps (startedAt / levelStartedAt) y la estructura. Así, cada lectura
+   * devuelve un estado con cuenta regresiva real, sin depender de que el admin
+   * esté presionando "siguiente nivel".
+   */
+  private async syncLiveStatus(tournament: Tournament): Promise<Tournament> {
+    if (tournament.status !== TournamentStatus.RUNNING) {
+      return tournament;
+    }
+    const structure = tournament.blindStructure;
+    if (!structure || structure.length === 0) {
+      return tournament;
+    }
+    const now = Date.now();
+
+    let current = tournament.currentLevel ?? 0;
+    let levelStartMs = tournament.levelStartedAt
+      ? new Date(tournament.levelStartedAt).getTime()
+      : Number.NaN;
+
+    if (Number.isNaN(levelStartMs)) {
+      // Fallback: derivar el inicio del nivel desde startedAt + duraciones previas.
+      if (!tournament.startedAt) {
+        return tournament;
+      }
+      const base = new Date(tournament.startedAt).getTime();
+      if (Number.isNaN(base)) {
+        return tournament;
+      }
+      levelStartMs = base;
+      for (let i = 0; i < current; i++) {
+        levelStartMs += (structure[i].durationMin ?? 0) * 60_000;
+      }
+    }
+
+    let advanced = false;
+    while (current < structure.length) {
+      const item = structure[current];
+      const durationMs = (item.durationMin ?? 0) * 60_000;
+      if (now < levelStartMs + durationMs) {
+        break;
+      }
+      if (current >= structure.length - 1) {
+        // El último item ya se agotó: queda a la espera de que el admin lo complete.
+        break;
+      }
+      levelStartMs += durationMs;
+      current += 1;
+      advanced = true;
+    }
+
+    if (advanced) {
+      await this.repository.update(tournament.id, {
+        currentLevel: current,
+        levelStartedAt: new Date(levelStartMs),
+      } as DeepPartial<Tournament>);
+      tournament.currentLevel = current;
+      tournament.levelStartedAt = new Date(levelStartMs);
+    }
+    return tournament;
+  }
 
   async start(id: number): Promise<Tournament> {
     const tournament = await this.findOne(id);

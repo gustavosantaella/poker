@@ -449,6 +449,15 @@ async function run(): Promise<void> {
         }),
       );
       console.log(`Seed: tournament "${spec.name}" created (${spec.status})`);
+    } else if (spec.live) {
+      // Al re-sembrar, refresca el estado en vivo de los torneos demo para que
+      // el countdown quede corriendo aunque la base se haya sembrado hace días.
+      await tournamentRepo.update(tournament.id, {
+        startedAt: spec.live.startedAt,
+        currentLevel: spec.live.currentLevel ?? null,
+        levelStartedAt: spec.live.levelStartedAt ?? null,
+      });
+      console.log(`Seed: tournament "${spec.name}" live state refreshed`);
     }
 
     // Reservas del torneo
