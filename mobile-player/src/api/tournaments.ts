@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Paginated, Tournament, TournamentReservation } from './types';
+import { Paginated, Tournament, TournamentPrize, TournamentReservation } from './types';
 
 export async function fetchTournaments(): Promise<Paginated<Tournament>> {
   const res = await apiClient.get('/tournaments', { params: { limit: 100 } });
@@ -14,6 +14,11 @@ export async function fetchTournament(id: number): Promise<Tournament> {
 export async function fetchTournamentReservations(tournamentId: number): Promise<TournamentReservation[]> {
   const res = await apiClient.get(`/tournaments/${tournamentId}/reservations`);
   return res.data.data as TournamentReservation[];
+}
+
+export async function fetchTournamentPrizes(tournamentId: number): Promise<TournamentPrize[]> {
+  const res = await apiClient.get(`/tournaments/${tournamentId}/prizes`);
+  return res.data.data as TournamentPrize[];
 }
 
 export async function fetchMyTournamentReservations(): Promise<TournamentReservation[]> {

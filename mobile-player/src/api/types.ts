@@ -142,6 +142,15 @@ export interface TournamentReservation {
   updatedAt: string;
 }
 
+export interface TournamentPrize {
+  id: number;
+  tournamentId: number;
+  place: number;
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;

@@ -14,6 +14,7 @@ import {
   deleteTournamentReservation,
   fetchMyTournamentReservations,
   fetchTournament,
+  fetchTournamentPrizes,
   fetchTournamentReservations,
   fetchTournaments,
   removeTournamentReservation,
@@ -95,6 +96,14 @@ export function useTournamentReservations(tournamentId: number) {
   return useQuery({
     queryKey: ['tournament-reservations', tournamentId],
     queryFn: () => fetchTournamentReservations(tournamentId),
+    enabled: tournamentId > 0,
+  });
+}
+
+export function useTournamentPrizes(tournamentId: number) {
+  return useQuery({
+    queryKey: ['tournament-prizes', tournamentId],
+    queryFn: () => fetchTournamentPrizes(tournamentId),
     enabled: tournamentId > 0,
   });
 }

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { BlindStructureItem } from '@/api/types';
 import { createTournamentReservation } from '@/api/tournaments';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
@@ -8,20 +10,23 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { AppText } from '@/components/ui/AppText';
 import { Badge } from '@/components/ui/Badge';
+import { BlindStructurePreview } from '@/components/features/BlindStructurePreview';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useTournament, useTournamentReservations, useDeleteTournamentReservation } from '@/hooks/use-queries';
+import { useDeleteTournamentReservation, useTournament, useTournamentPrizes, useTournamentReservations } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
+import { useTournamentCountdown } from '@/hooks/use-tournament-countdown';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
-import { formatCurrency, formatDateTime, formatNumber } from '@/utils/format';
-import { getErrorMessage } from '@/utils/error';
-import { BlindStructurePreview } from '@/components/features/BlindStructurePreview';
-import { summarizeStructure } from '@/utils/blind-structure';
 import { spacing } from '@/theme/spacing';
-import { useTournamentCountdown } from '@/hooks/use-tournament-countdown';
+import { getErrorMessage } from '@/utils/error';
+import { summarizeStructure } from '@/utils/blind-structure';
+import { formatCurrency, formatDateTime, formatNumber } from '@/utils/format';
+import { ReservationState, tournamentState } from '@/utils/reservation';
+
+type Tab = 'info' | 'structure' | 'prizes';
 
 export default function TournamentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,7 +37,9 @@ export default function TournamentDetailScreen() {
   const { user } = useAuth();
   const { data: tournament, isLoading, isError } = useTournament(tournamentId);
   const { data: reservations } = useTournamentReservations(tournamentId);
+  const { data: prizes } = useTournamentPrizes(tournamentId);
 
+  const [activeTab, setActiveTab] = useState<Tab>('info');
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const deleteReservation = useDeleteTournamentReservation(tournamentId);
   const countdown = useTournamentCountdown(tournament);
@@ -49,6 +56,15 @@ export default function TournamentDetailScreen() {
   const isPlaying = myReservation?.status === 'accepted';
 
   const reserve = useReserve((target, userId) => createTournamentReservation(target.id, userId));
+
+  const state: ReservationState =
+    alreadyReserved
+      ? isPlaying
+        ? 'playing'
+        : 'reserved'
+      : reserve.reservedIds.has(tournamentId)
+        ? 'reserved'
+        : null;
 
   if (isLoading) {
     return (
@@ -74,9 +90,21 @@ export default function TournamentDetailScreen() {
     );
   }
 
-  const reserved = alreadyReserved || reserve.isReserved(tournament.id);
+  const online = tournament.mode === 'online';
+  const reEntryLabel = tournament.reEntryEnabled
+    ? tournament.maxReEntries === 0
+      ? t('tournament.unlimited')
+      : `× ${tournament.maxReEntries ?? 0}`
+    : '—';
+  const addOnLabel = tournament.addOnEnabled
+    ? `${formatCurrency(tournament.addOnAmount ?? 0)} (+${formatNumber(tournament.addOnStack ?? 0)})`
+    : '—';
 
-  return (
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'info', label: t('tournament.info') },
+    { key: 'structure', label: t('tournament.structure') },
+    { key: 'prizes', label: t('tournament.prizes') },
+  ];  return (
     <AppScreen>
       <AppHeader
         title={tournament.name}
@@ -86,69 +114,30 @@ export default function TournamentDetailScreen() {
       />
 
       <View style={styles.badges}>
-        <Badge label={tournament.mode === 'online' ? t('mode.online') : t('mode.live')} tone={tournament.mode === 'online' ? 'primary' : 'success'} />
+        <Badge label={online ? t('mode.online') : t('mode.live')} tone={online ? 'primary' : 'success'} />
         <Badge label={t(`status.${tournament.status}`)} tone={tournament.status === 'registering' ? 'primary' : 'neutral'} />
+        {state ? (
+          <Badge
+            label={state === 'playing' ? t('tournament.playing') : t('tournament.reserved')}
+            tone={state === 'playing' ? 'success' : 'warning'}
+          />
+        ) : null}
       </View>
 
-      <AppCard>
-        <DetailRow
-          label={t('tournament.buyIn')}
-          value={`${formatCurrency(tournament.buyIn)}${tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}`}
+      {state === 'playing' ? (
+        <AppButton title={t('tournament.playing')} icon="checkmark-circle-outline" variant="success" disabled fullWidth style={styles.reserveBtn} />
+      ) : myReservation ? (
+        <AppButton
+          title={t('tournament.cancelReserve')}
+          icon="trash-outline"
+          variant="danger"
+          disabled={deleteReservation.isPending}
+          fullWidth
+          style={styles.reserveBtn}
+          onPress={() => setCancelModalVisible(true)}
         />
-        <DetailRow label={t('tournament.stack')} value={formatNumber(tournament.startingStack)} />
-        <DetailRow
-          label={t('tournament.players')}
-          value={
-            tournament.maxPlayers == null
-              ? t('tournament.unlimited')
-              : `${tournament.playersCount ?? 0} / ${formatNumber(tournament.maxPlayers)}`
-          }
-        />
-        <DetailRow
-          label={t('tournament.reEntry')}
-          value={tournament.reEntryEnabled ? t('common.confirm') : '—'}
-        />
-        <DetailRow
-          label={t('tournament.addOn')}
-          value={tournament.addOnEnabled ? t('common.confirm') : '—'}
-        />
-        {tournament.guaranteedPrize != null ? (
-          <DetailRow label={t('tournament.guaranteed')} value={formatCurrency(tournament.guaranteedPrize)} last />
-        ) : (
-          <DetailRow label={t('tournament.startDate')} value={formatDateTime(tournament.startDate)} last />
-        )}
-      </AppCard>
-
-      {reserved ? (
-        isPlaying ? (
-          <AppButton
-            title={t('tournament.playing')}
-            icon="checkmark-circle-outline"
-            variant="success"
-            disabled={true}
-            fullWidth
-            style={styles.reserveBtn}
-          />
-        ) : myReservation ? (
-          <AppButton
-            title={t('tournament.cancelReserve')}
-            icon="trash-outline"
-            variant="danger"
-            disabled={deleteReservation.isPending}
-            fullWidth
-            style={styles.reserveBtn}
-            onPress={() => setCancelModalVisible(true)}
-          />
-        ) : (
-          <AppButton
-            title={t('tournament.reserved')}
-            icon="checkmark"
-            variant="success"
-            disabled={true}
-            fullWidth
-            style={styles.reserveBtn}
-          />
-        )
+      ) : state === 'reserved' ? (
+        <AppButton title={t('tournament.reserved')} icon="checkmark" variant="success" disabled fullWidth style={styles.reserveBtn} />
       ) : (
         <AppButton
           title={t('tournament.reserve')}
@@ -160,34 +149,71 @@ export default function TournamentDetailScreen() {
         />
       )}
 
-      {tournament.blindStructure && tournament.blindStructure.length > 0 ? (
-        <AppCard style={styles.structureCard}>
-          <AppText variant="subtitle" style={styles.cardTitle}>
-            {t('structure.title')}
-          </AppText>
+      <View style={styles.tabs}>
+        {tabs.map((tab) => {
+          const active = activeTab === tab.key;
+          return (
+            <Pressable
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              style={[styles.tab, active && { backgroundColor: colors.primaryMuted }]}
+            >
+              <AppText variant="body" weight={active ? 'semibold' : 'regular'} color={active ? colors.primary : colors.textSecondary}>
+                {tab.label}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {activeTab === 'info' ? (
+        <AppCard>
+          <DetailRow label={t('tournament.buyIn')} value={`${formatCurrency(tournament.buyIn)}${tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}`} />
+          <DetailRow label={t('tournament.stack')} value={formatNumber(tournament.startingStack)} />
+          <DetailRow
+            label={t('tournament.players')}
+            value={tournament.maxPlayers == null ? t('tournament.unlimited') : `${tournament.playersCount ?? 0} / ${formatNumber(tournament.maxPlayers)}`}
+          />
+          {tournament.guaranteedPrize != null ? (
+            <DetailRow label={t('tournament.guaranteed')} value={formatCurrency(tournament.guaranteedPrize)} />
+          ) : null}
+          {tournament.paidPlacesValue != null ? (
+            <DetailRow label={t('tournament.paidPlaces')} value={formatNumber(tournament.paidPlacesValue)} />
+          ) : null}
+          <DetailRow label={t('tournament.reEntry')} value={reEntryLabel} />
+          <DetailRow label={t('tournament.addOn')} value={addOnLabel} last />
+        </AppCard>
+      ) : activeTab === 'structure' ? (
+        <AppCard>
           {currentLabel && tournament.status === 'running' ? (
             <AppText variant="body" weight="semibold" color={colors.primary} style={styles.currentLine}>
               ▶ {t('tournament.currentItem', { label: currentLabel, time: countdown.time })}
             </AppText>
           ) : null}
-          <BlindStructurePreview
-            items={tournament.blindStructure}
-            summary={summarizeStructure(tournament.blindStructure)}
-            lateRegistrationLevel={
-              tournament.lateRegistrationEnabled && tournament.lateRegistrationUntilLevel != null
-                ? tournament.lateRegistrationUntilLevel
-                : null
-            }
-            addOnLevel={
-              tournament.addOnEnabled && tournament.addOnUntilLevel != null
-                ? tournament.addOnUntilLevel
-                : null
-            }
-            reEntryUnlimited={tournament.reEntryEnabled && tournament.maxReEntries === 0}
-            currentIndex={tournament.currentLevel}
-          />
+          {tournament.blindStructure && tournament.blindStructure.length > 0 ? (
+            <BlindStructurePreview
+              items={tournament.blindStructure}
+              summary={summarizeStructure(tournament.blindStructure)}
+              lateRegistrationLevel={
+                tournament.lateRegistrationEnabled && tournament.lateRegistrationUntilLevel != null
+                  ? tournament.lateRegistrationUntilLevel
+                  : null
+              }
+              addOnLevel={
+                tournament.addOnEnabled && tournament.addOnUntilLevel != null ? tournament.addOnUntilLevel : null
+              }
+              reEntryUnlimited={tournament.reEntryEnabled && tournament.maxReEntries === 0}
+              currentIndex={tournament.currentLevel}
+            />
+          ) : (
+            <AppText variant="caption" color={colors.textSecondary}>
+              {t('structure.hint')}
+            </AppText>
+          )}
         </AppCard>
-      ) : null}
+      ) : (
+        <PrizesSection prizes={prizes ?? []} />
+      )}
 
       <ConfirmModal
         visible={reserve.target != null}
@@ -214,8 +240,8 @@ export default function TournamentDetailScreen() {
             try {
               await deleteReservation.mutateAsync(myReservation.id);
               setCancelModalVisible(false);
-            } catch (e) {
-              // error is handled by mutation state
+            } catch {
+              // error handled by mutation state
             }
           }
         }}
@@ -224,30 +250,72 @@ export default function TournamentDetailScreen() {
     </AppScreen>
   );
 }
-
 function DetailRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.detailRow, !last && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
       <AppText variant="label">{label}</AppText>
-      <AppText variant="body" weight="semibold">
-        {value}
-      </AppText>
+      <AppText variant="body" weight="semibold">{value}</AppText>
     </View>
   );
 }
 
+function PrizesSection({ prizes }: { prizes: { place: number; amount: number }[] }) {
+  const { colors } = useTheme();
+  const { t } = useI18n();
+  if (prizes.length === 0) {
+    return (
+      <AppCard>
+        <AppText variant="caption" center style={styles.emptyText}>
+          {t('tournament.noPrizes')}
+        </AppText>
+      </AppCard>
+    );
+  }
+  return (
+    <AppCard padded={false}>
+      {prizes.map((p, i) => (
+        <View
+          key={p.place}
+          style={[
+            styles.prizeRow,
+            i < prizes.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+          ]}
+        >
+          <View style={[styles.placeBadge, { backgroundColor: i === 0 ? colors.warningMuted : colors.surfaceMuted }]}>
+            <Ionicons name={i === 0 ? 'trophy' : 'medal-outline'} size={16} color={i === 0 ? colors.warning : colors.textMuted} />
+            <AppText variant="body" weight="semibold" color={i === 0 ? colors.warning : colors.textSecondary}>
+              {i + 1}º
+            </AppText>
+          </View>
+          <AppText variant="body" weight="semibold">{formatCurrency(p.amount)}</AppText>
+        </View>
+      ))}
+    </AppCard>
+  );
+}
+
 const styles = StyleSheet.create({
-  badges: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  detailRow: {
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  reserveBtn: { marginBottom: 12 },
+  tabs: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  currentLine: { marginBottom: spacing.sm },
+  emptyText: { paddingVertical: spacing.md },
+  prizeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
-  reserveBtn: { marginTop: 16 },
-  structureCard: { marginTop: spacing.md },
-  cardTitle: { marginBottom: spacing.sm },
-  currentLine: { marginBottom: spacing.sm },
+  placeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
 });
-
