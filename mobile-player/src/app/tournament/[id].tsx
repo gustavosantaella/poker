@@ -2,7 +2,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { BlindStructureItem } from '@/api/types';
+import { BlindLevelItem, BlindBreakItem } from '@/api/types';
 import { createTournamentReservation } from '@/api/tournaments';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
@@ -23,8 +23,8 @@ import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
 import { getErrorMessage } from '@/utils/error';
 import { summarizeStructure } from '@/utils/blind-structure';
-import { formatCurrency, formatDateTime, formatNumber } from '@/utils/format';
-import { ReservationState, tournamentState } from '@/utils/reservation';
+import { formatChips, formatCurrency, formatDateTime, formatDuration, formatNumber } from '@/utils/format';
+import { ReservationState } from '@/utils/reservation';
 
 type Tab = 'info' | 'structure' | 'prizes';
 
@@ -45,12 +45,6 @@ export default function TournamentDetailScreen() {
   const countdown = useTournamentCountdown(tournament);
 
   const current = countdown.currentItem;
-  const currentLabel = current
-    ? current.type === 'break'
-      ? t('tournament.breakShort')
-      : t('tournament.levelShort', { level: current.level })
-    : null;
-
   const myReservation = (reservations ?? []).find((r) => r.userId === user?.id);
   const alreadyReserved = myReservation !== undefined;
   const isPlaying = myReservation?.status === 'accepted';
@@ -98,13 +92,38 @@ export default function TournamentDetailScreen() {
     : '—';
   const addOnLabel = tournament.addOnEnabled
     ? `${formatCurrency(tournament.addOnAmount ?? 0)} (+${formatNumber(tournament.addOnStack ?? 0)})`
-    : '—';
-
-  const tabs: { key: Tab; label: string }[] = [
+    : '—';  const tabs: { key: Tab; label: string }[] = [
     { key: 'info', label: t('tournament.info') },
     { key: 'structure', label: t('tournament.structure') },
     { key: 'prizes', label: t('tournament.prizes') },
-  ];  return (
+  ];
+
+  const items = tournament.blindStructure ?? [];
+  const currentIndex = countdown.currentIndex;
+  const nextLevel: BlindLevelItem | null =
+    currentIndex != null
+      ? ((items.slice(currentIndex + 1).find((i) => i.type === 'level') ?? null) as BlindLevelItem | null)
+      : null;
+  const nextBreak: BlindBreakItem | null =
+    currentIndex != null
+      ? ((items.slice(currentIndex + 1).find((i) => i.type === 'break') ?? null) as BlindBreakItem | null)
+      : null;
+  const breakPos = nextBreak ? items.indexOf(nextBreak) : -1;
+  let minutesUntilBreak = 0;
+  if (nextBreak && currentIndex != null && breakPos >= 0) {
+    if (current && current.type === 'level') {
+      minutesUntilBreak +=
+        tournament.status === 'running' && countdown.remainingSec > 0
+          ? countdown.remainingSec / 60
+          : current.durationMin;
+    }
+    for (let i = currentIndex + 1; i < breakPos; i++) {
+      minutesUntilBreak += items[i].durationMin ?? 0;
+    }
+  }
+  minutesUntilBreak = Math.round(minutesUntilBreak);
+
+  return (
     <AppScreen>
       <AppHeader
         title={tournament.name}
@@ -165,7 +184,6 @@ export default function TournamentDetailScreen() {
           );
         })}
       </View>
-
       {activeTab === 'info' ? (
         <AppCard>
           <DetailRow label={t('tournament.buyIn')} value={`${formatCurrency(tournament.buyIn)}${tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}`} />
@@ -184,33 +202,73 @@ export default function TournamentDetailScreen() {
           <DetailRow label={t('tournament.addOn')} value={addOnLabel} last />
         </AppCard>
       ) : activeTab === 'structure' ? (
-        <AppCard>
-          {currentLabel && tournament.status === 'running' ? (
-            <AppText variant="body" weight="semibold" color={colors.primary} style={styles.currentLine}>
-              ▶ {t('tournament.currentItem', { label: currentLabel, time: countdown.time })}
-            </AppText>
+        <>
+          {current ? (
+            <View style={[styles.timerCard, { backgroundColor: current.type === 'break' ? colors.warningMuted : colors.primaryMuted }]}>
+              <AppText
+                variant={tournament.status === 'running' ? 'h1' : 'title'}
+                color={current.type === 'break' ? colors.warning : colors.primary}
+                center
+              >
+                {tournament.status === 'running'
+                  ? countdown.time
+                  : current.type === 'break'
+                    ? t('tournament.currentBreak')
+                    : t('tournament.currentLevel', { level: current.level })}
+              </AppText>
+              {current.type === 'level' ? (
+                <AppText variant="body" weight="semibold" color={colors.primary} center>
+                  {formatChips(current.smallBlind)}/{formatChips(current.bigBlind)}
+                  {current.ante > 0 ? ` • ${t('tournament.ante')} ${formatChips(current.ante)}` : ''}
+                </AppText>
+              ) : (
+                <AppText variant="body" weight="semibold" color={colors.warning} center>
+                  {t('structure.minutes', { minutes: current.durationMin })}
+                </AppText>
+              )}
+              {nextLevel ? (
+                <View style={styles.nextRow}>
+                  <Ionicons name="arrow-forward-circle-outline" size={18} color={colors.primary} />
+                  <AppText variant="caption" color={colors.textSecondary}>{t('tournament.nextLevel')}</AppText>
+                  <AppText variant="body" weight="semibold">
+                    L{nextLevel.level} {formatChips(nextLevel.smallBlind)}/{formatChips(nextLevel.bigBlind)}
+                  </AppText>
+                </View>
+              ) : null}
+              {nextBreak ? (
+                <View style={styles.nextRow}>
+                  <Ionicons name="cafe-outline" size={18} color={colors.warning} />
+                  <AppText variant="caption" color={colors.textSecondary}>{t('tournament.nextBreak')}</AppText>
+                  <AppText variant="body" weight="semibold">
+                    {t('structure.afterLevel', { level: nextBreak.afterLevel })} • ≈{formatDuration(minutesUntilBreak)}
+                  </AppText>
+                </View>
+              ) : null}
+            </View>
           ) : null}
-          {tournament.blindStructure && tournament.blindStructure.length > 0 ? (
-            <BlindStructurePreview
-              items={tournament.blindStructure}
-              summary={summarizeStructure(tournament.blindStructure)}
-              lateRegistrationLevel={
-                tournament.lateRegistrationEnabled && tournament.lateRegistrationUntilLevel != null
-                  ? tournament.lateRegistrationUntilLevel
-                  : null
-              }
-              addOnLevel={
-                tournament.addOnEnabled && tournament.addOnUntilLevel != null ? tournament.addOnUntilLevel : null
-              }
-              reEntryUnlimited={tournament.reEntryEnabled && tournament.maxReEntries === 0}
-              currentIndex={tournament.currentLevel}
-            />
-          ) : (
-            <AppText variant="caption" color={colors.textSecondary}>
-              {t('structure.hint')}
-            </AppText>
-          )}
-        </AppCard>
+          <AppCard>
+            {tournament.blindStructure && tournament.blindStructure.length > 0 ? (
+              <BlindStructurePreview
+                items={tournament.blindStructure}
+                summary={summarizeStructure(tournament.blindStructure)}
+                lateRegistrationLevel={
+                  tournament.lateRegistrationEnabled && tournament.lateRegistrationUntilLevel != null
+                    ? tournament.lateRegistrationUntilLevel
+                    : null
+                }
+                addOnLevel={
+                  tournament.addOnEnabled && tournament.addOnUntilLevel != null ? tournament.addOnUntilLevel : null
+                }
+                reEntryUnlimited={tournament.reEntryEnabled && tournament.maxReEntries === 0}
+                currentIndex={tournament.currentLevel}
+              />
+            ) : (
+              <AppText variant="caption" color={colors.textSecondary}>
+                {t('structure.hint')}
+              </AppText>
+            )}
+          </AppCard>
+        </>
       ) : (
         <PrizesSection prizes={prizes ?? []} />
       )}
@@ -307,8 +365,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
+  timerCard: { borderRadius: 16, padding: 16, gap: 6, marginBottom: 12 },
+  nextRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
-  currentLine: { marginBottom: spacing.sm },
   emptyText: { paddingVertical: spacing.md },
   prizeRow: {
     flexDirection: 'row',
