@@ -2,7 +2,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { BlindLevelItem, BlindBreakItem } from '@/api/types';
+import { BlindLevelItem, BlindBreakItem, TournamentChip } from '@/api/types';
 import { createTournamentReservation } from '@/api/tournaments';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
@@ -15,7 +15,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useDeleteTournamentReservation, useTournament, useTournamentPrizes, useTournamentReservations } from '@/hooks/use-queries';
+import { useDeleteTournamentReservation, useTournament, useTournamentChips, useTournamentPrizes, useTournamentReservations } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useTournamentCountdown } from '@/hooks/use-tournament-countdown';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -26,7 +26,7 @@ import { summarizeStructure } from '@/utils/blind-structure';
 import { formatChips, formatCurrency, formatDateTime, formatDuration, formatNumber } from '@/utils/format';
 import { ReservationState } from '@/utils/reservation';
 
-type Tab = 'info' | 'structure' | 'prizes';
+type Tab = 'info' | 'structure' | 'prizes' | 'chips';
 
 export default function TournamentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +38,7 @@ export default function TournamentDetailScreen() {
   const { data: tournament, isLoading, isError } = useTournament(tournamentId);
   const { data: reservations } = useTournamentReservations(tournamentId);
   const { data: prizes } = useTournamentPrizes(tournamentId);
+  const { data: tournamentChips } = useTournamentChips(tournamentId);
 
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
@@ -96,6 +97,7 @@ export default function TournamentDetailScreen() {
     { key: 'info', label: t('tournament.info') },
     { key: 'structure', label: t('tournament.structure') },
     { key: 'prizes', label: t('tournament.prizes') },
+    { key: 'chips', label: t('tournament.chips') },
   ];
 
   const items = tournament.blindStructure ?? [];
@@ -283,6 +285,8 @@ export default function TournamentDetailScreen() {
             )}
           </AppCard>
         </>
+      ) : activeTab === 'chips' ? (
+        <ChipsSection chips={tournamentChips ?? []} />
       ) : (
         <PrizesSection prizes={prizes ?? []} />
       )}
@@ -329,6 +333,49 @@ function DetailRow({ label, value, last }: { label: string; value: string; last?
       <AppText variant="label">{label}</AppText>
       <AppText variant="body" weight="semibold">{value}</AppText>
     </View>
+  );
+}
+
+function ChipsSection({ chips }: { chips: TournamentChip[] }) {
+  const { colors } = useTheme();
+  const { t } = useI18n();
+  if (chips.length === 0) {
+    return (
+      <AppCard>
+        <AppText variant="caption" center style={styles.emptyText}>
+          {t('tournament.noChips')}
+        </AppText>
+      </AppCard>
+    );
+  }
+  const sorted = [...chips].sort((a, b) => (a.chip?.value ?? 0) - (b.chip?.value ?? 0));
+  return (
+    <AppCard padded={false}>
+      {sorted.map((tc, i) => (
+        <View
+          key={tc.id}
+          style={[
+            styles.chipRow,
+            i < sorted.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+          ]}
+        >
+          <View style={[styles.chipSwatch, { backgroundColor: tc.chip?.hexColor ?? colors.surfaceMuted }]} />
+          <View style={styles.chipInfo}>
+            <AppText variant="body" weight="semibold">
+              {formatChips(tc.chip?.value ?? 0)}
+            </AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {tc.chip?.color ?? t('tournament.value')}
+            </AppText>
+          </View>
+          <AppText variant="caption" color={colors.textMuted} style={styles.chipDiscard}>
+            {tc.discardLevel != null
+              ? t('tournament.discardAt', { level: tc.discardLevel })
+              : t('tournament.discardNone')}
+          </AppText>
+        </View>
+      ))}
+    </AppCard>
   );
 }
 
@@ -391,6 +438,22 @@ const styles = StyleSheet.create({
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
   emptyText: { paddingVertical: spacing.md },
+  chipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+  },
+  chipSwatch: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,0.15)',
+  },
+  chipInfo: { flex: 1 },
+  chipDiscard: { flexShrink: 1, textAlign: 'right' },
   prizeRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -14,6 +14,7 @@ import {
   deleteTournamentReservation,
   fetchMyTournamentReservations,
   fetchTournament,
+  fetchTournamentChips,
   fetchTournamentPrizes,
   fetchTournamentReservations,
   fetchTournaments,
@@ -89,6 +90,14 @@ export function useTournament(id: number) {
     queryFn: () => fetchTournament(id),
     enabled: id > 0,
     retry: false,
+  });
+}
+
+export function useTournamentChips(tournamentId: number) {
+  return useQuery({
+    queryKey: ['tournament-chips', tournamentId],
+    queryFn: () => fetchTournamentChips(tournamentId),
+    enabled: tournamentId > 0,
   });
 }
 

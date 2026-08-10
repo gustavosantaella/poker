@@ -151,6 +151,28 @@ export interface TournamentPrize {
   updatedAt: string;
 }
 
+export interface Chip {
+  id: number;
+  value: number;
+  color: string;
+  hexColor: string;
+  quantity: number | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TournamentChip {
+  id: number;
+  tournamentId: number;
+  chipId: number;
+  chip: Chip;
+  discardLevel: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;
