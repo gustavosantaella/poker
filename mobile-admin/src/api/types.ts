@@ -6,6 +6,9 @@ export interface User {
   name: string;
   role: UserRole;
   isActive: boolean;
+  address: string | null;
+  phone: string | null;
+  city: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +38,8 @@ export interface Chip {
 
 export type TableStatus = 'open' | 'running' | 'paused' | 'closed';
 
+export type GameMode = 'live' | 'online';
+
 export interface PokerTable {
   id: number;
   name: string;
@@ -46,6 +51,7 @@ export interface PokerTable {
   maxBuyIn: number;
   seats: number;
   status: TableStatus;
+  mode: GameMode;
   notes: string | null;
   isActive: boolean;
   createdAt: string;
@@ -111,6 +117,7 @@ export interface Tournament {
   gameType: GameType | null;
   startDate: string;
   status: TournamentStatus;
+  mode: GameMode;
   buyIn: number;
   fee: number;
   startingStack: number;
@@ -193,6 +200,7 @@ export interface TablePayload {
   maxBuyIn: number;
   seats?: number;
   status?: TableStatus;
+  mode?: GameMode;
   notes?: string;
   isActive?: boolean;
 }
@@ -202,6 +210,7 @@ export interface TournamentPayload {
   gameTypeId: number | null;
   startDate: string;
   status?: TournamentStatus;
+  mode?: GameMode;
   buyIn: number;
   fee?: number;
   startingStack: number;

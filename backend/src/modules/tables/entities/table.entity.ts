@@ -10,6 +10,11 @@ export enum TableStatus {
   CLOSED = 'closed',
 }
 
+export enum TableMode {
+  LIVE = 'live',
+  ONLINE = 'online',
+}
+
 @Entity('tables')
 export class PokerTable extends BaseEntity {
   @Column({ length: 100 })
@@ -39,6 +44,9 @@ export class PokerTable extends BaseEntity {
 
   @Column({ type: 'enum', enum: TableStatus, default: TableStatus.OPEN })
   status: TableStatus;
+
+  @Column({ type: 'enum', enum: TableMode, default: TableMode.LIVE })
+  mode: TableMode;
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;

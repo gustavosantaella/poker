@@ -15,7 +15,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { TournamentStatus } from '../entities/tournament.entity';
+import { TournamentMode, TournamentStatus } from '../entities/tournament.entity';
 import { BlindStructureItemDto, GenerateStructureDto } from './blind-structure.dto';
 
 export class CreateTournamentDto {
@@ -34,6 +34,10 @@ export class CreateTournamentDto {
   @IsOptional()
   @IsEnum(TournamentStatus)
   status?: TournamentStatus;
+
+  @IsOptional()
+  @IsEnum(TournamentMode)
+  mode?: TournamentMode;
 
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'buyIn must be a valid number' })
   @Min(0)

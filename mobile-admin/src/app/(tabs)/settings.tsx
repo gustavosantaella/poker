@@ -25,6 +25,9 @@ const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(120),
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
   password: z.string().optional(),
+  address: z.string().max(255).optional(),
+  phone: z.string().max(60).optional(),
+  city: z.string().max(120).optional(),
 });
 
 type ProfileValues = z.infer<typeof profileSchema>;
@@ -57,6 +60,9 @@ export default function SettingsScreen() {
         name: values.name.trim(),
         email: values.email.trim(),
         password: values.password ? values.password : undefined,
+        address: values.address?.trim() || null,
+        phone: values.phone?.trim() || null,
+        city: values.city?.trim() || null,
       });
       setProfileOpen(false);
     } catch (error) {
@@ -162,6 +168,9 @@ export default function SettingsScreen() {
               name: user?.name ?? '',
               email: user?.email ?? '',
               password: '',
+              address: user?.address ?? '',
+              phone: user?.phone ?? '',
+              city: user?.city ?? '',
             }}
             onSubmit={handleUpdateProfile}
           >
@@ -174,6 +183,14 @@ export default function SettingsScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
+                <FormTextField
+                  name="address"
+                  label={t('settings.address')}
+                  placeholder={t('settings.venueHint')}
+                  autoCapitalize="words"
+                />
+                <FormTextField name="city" label={t('settings.city')} autoCapitalize="words" />
+                <FormTextField name="phone" label={t('settings.phone')} keyboardType="phone-pad" />
                 <FormTextField
                   name="password"
                   label={t('settings.newPassword')}

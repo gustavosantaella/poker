@@ -17,7 +17,10 @@ export function TableListItem({ table, onPress }: { table: PokerTable; onPress: 
           <AppText variant="subtitle" numberOfLines={1}>
             {table.name}
           </AppText>
-          <AppText variant="caption">{table.gameType?.name ?? t('table.noGameType')}</AppText>
+          <AppText variant="caption">
+            {table.gameType?.name ?? t('table.noGameType')} •{' '}
+            {table.mode === 'online' ? t('mode.online') : t('mode.live')}
+          </AppText>
         </View>
         <TableStatusBadge status={table.status} />
       </View>

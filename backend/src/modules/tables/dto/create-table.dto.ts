@@ -1,5 +1,5 @@
 import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
-import { TableStatus } from '../entities/table.entity';
+import { TableMode, TableStatus } from '../entities/table.entity';
 
 export class CreateTableDto {
   @IsString()
@@ -36,6 +36,10 @@ export class CreateTableDto {
   @IsOptional()
   @IsEnum(TableStatus)
   status?: TableStatus;
+
+  @IsOptional()
+  @IsEnum(TableMode)
+  mode?: TableMode;
 
   @IsOptional()
   @IsString()

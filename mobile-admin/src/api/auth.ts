@@ -5,6 +5,9 @@ export interface UpdateProfilePayload {
   name?: string;
   email?: string;
   password?: string;
+  address?: string | null;
+  phone?: string | null;
+  city?: string | null;
 }
 
 export async function login(email: string, password: string): Promise<AuthResult> {

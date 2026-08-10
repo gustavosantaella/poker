@@ -23,6 +23,9 @@ export const en = {
   'status.completed': 'Completed',
   'status.cancelled': 'Cancelled',
 
+  'mode.live': 'Live',
+  'mode.online': 'Online',
+
   'growth.slow': 'Slow',
   'growth.normal': 'Normal',
   'growth.fast': 'Fast',
@@ -107,6 +110,10 @@ export const en = {
   'settings.editProfile': 'Edit profile',
   'settings.name': 'Name',
   'settings.email': 'Email',
+  'settings.address': 'Address (optional)',
+  'settings.city': 'City (optional)',
+  'settings.phone': 'Contact number (optional)',
+  'settings.venueHint': 'In case you run a physical casino',
   'settings.newPassword': 'New password (optional)',
   'settings.passwordHint': 'Leave empty to keep current',
 
@@ -164,6 +171,7 @@ export const en = {
   'table.maxBuyIn': 'Max buy-in',
   'table.status': 'Status',
   'table.noGameType': 'No game type',
+  'table.mode': 'Mode',
   'table.loading': 'Loading table...',
   'table.notFoundTitle': 'Table not found',
   'table.notFoundMessage': 'This table may have been deleted.',
@@ -265,6 +273,7 @@ export const en = {
   'tournament.notFoundMessage': 'This tournament may have been deleted.',
   'tournament.create': 'Create tournament',
   'tournament.players': 'Players',
+  'tournament.mode': 'Mode',
   'tournament.reserved': 'Reserved',
   'tournament.playing': 'Playing',
   'tournament.rebuys': 'Rebuys',
@@ -364,6 +373,9 @@ export const es: Record<TranslationKey, string> = {
   'status.completed': 'Finalizado',
   'status.cancelled': 'Cancelado',
 
+  'mode.live': 'En vivo',
+  'mode.online': 'Online',
+
   'growth.slow': 'Lenta',
   'growth.normal': 'Normal',
   'growth.fast': 'Rápida',
@@ -448,6 +460,10 @@ export const es: Record<TranslationKey, string> = {
   'settings.editProfile': 'Editar perfil',
   'settings.name': 'Nombre',
   'settings.email': 'Correo',
+  'settings.address': 'Dirección (opcional)',
+  'settings.city': 'Ciudad (opcional)',
+  'settings.phone': 'Número de contacto (opcional)',
+  'settings.venueHint': 'En caso de operar un casino físico',
   'settings.newPassword': 'Nueva contraseña (opcional)',
   'settings.passwordHint': 'Déjala vacía para mantener la actual',
 
@@ -505,6 +521,7 @@ export const es: Record<TranslationKey, string> = {
   'table.maxBuyIn': 'Buy-in máximo',
   'table.status': 'Estado',
   'table.noGameType': 'Sin tipo de juego',
+  'table.mode': 'Modalidad',
   'table.loading': 'Cargando mesa...',
   'table.notFoundTitle': 'Mesa no encontrada',
   'table.notFoundMessage': 'Es posible que esta mesa haya sido eliminada.',
@@ -606,6 +623,7 @@ export const es: Record<TranslationKey, string> = {
   'tournament.notFoundMessage': 'Es posible que este torneo haya sido eliminado.',
   'tournament.create': 'Crear torneo',
   'tournament.players': 'Jugadores',
+  'tournament.mode': 'Modalidad',
   'tournament.reserved': 'Reservados',
   'tournament.playing': 'Jugando',
   'tournament.rebuys': 'Rebuys',

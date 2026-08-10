@@ -6,7 +6,7 @@ import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { TABLE_STATUS_VALUES } from '@/constants';
+import { TABLE_STATUS_VALUES, MODE_VALUES } from '@/constants';
 import { useCreateTable, useGameTypes, useTable, useUpdateTable } from '@/hooks/use-queries';
 import { useI18n } from '@/i18n/I18nProvider';
 import { TranslationKey } from '@/i18n';
@@ -41,6 +41,11 @@ export function TableForm({ tableId }: TableFormProps) {
     value,
   }));
 
+  const modeOptions = MODE_VALUES.map((value) => ({
+    label: t(`mode.${value}` as TranslationKey),
+    value,
+  }));
+
   if (gameTypesLoading || (tableId && tableLoading) || (tableId && !table)) {
     return (
       <AppCard>
@@ -61,6 +66,7 @@ export function TableForm({ tableId }: TableFormProps) {
         maxBuyIn: table.maxBuyIn,
         seats: table.seats,
         status: table.status,
+        mode: table.mode,
         notes: table.notes ?? '',
       }
     : {
@@ -72,6 +78,7 @@ export function TableForm({ tableId }: TableFormProps) {
         maxBuyIn: 500,
         seats: 9,
         status: 'open',
+        mode: 'live',
         notes: '',
       };
 
@@ -102,6 +109,7 @@ export function TableForm({ tableId }: TableFormProps) {
               placeholder={t('table.gameTypePlaceholder')}
               options={gameTypeOptions}
             />
+            <FormSegmented name="mode" label={t('table.mode')} options={modeOptions} />
             <FormNumberField name="seats" label={t('table.seats')} />
             <FormTextField name="notes" label={t('table.notes')} placeholder={t('common.optional')} multiline numberOfLines={3} />
           </AppCard>

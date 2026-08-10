@@ -24,4 +24,13 @@ export class User extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  address: string | null;
+
+  @Column({ type: 'varchar', length: 60, nullable: true })
+  phone: string | null;
+
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  city: string | null;
+
 }

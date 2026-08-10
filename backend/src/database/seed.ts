@@ -3,8 +3,8 @@ import { DataSource } from 'typeorm';
 import typeormConfig from './typeorm.config';
 import { Chip } from '../modules/chips/entities/chip.entity';
 import { GameType } from '../modules/game-types/entities/game-type.entity';
-import { PokerTable, TableStatus } from '../modules/tables/entities/table.entity';
-import { Tournament, TournamentStatus } from '../modules/tournaments/entities/tournament.entity';
+import { PokerTable, TableMode, TableStatus } from '../modules/tables/entities/table.entity';
+import { Tournament, TournamentMode, TournamentStatus } from '../modules/tournaments/entities/tournament.entity';
 import { TournamentChip } from '../modules/tournaments/entities/tournament-chip.entity';
 import { TournamentPrize } from '../modules/tournaments/entities/tournament-prize.entity';
 import {
@@ -34,6 +34,7 @@ interface SeedTournament {
   options?: Partial<
     Pick<
       Tournament,
+      | 'mode'
       | 'registrationOpen'
       | 'currentPlayers'
       | 'reservedPlayers'
@@ -191,10 +192,29 @@ async function run(): Promise<void> {
         maxBuyIn: 300,
         seats: 9,
         status: TableStatus.OPEN,
+        mode: TableMode.LIVE,
         notes: "1/2 No-Limit Hold'em cash table.",
       }),
     );
     console.log('Seed: sample cash table created');
+  }
+  const existingOnlineTable = await tableRepo.findOne({ where: { name: 'Online Cash 1/2' } });
+  if (!existingOnlineTable) {
+    await tableRepo.save(
+      tableRepo.create({
+        name: 'Online Cash 1/2',
+        gameTypeId: gameTypes[0].id,
+        smallBlind: 1,
+        bigBlind: 2,
+        minBuyIn: 25,
+        maxBuyIn: 200,
+        seats: 9,
+        status: TableStatus.OPEN,
+        mode: TableMode.ONLINE,
+        notes: '1/2 No-Limit Hold\'em online cash table.',
+      }),
+    );
+    console.log('Seed: sample online cash table created');
   }
 
   // ---- Torneos de prueba con reservas, fichas y premios ----
@@ -241,6 +261,7 @@ async function run(): Promise<void> {
         maxPlayers: 9,
       },
       options: {
+        mode: TournamentMode.ONLINE,
         registrationOpen: true,
         currentPlayers: 6,
         reservedPlayers: 7,
@@ -401,6 +422,7 @@ async function run(): Promise<void> {
           gameTypeId: gameTypes[0].id,
           startDate: spec.startDate,
           status: spec.status,
+          mode: spec.options?.mode ?? TournamentMode.LIVE,
           buyIn: spec.buyIn,
           fee: spec.fee,
           startingStack: spec.startingStack,

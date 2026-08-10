@@ -1,9 +1,11 @@
-import { AnteMode, BlindGrowth, TableStatus, TournamentStatus } from '@/api/types';
+import { AnteMode, BlindGrowth, GameMode, TableStatus, TournamentStatus } from '@/api/types';
 
 export interface Option<T extends string = string> {
   label: string;
   value: T;
 }
+
+export const MODE_VALUES: GameMode[] = ['live', 'online'];
 
 export const TABLE_STATUS_VALUES: TableStatus[] = ['open', 'running', 'paused', 'closed'];
 

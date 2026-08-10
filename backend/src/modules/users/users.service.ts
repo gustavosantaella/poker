@@ -16,7 +16,7 @@ export class UsersService extends CrudService<User> {
     return this.repository.findOne({
       where: { email: email.toLowerCase() },
       select: withPassword
-        ? ['id', 'email', 'name', 'password', 'role', 'isActive', 'createdAt', 'updatedAt']
+        ? ['id', 'email', 'name', 'password', 'role', 'isActive', 'address', 'phone', 'city', 'createdAt', 'updatedAt']
         : undefined,
     });
   }
@@ -40,6 +40,9 @@ export class UsersService extends CrudService<User> {
       name: user.name,
       role: user.role,
       isActive: user.isActive,
+      address: user.address ?? null,
+      phone: user.phone ?? null,
+      city: user.city ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

@@ -8,7 +8,7 @@ import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { TOURNAMENT_STATUS_VALUES } from '@/constants';
+import { TOURNAMENT_STATUS_VALUES, MODE_VALUES } from '@/constants';
 import { useCreateTournament, useGameTypes, useTournament, useUpdateTournament } from '@/hooks/use-queries';
 import { TranslationKey } from '@/i18n';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -141,6 +141,11 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
     value,
   }));
 
+  const modeOptions = MODE_VALUES.map((value) => ({
+    label: t(`mode.${value}` as TranslationKey),
+    value,
+  }));
+
   const paidPlacesOptions = [
     { label: t('tournament.percent'), value: 'percent' },
     { label: t('tournament.fixed'), value: 'fixed' },
@@ -161,6 +166,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         gameTypeId: tournament.gameTypeId ?? 0,
         startDate: tournament.startDate,
         status: tournament.status,
+        mode: tournament.mode,
         buyIn: tournament.buyIn,
         fee: tournament.fee,
         startingStack: tournament.startingStack,
@@ -196,6 +202,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         gameTypeId: 0,
         startDate: defaultStartDate(),
         status: 'registering',
+        mode: 'live',
         buyIn: 50,
         fee: 5,
         startingStack: 10000,
@@ -232,6 +239,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       gameTypeId: Number(values.gameTypeId),
       startDate: values.startDate,
       status: values.status,
+      mode: values.mode,
       buyIn: Number(values.buyIn),
       fee: Number(values.fee ?? 0),
       startingStack: Number(values.startingStack),
@@ -308,6 +316,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
             <FormSelect name="gameTypeId" label={t('tournament.gameType')} placeholder={t('tournament.gameTypePlaceholder')} options={gameTypeOptions} />
             <FormDateField name="startDate" label={t('tournament.startDate')} />
             <FormSegmented name="status" label={t('tournament.status')} options={statusOptions} />
+            <FormSegmented name="mode" label={t('tournament.mode')} options={modeOptions} />
             <FormSwitch
               name="maxPlayersUnlimited"
               label={t('tournament.unlimitedPlayers')}

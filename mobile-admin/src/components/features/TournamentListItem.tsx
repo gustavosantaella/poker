@@ -53,7 +53,8 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
               {tournament.name}
             </AppText>
             <AppText variant="caption">
-              {tournament.gameType?.name ?? t('table.noGameType')} • {formatDateTime(tournament.startDate)}
+              {tournament.gameType?.name ?? t('table.noGameType')} • {formatDateTime(tournament.startDate)} •{' '}
+              {tournament.mode === 'online' ? t('mode.online') : t('mode.live')}
             </AppText>
           </View>
           <TournamentStatusBadge status={tournament.status} />

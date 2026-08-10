@@ -13,6 +13,9 @@ export interface AuthResult {
     name: string;
     role: string;
     isActive: boolean;
+    address: string | null;
+    phone: string | null;
+    city: string | null;
     createdAt: Date;
     updatedAt: Date;
   };

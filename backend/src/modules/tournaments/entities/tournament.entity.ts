@@ -13,6 +13,11 @@ export enum TournamentStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum TournamentMode {
+  LIVE = 'live',
+  ONLINE = 'online',
+}
+
 @Entity('tournaments')
 export class Tournament extends BaseEntity {
   @Column({ length: 100 })
@@ -30,6 +35,9 @@ export class Tournament extends BaseEntity {
 
   @Column({ type: 'enum', enum: TournamentStatus, default: TournamentStatus.SCHEDULED })
   status: TournamentStatus;
+
+  @Column({ type: 'enum', enum: TournamentMode, default: TournamentMode.LIVE })
+  mode: TournamentMode;
 
   @Column({ type: 'decimal', precision: 14, scale: 2, transformer: DecimalTransformer })
   buyIn: number;

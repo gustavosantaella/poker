@@ -12,6 +12,7 @@ export const createTableSchema = (t: TFunction) =>
       maxBuyIn: z.coerce.number().min(0, t('validation.mustBeZeroOrMore')),
       seats: z.coerce.number().int().min(1, t('validation.atLeastOneSeat')).max(20),
       status: z.enum(['open', 'running', 'paused', 'closed']),
+      mode: z.enum(['live', 'online']),
       notes: z.string().max(1000).optional(),
     })
     .refine((data) => data.bigBlind >= data.smallBlind, {
