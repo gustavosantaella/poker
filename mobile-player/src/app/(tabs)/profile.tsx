@@ -46,18 +46,20 @@ export default function ProfileScreen() {
 
   const myReservationsRows = [
     ...(myTables ?? [])
-      .filter((r) => r.status !== 'cancelled')
+      .filter((r) => r.status === 'pending')
       .map((r) => ({
         key: `t-${r.id}`,
         name: r.table?.name ?? `#${r.tableId}`,
-        status: r.status === 'confirmed' ? t('table.playing') : t('table.reserved'),
+        status: t('table.reserved'),
         reservationId: r.id,
         type: 'table' as const,
       })),
-    ...(myTournaments ?? []).map((r) => ({
+    ...(myTournaments ?? [])
+      .filter((r) => r.status === 'pending')
+      .map((r) => ({
       key: `m-${r.id}`,
       name: r.tournament?.name ?? `#${r.tournamentId}`,
-      status: r.status === 'accepted' ? t('tournament.playing') : t('tournament.reserved'),
+      status: t('tournament.reserved'),
       reservationId: r.id,
       type: 'tournament' as const,
     })),

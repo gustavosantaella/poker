@@ -205,6 +205,20 @@ export default function TournamentDetailScreen() {
         <>
           {current ? (
             <View style={[styles.timerCard, { backgroundColor: current.type === 'break' ? colors.warningMuted : colors.primaryMuted }]}>
+              {tournament.status === 'running' ? (
+                <View
+                style={[
+                  styles.timerBadge,
+                  { backgroundColor: current.type === 'break' ? colors.warning : colors.primary },
+                ]}
+              >
+                <AppText variant="caption" weight="semibold" color={colors.onPrimary}>
+                  {current.type === 'break'
+                    ? t('tournament.currentBreak')
+                    : t('tournament.levelShort', { level: current.level })}
+                </AppText>
+              </View>
+              ) : null}
               <AppText
                 variant={tournament.status === 'running' ? 'h1' : 'title'}
                 color={current.type === 'break' ? colors.warning : colors.primary}
@@ -365,7 +379,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  timerCard: { borderRadius: 16, padding: 16, gap: 6, marginBottom: 12 },
+  timerCard: { borderRadius: 16, padding: 16, paddingTop: 28, gap: 6, marginBottom: 12 },
+  timerBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 12,
+    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
   emptyText: { paddingVertical: spacing.md },

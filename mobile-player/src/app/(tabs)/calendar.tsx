@@ -28,7 +28,15 @@ import {
 } from '@/utils/calendar';
 
 type CalendarEvent =
-  | { kind: 'tournament'; id: number; name: string; date: Date; status: TournamentStatus; buyIn: number }
+  | {
+      kind: 'tournament';
+      id: number;
+      name: string;
+      date: Date;
+      status: TournamentStatus;
+      level: number | null;
+      onBreak: boolean;
+    }
   | { kind: 'table'; id: number; name: string; status: TableStatus; blinds: string };
 
 const LOCALE: Record<string, string> = { en: 'en-US', es: 'es-ES' };
@@ -74,6 +82,9 @@ export default function CalendarScreen() {
       if (trn.status === 'cancelled') continue;
       const date = new Date(trn.startDate);
       if (Number.isNaN(date.getTime())) continue;
+      // Nivel/descanso actual si el torneo está en curso.
+      const currentItem =
+        trn.status === 'running' && trn.currentLevel != null ? trn.blindStructure?.[trn.currentLevel] : null;
       const key = dateKey(date);
       const arr = map.get(key) ?? [];
       arr.push({
@@ -82,7 +93,8 @@ export default function CalendarScreen() {
         name: trn.name,
         date,
         status: trn.status,
-        buyIn: trn.buyIn,
+        level: currentItem?.type === 'level' ? currentItem.level : null,
+        onBreak: currentItem?.type === 'break',
       });
       map.set(key, arr);
     }
@@ -165,6 +177,11 @@ export default function CalendarScreen() {
           {isTournament ? (
             <AppText variant="caption" color={colors.textSecondary}>
               {formatEventTime(event.date, locale)} · {t('calendar.tournament')}
+              {event.onBreak
+                ? ` · ${t('tournament.breakShort')}`
+                : event.level != null
+                  ? ` · ${t('tournament.levelShort', { level: event.level })}`
+                  : ''}
             </AppText>
           ) : (
             <AppText variant="caption" color={colors.textSecondary}>
