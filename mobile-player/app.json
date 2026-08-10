@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "PokeLAP Player",
+    "slug": "pokelap-player",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "pokelapplayer",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pokelap.player"
+    },
+    "android": {
+      "package": "com.pokelap.player",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-splash-screen",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow PokeLAP Player to access your photos to set your profile picture."
+        }
+      ]
+    ],
+    "experiments": {
+      "reactCompiler": true
+    }
+  }
+}

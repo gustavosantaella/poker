@@ -4,7 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { CrudService } from '../../common/services/crud.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 
 @Injectable()
 export class UsersService extends CrudService<User> {
@@ -16,14 +16,26 @@ export class UsersService extends CrudService<User> {
     return this.repository.findOne({
       where: { email: email.toLowerCase() },
       select: withPassword
-        ? ['id', 'email', 'name', 'password', 'role', 'isActive', 'address', 'phone', 'city', 'createdAt', 'updatedAt']
+        ? ['id', 'email', 'name', 'password', 'role', 'isActive', 'address', 'phone', 'city', 'alias', 'country', 'photoUrl', 'createdAt', 'updatedAt']
         : undefined,
     });
   }
 
-  async createWithPassword(email: string, name: string, password: string): Promise<User> {
+  async createWithPassword(
+    email: string,
+    name: string,
+    password: string,
+    role = UserRole.ADMIN,
+    alias?: string,
+  ): Promise<User> {
     const hashed = await bcrypt.hash(password, 10);
-    return this.create({ email: email.toLowerCase(), name, password: hashed });
+    return this.create({
+      email: email.toLowerCase(),
+      name,
+      password: hashed,
+      role,
+      alias: alias ?? null,
+    });
   }
 
   async update(id: number, data: UpdateUserDto): Promise<User> {
@@ -43,6 +55,9 @@ export class UsersService extends CrudService<User> {
       address: user.address ?? null,
       phone: user.phone ?? null,
       city: user.city ?? null,
+      alias: user.alias ?? null,
+      country: user.country ?? null,
+      photoUrl: user.photoUrl ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

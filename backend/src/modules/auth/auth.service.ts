@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -37,7 +37,13 @@ export class AuthService {
       this.logger.warn(`Register rejected for ${dto.email}: email already registered`);
       throw new ConflictException('Email is already registered');
     }
-    const user = await this.usersService.createWithPassword(dto.email, dto.name, dto.password);
+    const user = await this.usersService.createWithPassword(
+      dto.email,
+      dto.name,
+      dto.password,
+      dto.role ?? UserRole.ADMIN,
+      dto.alias,
+    );
     this.logger.log(`Registered new user ${dto.email} (id=${user.id})`);
     return this.buildAuthResult(user);
   }

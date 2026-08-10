@@ -33,4 +33,13 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', length: 120, nullable: true })
   city: string | null;
 
+  @Column({ type: 'varchar', length: 60, nullable: true })
+  alias: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  country: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  photoUrl: string | null;
+
 }

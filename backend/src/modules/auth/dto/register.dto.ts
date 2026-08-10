@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { UserRole } from '../../users/entities/user.entity';
 
 export class RegisterDto {
   @IsEmail({}, { message: 'A valid email is required' })
@@ -13,4 +14,13 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Name is required' })
   @MaxLength(120)
   name: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  alias?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
 }

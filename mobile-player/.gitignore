@@ -1,0 +1,6 @@
+.expo
+.env
+install.log
+node_modules
+npm-debug.log
+pnpm-debug.log

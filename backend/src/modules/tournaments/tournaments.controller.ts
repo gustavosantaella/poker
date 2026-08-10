@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import { DeepPartial } from 'typeorm';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { GenerateStructureDto } from './dto/blind-structure.dto';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
@@ -8,6 +9,7 @@ import { CreateReservationDto, RebuyDto, UpdateReservationDto } from './dto/rese
 import { CreateTournamentChipDto } from './dto/tournament-chip.dto';
 import { UpdatePrizesDto } from './dto/tournament-prize.dto';
 import { Tournament } from './entities/tournament.entity';
+import { User } from '../users/entities/user.entity';
 import { TournamentsService } from './tournaments.service';
 
 @Controller('tournaments')
@@ -27,6 +29,11 @@ export class TournamentsController {
   @Get('players')
   listPlayers() {
     return this.service.listPlayers();
+  }
+
+  @Get('my-reservations')
+  myReservations(@CurrentUser() user: User) {
+    return this.service.myReservations(user.id);
   }
 
   @Get(':id')

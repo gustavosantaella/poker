@@ -38,4 +38,18 @@ export class UpdateUserDto {
   @MaxLength(120)
   city?: string | null;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  alias?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  country?: string | null;
+
+  @IsOptional()
+  @IsString()
+  photoUrl?: string | null;
+
 }
