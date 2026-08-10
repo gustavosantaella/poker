@@ -16,6 +16,11 @@ export class TablesController {
     return this.service.findAll({ ...pagination, order: { createdAt: 'DESC' } });
   }
 
+  @Get('my-reservations')
+  myReservations(@CurrentUser() user: User) {
+    return this.service.myReservations(user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);

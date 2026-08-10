@@ -1,4 +1,5 @@
 ﻿import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { createTableReservation } from '@/api/tables';
 import { TableCard } from '@/components/features/TableCard';
 import { AppHeader } from '@/components/ui/AppHeader';
@@ -7,7 +8,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useTables } from '@/hooks/use-queries';
+import { useMyTableReservations, useTables } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
 
@@ -16,8 +17,18 @@ export default function TablesScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { data, isLoading, isRefetching, refetch } = useTables();
+  const { data: myReservations } = useMyTableReservations();
   const tables = data?.items ?? [];
   const reserve = useReserve((target, userId) => createTableReservation(target.id, userId));
+
+  const reservedIds = useMemo(() => {
+    const set = new Set<number>();
+    (myReservations ?? []).forEach((r) => {
+      if (r.status !== 'cancelled') set.add(r.tableId);
+    });
+    reserve.reservedIds.forEach((id) => set.add(id));
+    return set;
+  }, [myReservations, reserve.reservedIds]);
 
   return (
     <AppScreen refreshing={isRefetching} onRefresh={refetch}>
@@ -31,7 +42,7 @@ export default function TablesScreen() {
           <TableCard
             key={table.id}
             table={table}
-            reserved={reserve.isReserved(table.id)}
+            reserved={reservedIds.has(table.id)}
             onPress={() => router.push(`/table/${table.id}`)}
             onReserve={() => reserve.open({ id: table.id, name: table.name })}
           />

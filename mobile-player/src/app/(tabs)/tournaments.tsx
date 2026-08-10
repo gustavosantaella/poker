@@ -1,4 +1,5 @@
 ﻿import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { createTournamentReservation } from '@/api/tournaments';
 import { TournamentCard } from '@/components/features/TournamentCard';
 import { AppHeader } from '@/components/ui/AppHeader';
@@ -7,7 +8,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useTournaments } from '@/hooks/use-queries';
+import { useMyTournamentReservations, useTournaments } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
 
@@ -16,8 +17,16 @@ export default function TournamentsScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { data, isLoading, isRefetching, refetch } = useTournaments();
+  const { data: myReservations } = useMyTournamentReservations();
   const tournaments = data?.items ?? [];
   const reserve = useReserve((target, userId) => createTournamentReservation(target.id, userId));
+
+  const reservedIds = useMemo(() => {
+    const set = new Set<number>();
+    (myReservations ?? []).forEach((r) => set.add(r.tournamentId));
+    reserve.reservedIds.forEach((id) => set.add(id));
+    return set;
+  }, [myReservations, reserve.reservedIds]);
 
   return (
     <AppScreen refreshing={isRefetching} onRefresh={refetch}>
@@ -34,7 +43,7 @@ export default function TournamentsScreen() {
           <TournamentCard
             key={tournament.id}
             tournament={tournament}
-            reserved={reserve.isReserved(tournament.id)}
+            reserved={reservedIds.has(tournament.id)}
             onPress={() => router.push(`/tournament/${tournament.id}`)}
             onReserve={() => reserve.open({ id: tournament.id, name: tournament.name })}
           />

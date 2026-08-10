@@ -1,4 +1,5 @@
-import { useRouter } from 'expo-router';
+﻿import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { createTableReservation } from '@/api/tables';
 import { createTournamentReservation } from '@/api/tournaments';
@@ -11,7 +12,7 @@ import { AppText } from '@/components/ui/AppText';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useTables, useTournaments } from '@/hooks/use-queries';
+import { useMyTableReservations, useMyTournamentReservations, useTables, useTournaments } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
@@ -25,10 +26,28 @@ export default function HomeScreen() {
     useTables();
   const { data: tournamentsData, refetch: refetchTournaments, isRefetching: tournamentsRefetching } =
     useTournaments();
+  const { data: myTableReservations } = useMyTableReservations();
+  const { data: myTournamentReservations } = useMyTournamentReservations();
   const tables = (tablesData?.items ?? []).slice(0, 3);
   const tournaments = (tournamentsData?.items ?? []).slice(0, 3);
   const reserveTable = useReserve((target, userId) => createTableReservation(target.id, userId));
   const reserveTournament = useReserve((target, userId) => createTournamentReservation(target.id, userId));
+
+  const tableReservedIds = useMemo(() => {
+    const set = new Set<number>();
+    (myTableReservations ?? []).forEach((r) => {
+      if (r.status !== 'cancelled') set.add(r.tableId);
+    });
+    reserveTable.reservedIds.forEach((id) => set.add(id));
+    return set;
+  }, [myTableReservations, reserveTable.reservedIds]);
+
+  const tournamentReservedIds = useMemo(() => {
+    const set = new Set<number>();
+    (myTournamentReservations ?? []).forEach((r) => set.add(r.tournamentId));
+    reserveTournament.reservedIds.forEach((id) => set.add(id));
+    return set;
+  }, [myTournamentReservations, reserveTournament.reservedIds]);
 
   const handleRefresh = async () => {
     await Promise.all([refetchTables(), refetchTournaments()]);
@@ -41,18 +60,12 @@ export default function HomeScreen() {
       <AppHeader title={t('home.hello', { name: greeting })} />
 
       <View style={[styles.hero, { backgroundColor: colors.primaryMuted }]}>
-        <AppText variant="title" color={colors.primary}>
-          {t('home.heroTitle')}
-        </AppText>
-        <AppText variant="caption" color={colors.primary}>
-          {t('home.heroSubtitle')}
-        </AppText>
+        <AppText variant="title" color={colors.primary}>{t('home.heroTitle')}</AppText>
+        <AppText variant="caption" color={colors.primary}>{t('home.heroSubtitle')}</AppText>
       </View>
 
       <View style={styles.sectionHeader}>
-        <AppText variant="subtitle">
-          {t('home.availableTables')}
-        </AppText>
+        <AppText variant="subtitle">{t('home.availableTables')}</AppText>
         <AppButton title={t('home.seeAll')} variant="ghost" size="sm" onPress={() => router.push('/tables')} />
       </View>
       {tablesLoading ? (
@@ -62,7 +75,7 @@ export default function HomeScreen() {
           <TableCard
             key={table.id}
             table={table}
-            reserved={reserveTable.isReserved(table.id)}
+            reserved={tableReservedIds.has(table.id)}
             onPress={() => router.push(`/table/${table.id}`)}
             onReserve={() => reserveTable.open({ id: table.id, name: table.name })}
           />
@@ -70,16 +83,14 @@ export default function HomeScreen() {
       )}
 
       <View style={styles.sectionHeader}>
-        <AppText variant="subtitle">
-          {t('home.upcomingTournaments')}
-        </AppText>
+        <AppText variant="subtitle">{t('home.upcomingTournaments')}</AppText>
         <AppButton title={t('home.seeAll')} variant="ghost" size="sm" onPress={() => router.push('/tournaments')} />
       </View>
       {tournaments.map((tournament) => (
         <TournamentCard
           key={tournament.id}
           tournament={tournament}
-          reserved={reserveTournament.isReserved(tournament.id)}
+          reserved={tournamentReservedIds.has(tournament.id)}
           onPress={() => router.push(`/tournament/${tournament.id}`)}
           onReserve={() => reserveTournament.open({ id: tournament.id, name: tournament.name })}
         />

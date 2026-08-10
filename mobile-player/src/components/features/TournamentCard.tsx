@@ -1,3 +1,4 @@
+﻿import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 import { Tournament } from '@/api/types';
 import { AppCard } from '@/components/ui/AppCard';
@@ -21,49 +22,59 @@ export function TournamentCard({
 }) {
   const { colors } = useTheme();
   const { t } = useI18n();
+  const online = tournament.mode === 'online';
+  const modeBg = online ? colors.primary : colors.success;
+  const modeFg = colors.onPrimary;
 
   return (
     <AppCard onPress={onPress} style={styles.card}>
+      <View style={[styles.modeBar, { backgroundColor: modeBg }]}>
+        <Ionicons name={online ? 'globe-outline' : 'location-outline'} size={13} color={modeFg} />
+        <AppText variant="caption" weight="semibold" color={modeFg}>
+          {online ? t('mode.online') : t('mode.live')}
+        </AppText>
+      </View>
+
       <View style={styles.header}>
         <View style={styles.titleWrap}>
           <AppText variant="subtitle" numberOfLines={1}>
             {tournament.name}
           </AppText>
-          <AppText variant="caption">
-            {formatDateTime(tournament.startDate)} •{' '}
-            {tournament.mode === 'online' ? t('mode.online') : t('mode.live')}
-          </AppText>
+          <AppText variant="caption">{tournament.gameType?.name ?? t('table.noGameType')}</AppText>
         </View>
         <Badge label={t(`status.${tournament.status}`)} tone={tournament.status === 'registering' ? 'primary' : 'neutral'} />
       </View>
 
+      <View style={styles.dateRow}>
+        <Ionicons name="calendar-outline" size={15} color={colors.primary} />
+        <AppText variant="body" weight="semibold" color={colors.primary}>
+          {formatDateTime(tournament.startDate)}
+        </AppText>
+      </View>
+
       <View style={styles.meta}>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>
-            {t('tournament.buyIn')}
-          </AppText>
-          <AppText variant="body" weight="semibold">
-            {formatCurrency(tournament.buyIn)}
-            {tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}
-          </AppText>
+          <AppText variant="caption" color={colors.textSecondary}>{t('tournament.buyIn')}</AppText>
+          <AppText variant="body" weight="semibold">{formatCurrency(tournament.buyIn)}{tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}</AppText>
         </View>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>
-            {t('tournament.stack')}
-          </AppText>
-          <AppText variant="body" weight="semibold">
-            {formatNumber(tournament.startingStack)}
-          </AppText>
+          <AppText variant="caption" color={colors.textSecondary}>{t('tournament.stack')}</AppText>
+          <AppText variant="body" weight="semibold">{formatNumber(tournament.startingStack)}</AppText>
         </View>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>
-            {t('tournament.players')}
-          </AppText>
-          <AppText variant="body" weight="semibold">
-            {tournament.maxPlayers == null ? t('tournament.unlimited') : formatNumber(tournament.maxPlayers)}
-          </AppText>
+          <AppText variant="caption" color={colors.textSecondary}>{t('tournament.players')}</AppText>
+          <AppText variant="body" weight="semibold">{tournament.maxPlayers == null ? t('tournament.unlimited') : formatNumber(tournament.maxPlayers)}</AppText>
         </View>
       </View>
+
+      {tournament.guaranteedPrize != null ? (
+        <View style={[styles.guaranteed, { backgroundColor: colors.warningMuted }]}>
+          <Ionicons name="trophy" size={15} color={colors.warning} />
+          <AppText variant="body" weight="bold" color={colors.warning}>
+            {t('tournament.guaranteed')}: {formatCurrency(tournament.guaranteedPrize)}
+          </AppText>
+        </View>
+      ) : null}
 
       <AppButton
         title={reserved ? t('tournament.reserved') : t('tournament.reserve')}
@@ -81,9 +92,29 @@ export function TournamentCard({
 
 const styles = StyleSheet.create({
   card: { marginBottom: 12 },
+  modeBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: -16,
+    marginHorizontal: -16,
+    marginBottom: 12,
+    paddingVertical: 7,
+  },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 },
   titleWrap: { flex: 1, marginRight: 8 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
   meta: { flexDirection: 'row', gap: 12 },
   metaItem: { flex: 1 },
+  guaranteed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 10,
+  },
   reserveBtn: { marginTop: 12 },
 });

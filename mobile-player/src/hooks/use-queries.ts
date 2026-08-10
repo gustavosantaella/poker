@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchMe, updateProfile, UpdateProfilePayload } from '@/api/auth';
 import {
   createTableReservation,
+  fetchMyTableReservations,
   fetchTable,
   fetchTableReservations,
   fetchTables,
 } from '@/api/tables';
 import {
   createTournamentReservation,
+  fetchMyTournamentReservations,
   fetchTournament,
   fetchTournamentReservations,
   fetchTournaments,
@@ -32,6 +34,10 @@ export function useTableReservations(tableId: number) {
     queryFn: () => fetchTableReservations(tableId),
     enabled: tableId > 0,
   });
+}
+
+export function useMyTableReservations() {
+  return useQuery({ queryKey: ['my-table-reservations'], queryFn: fetchMyTableReservations });
 }
 
 export function useCreateTableReservation(tableId: number) {
@@ -62,6 +68,13 @@ export function useTournamentReservations(tournamentId: number) {
     queryKey: ['tournament-reservations', tournamentId],
     queryFn: () => fetchTournamentReservations(tournamentId),
     enabled: tournamentId > 0,
+  });
+}
+
+export function useMyTournamentReservations() {
+  return useQuery({
+    queryKey: ['my-tournament-reservations'],
+    queryFn: fetchMyTournamentReservations,
   });
 }
 

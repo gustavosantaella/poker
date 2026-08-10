@@ -16,6 +16,11 @@ export async function fetchTableReservations(tableId: number): Promise<TableRese
   return res.data.data as TableReservation[];
 }
 
+export async function fetchMyTableReservations(): Promise<TableReservation[]> {
+  const res = await apiClient.get('/tables/my-reservations');
+  return res.data.data as TableReservation[];
+}
+
 export async function createTableReservation(
   tableId: number,
   userId: number,

@@ -37,6 +37,11 @@ export class TablesService extends CrudService<PokerTable> {
 
   // ---- Reservas de mesa ----
 
+  myReservations(userId: number) {
+    return this.reservationsRepo.find({ where: { userId }, order: { createdAt: 'DESC' } });
+  }
+
+
   async createReservation(tableId: number, dto: CreateTableReservationDto) {
     await this.findOne(tableId);
     const existing = await this.reservationsRepo.findOne({

@@ -16,6 +16,11 @@ export async function fetchTournamentReservations(tournamentId: number): Promise
   return res.data.data as TournamentReservation[];
 }
 
+export async function fetchMyTournamentReservations(): Promise<TournamentReservation[]> {
+  const res = await apiClient.get('/tournaments/my-reservations');
+  return res.data.data as TournamentReservation[];
+}
+
 export async function createTournamentReservation(
   tournamentId: number,
   userId: number,
