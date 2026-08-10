@@ -71,6 +71,7 @@ export function useTable(id?: number) {
     queryKey: ['tables', id],
     queryFn: () => fetchTable(id as number),
     enabled: !!id,
+    retry: false,
   });
 }
 
@@ -83,6 +84,7 @@ export function useTournament(id: number) {
     queryKey: ['tournaments', id],
     queryFn: () => fetchTournament(id),
     enabled: id > 0,
+    retry: false,
   });
 }
 

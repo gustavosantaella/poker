@@ -11,7 +11,6 @@ import { AppSelect } from '@/components/ui/AppSelect';
 import { AppText } from '@/components/ui/AppText';
 import { AppTextField } from '@/components/ui/AppTextField';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { ListItem } from '@/components/ui/ListItem';
 import { LoadingView } from '@/components/ui/LoadingView';
 import {
@@ -66,6 +65,7 @@ export function TournamentActionsSheet({
 
   const handleClose = () => {
     setSection('main');
+    setConfirmDelete(false);
     setError(null);
     onClose();
   };
@@ -98,17 +98,19 @@ export function TournamentActionsSheet({
   };
 
   const title =
-    section === 'main'
-      ? t('tournament.actions')
-      : section === 'structure'
-        ? t('tournament.viewStructure')
-        : section === 'reservations'
-          ? t('tournament.reservations')
-          : section === 'chips'
-            ? t('chips.title')
-            : section === 'players'
-              ? t('tournament.players')
-              : t('tournament.prizes');
+    confirmDelete
+      ? t('tournament.deleteTournament')
+      : section === 'main'
+        ? t('tournament.actions')
+        : section === 'structure'
+          ? t('tournament.viewStructure')
+          : section === 'reservations'
+            ? t('tournament.reservations')
+            : section === 'chips'
+              ? t('chips.title')
+              : section === 'players'
+                ? t('tournament.players')
+                : t('tournament.prizes');
 
   return (
     <>
@@ -121,7 +123,29 @@ export function TournamentActionsSheet({
             </AppText>
           </Pressable>
         ) : null}
-        {section === 'main' ? (
+        {confirmDelete ? (
+          <View style={styles.deleteConfirm}>
+            <AppText variant="body" color={colors.textSecondary} style={styles.deleteMsg}>
+              {t('tournament.deleteConfirm')}
+            </AppText>
+            <View style={styles.deleteActions}>
+              <AppButton
+                title={t('common.cancel')}
+                variant="secondary"
+                style={styles.deleteBtn}
+                onPress={() => setConfirmDelete(false)}
+                disabled={remove.isPending}
+              />
+              <AppButton
+                title={t('common.delete')}
+                variant="danger"
+                style={styles.deleteBtn}
+                onPress={handleDelete}
+                loading={remove.isPending}
+              />
+            </View>
+          </View>
+        ) : section === 'main' ? (
           <MainOptions
             tournament={tournament}
             onStartPause={handleStartPause}
@@ -150,17 +174,6 @@ export function TournamentActionsSheet({
           </AppText>
         ) : null}
       </BottomSheet>
-
-      <ConfirmModal
-        visible={confirmDelete}
-        title={t('tournament.deleteTournament')}
-        message={t('tournament.deleteConfirm')}
-        confirmLabel={t('common.delete')}
-        destructive
-        loading={remove.isPending}
-        onConfirm={handleDelete}
-        onCancel={() => setConfirmDelete(false)}
-      />
     </>
   );
 }
@@ -497,6 +510,7 @@ function ChipsView({ tournamentId, onError }: { tournamentId: number; onError: (
 }
 function PlayersView({ tournament, onError }: { tournament: Tournament; onError: (m: string) => void }) {
   const { t } = useI18n();
+  const { colors } = useTheme();
   const { data: reservations, isLoading } = useReservations(tournament.id);
   const remove = useRemoveReservation(tournament.id);
   const rebuy = useRebuyReservation(tournament.id);
@@ -553,6 +567,30 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
     <View>
       {isLoading ? (
         <LoadingView />
+      ) : deleteTarget ? (
+        <View style={styles.deleteConfirm}>
+          <AppText variant="body" color={colors.textSecondary} style={styles.deleteMsg}>
+            {t('tournament.deletePlayerConfirm', {
+              name: deleteTarget.user?.name ?? `#${deleteTarget.userId}`,
+            })}
+          </AppText>
+          <View style={styles.deleteActions}>
+            <AppButton
+              title={t('common.cancel')}
+              variant="secondary"
+              style={styles.deleteBtn}
+              onPress={() => setDeleteTarget(null)}
+              disabled={remove.isPending}
+            />
+            <AppButton
+              title={t('common.delete')}
+              variant="danger"
+              style={styles.deleteBtn}
+              onPress={handleDelete}
+              loading={remove.isPending}
+            />
+          </View>
+        </View>
       ) : accepted.length === 0 ? (
         <AppText variant="caption" center style={styles.empty}>
           {t('tournament.noPlayers')}
@@ -627,19 +665,6 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
           </View>
         ) : null}
       </AppModal>
-
-      <ConfirmModal
-        visible={deleteTarget != null}
-        title={t('tournament.deletePlayerTitle')}
-        message={t('tournament.deletePlayerConfirm', {
-          name: deleteTarget?.user?.name ?? `#${deleteTarget?.userId ?? ''}`,
-        })}
-        confirmLabel={t('common.delete')}
-        destructive
-        loading={remove.isPending}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
     </View>
   );
 }
@@ -765,4 +790,8 @@ const styles = StyleSheet.create({
   saveBtn: { marginTop: 12 },
   modalPlayer: { marginBottom: 12 },
   prizesInfo: { marginBottom: 12 },
+  deleteConfirm: { paddingVertical: 8 },
+  deleteMsg: { marginBottom: 16 },
+  deleteActions: { flexDirection: 'row', gap: 8 },
+  deleteBtn: { flex: 1 },
 });
