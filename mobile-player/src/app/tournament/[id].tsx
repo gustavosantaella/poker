@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { createTournamentReservation } from '@/api/tournaments';
@@ -11,11 +12,15 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useTournament, useTournamentReservations } from '@/hooks/use-queries';
+import { useTournament, useTournamentReservations, useDeleteTournamentReservation } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { formatCurrency, formatDateTime, formatNumber } from '@/utils/format';
+import { getErrorMessage } from '@/utils/error';
+import { BlindStructurePreview } from '@/components/features/BlindStructurePreview';
+import { summarizeStructure } from '@/utils/blind-structure';
+import { spacing } from '@/theme/spacing';
 
 export default function TournamentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,7 +31,14 @@ export default function TournamentDetailScreen() {
   const { user } = useAuth();
   const { data: tournament, isLoading, isError } = useTournament(tournamentId);
   const { data: reservations } = useTournamentReservations(tournamentId);
-  const alreadyReserved = (reservations ?? []).some((r) => r.userId === user?.id);
+
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const deleteReservation = useDeleteTournamentReservation(tournamentId);
+
+  const myReservation = (reservations ?? []).find((r) => r.userId === user?.id);
+  const alreadyReserved = myReservation !== undefined;
+  const isPlaying = myReservation?.status === 'accepted';
+
   const reserve = useReserve((target, userId) => createTournamentReservation(target.id, userId));
 
   if (isLoading) {
@@ -98,15 +110,69 @@ export default function TournamentDetailScreen() {
         )}
       </AppCard>
 
-      <AppButton
-        title={reserved ? t('tournament.reserved') : t('tournament.reserve')}
-        icon={reserved ? 'checkmark' : 'add'}
-        variant={reserved ? 'success' : 'primary'}
-        disabled={reserved}
-        fullWidth
-        style={styles.reserveBtn}
-        onPress={() => reserve.open({ id: tournament.id, name: tournament.name })}
-      />
+      {reserved ? (
+        isPlaying ? (
+          <AppButton
+            title={t('tournament.playing')}
+            icon="checkmark-circle-outline"
+            variant="success"
+            disabled={true}
+            fullWidth
+            style={styles.reserveBtn}
+          />
+        ) : myReservation ? (
+          <AppButton
+            title={t('tournament.cancelReserve')}
+            icon="trash-outline"
+            variant="danger"
+            disabled={deleteReservation.isPending}
+            fullWidth
+            style={styles.reserveBtn}
+            onPress={() => setCancelModalVisible(true)}
+          />
+        ) : (
+          <AppButton
+            title={t('tournament.reserved')}
+            icon="checkmark"
+            variant="success"
+            disabled={true}
+            fullWidth
+            style={styles.reserveBtn}
+          />
+        )
+      ) : (
+        <AppButton
+          title={t('tournament.reserve')}
+          icon="add"
+          variant="primary"
+          fullWidth
+          style={styles.reserveBtn}
+          onPress={() => reserve.open({ id: tournament.id, name: tournament.name })}
+        />
+      )}
+
+      {tournament.blindStructure && tournament.blindStructure.length > 0 ? (
+        <AppCard style={styles.structureCard}>
+          <AppText variant="subheader" style={styles.cardTitle}>
+            {t('structure.title')}
+          </AppText>
+          <BlindStructurePreview
+            items={tournament.blindStructure}
+            summary={summarizeStructure(tournament.blindStructure)}
+            lateRegistrationLevel={
+              tournament.lateRegistrationEnabled && tournament.lateRegistrationUntilLevel != null
+                ? tournament.lateRegistrationUntilLevel
+                : null
+            }
+            addOnLevel={
+              tournament.addOnEnabled && tournament.addOnUntilLevel != null
+                ? tournament.addOnUntilLevel
+                : null
+            }
+            reEntryUnlimited={tournament.reEntryEnabled && tournament.maxReEntries === 0}
+          />
+        </AppCard>
+      ) : null}
 
       <ConfirmModal
         visible={reserve.target != null}
@@ -118,6 +184,27 @@ export default function TournamentDetailScreen() {
         error={reserve.modalError}
         onConfirm={() => user && reserve.confirm(user.id)}
         onCancel={reserve.close}
+      />
+
+      <ConfirmModal
+        visible={cancelModalVisible}
+        title={t('tournament.cancelReserveConfirmTitle')}
+        message={t('tournament.cancelReserveConfirm', { name: tournament.name })}
+        confirmLabel={t('common.confirm')}
+        cancelLabel={t('common.cancel')}
+        loading={deleteReservation.isPending}
+        error={deleteReservation.error ? getErrorMessage(deleteReservation.error) : null}
+        onConfirm={async () => {
+          if (myReservation) {
+            try {
+              await deleteReservation.mutateAsync(myReservation.id);
+              setCancelModalVisible(false);
+            } catch (e) {
+              // error is handled by mutation state
+            }
+          }
+        }}
+        onCancel={() => setCancelModalVisible(false)}
       />
     </AppScreen>
   );
@@ -144,4 +231,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   reserveBtn: { marginTop: 16 },
+  structureCard: { marginTop: spacing.md },
+  cardTitle: { marginBottom: spacing.sm },
 });
+

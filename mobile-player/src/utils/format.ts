@@ -29,3 +29,12 @@ export function formatDateTime(iso: string): string {
     minute: '2-digit',
   });
 }
+
+export function formatDuration(totalMin: number): string {
+  const hours = Math.floor(totalMin / 60);
+  const minutes = totalMin % 60;
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
+

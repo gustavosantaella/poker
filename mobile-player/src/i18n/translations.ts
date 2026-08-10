@@ -105,11 +105,34 @@ export const en = {
   'profile.requiredHint': 'Nickname and name are required',
   'profile.logoutConfirm': 'Are you sure you want to sign out?',
 
+  'table.cancelReserve': 'Cancel reservation',
+  'table.cancelReserveConfirmTitle': 'Cancel Reservation',
+  'table.cancelReserveConfirm': 'Are you sure you want to cancel your reservation at {name}?',
+  'table.playing': 'Playing',
+
+  'tournament.cancelReserve': 'Cancel reservation',
+  'tournament.cancelReserveConfirmTitle': 'Cancel Reservation',
+  'tournament.cancelReserveConfirm': 'Are you sure you want to cancel your reservation for {name}?',
+  'tournament.playing': 'Playing',
+
+  'structure.title': 'Blind structure',
+  'structure.summary': '{levels} levels • {breaks} breaks • Est. {duration}',
+  'structure.breakLabel': '☕ Break • {minutes} min',
+  'structure.afterLevel': 'after level {level}',
+  'structure.ante': 'ante {ante}',
+  'structure.noAnte': 'no ante',
+  'structure.minutes': '{minutes} min',
+  'structure.estimatedEnd': 'Estimated end: {smallBlind}/{bigBlind} (BB ≈ 5% of stack).',
+  'structure.registrationClosesAt': 'Registration closes at level {level}',
+  'structure.addOnEndsAt': 'Add-on ends at level {level}',
+  'structure.reEntryUnlimited': 'Unlimited re-entry until registration closes',
+
   'errors.sessionExpired': 'Your session expired. Please sign in again.',
   'errors.forbidden': 'You do not have permission to do this.',
   'errors.network': 'Network error. Check that the API URL is correct and reachable.',
   'errors.generic': 'Something went wrong. Try again.',
 };
+
 
 export const es: Record<TranslationKey, string> = {
   'common.confirm': 'Confirmar',
@@ -218,11 +241,34 @@ export const es: Record<TranslationKey, string> = {
   'profile.requiredHint': 'El alias y el nombre son obligatorios',
   'profile.logoutConfirm': '¿Seguro que quieres cerrar sesión?',
 
+  'table.cancelReserve': 'Cancelar reserva',
+  'table.cancelReserveConfirmTitle': 'Cancelar reserva',
+  'table.cancelReserveConfirm': '¿Estás seguro de que deseas cancelar tu reserva en {name}?',
+  'table.playing': 'Jugando',
+
+  'tournament.cancelReserve': 'Cancelar reserva',
+  'tournament.cancelReserveConfirmTitle': 'Cancelar reserva',
+  'tournament.cancelReserveConfirm': '¿Estás seguro de que deseas cancelar tu reserva para {name}?',
+  'tournament.playing': 'Jugando',
+
+  'structure.title': 'Estructura de ciegas',
+  'structure.summary': '{levels} niveles • {breaks} descansos • Est. {duration}',
+  'structure.breakLabel': '☕ Descanso • {minutes} min',
+  'structure.afterLevel': 'después del nivel {level}',
+  'structure.ante': 'ante {ante}',
+  'structure.noAnte': 'sin ante',
+  'structure.minutes': '{minutes} min',
+  'structure.estimatedEnd': 'Fin estimado: {smallBlind}/{bigBlind} (BB ≈ 5% del stack).',
+  'structure.registrationClosesAt': 'El registro cierra en el nivel {level}',
+  'structure.addOnEndsAt': 'El add-on finaliza en el nivel {level}',
+  'structure.reEntryUnlimited': 'Re-entrada ilimitada hasta el cierre del registro',
+
   'errors.sessionExpired': 'Tu sesión expiró. Inicia sesión de nuevo.',
   'errors.forbidden': 'No tienes permiso para realizar esta acción.',
   'errors.network': 'Error de red. Verifica que la URL de la API sea correcta y accesible.',
   'errors.generic': 'Algo salió mal. Inténtalo de nuevo.',
 };
+
 
 export const translations = { en, es } as const;
 

@@ -28,3 +28,11 @@ export async function createTournamentReservation(
   const res = await apiClient.post(`/tournaments/${tournamentId}/reservations`, { userId });
   return res.data.data as TournamentReservation;
 }
+
+export async function deleteTournamentReservation(
+  tournamentId: number,
+  reservationId: number,
+): Promise<void> {
+  await apiClient.delete(`/tournaments/${tournamentId}/reservations/${reservationId}`);
+}
+

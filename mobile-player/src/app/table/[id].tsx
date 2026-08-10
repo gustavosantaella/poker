@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { createTableReservation } from '@/api/tables';
@@ -11,11 +12,12 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useTable, useTableReservations } from '@/hooks/use-queries';
+import { useTable, useTableReservations, useDeleteTableReservation } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { formatCurrency } from '@/utils/format';
+import { getErrorMessage } from '@/utils/error';
 
 export default function TableDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,9 +28,16 @@ export default function TableDetailScreen() {
   const { user } = useAuth();
   const { data: table, isLoading, isError } = useTable(tableId);
   const { data: reservations } = useTableReservations(tableId);
-  const alreadyReserved = (reservations ?? []).some(
+
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const deleteReservation = useDeleteTableReservation(tableId);
+
+  const myReservation = (reservations ?? []).find(
     (r) => r.userId === user?.id && r.status !== 'cancelled',
   );
+  const alreadyReserved = myReservation !== undefined;
+  const isPlaying = myReservation?.status === 'confirmed';
+
   const reserve = useReserve((target, userId) => createTableReservation(target.id, userId));
 
   if (isLoading) {
@@ -81,15 +90,46 @@ export default function TableDetailScreen() {
         {table.notes ? <DetailRow label={t('common.optional')} value={table.notes} last /> : null}
       </AppCard>
 
-      <AppButton
-        title={reserved ? t('table.reserved') : t('table.reserve')}
-        icon={reserved ? 'checkmark' : 'add'}
-        variant={reserved ? 'success' : 'primary'}
-        disabled={reserved}
-        fullWidth
-        style={styles.reserveBtn}
-        onPress={() => reserve.open({ id: table.id, name: table.name })}
-      />
+      {reserved ? (
+        isPlaying ? (
+          <AppButton
+            title={t('table.playing')}
+            icon="checkmark-circle-outline"
+            variant="success"
+            disabled={true}
+            fullWidth
+            style={styles.reserveBtn}
+          />
+        ) : myReservation ? (
+          <AppButton
+            title={t('table.cancelReserve')}
+            icon="trash-outline"
+            variant="danger"
+            disabled={deleteReservation.isPending}
+            fullWidth
+            style={styles.reserveBtn}
+            onPress={() => setCancelModalVisible(true)}
+          />
+        ) : (
+          <AppButton
+            title={t('table.reserved')}
+            icon="checkmark"
+            variant="success"
+            disabled={true}
+            fullWidth
+            style={styles.reserveBtn}
+          />
+        )
+      ) : (
+        <AppButton
+          title={t('table.reserve')}
+          icon="add"
+          variant="primary"
+          fullWidth
+          style={styles.reserveBtn}
+          onPress={() => reserve.open({ id: table.id, name: table.name })}
+        />
+      )}
 
       <ConfirmModal
         visible={reserve.target != null}
@@ -101,6 +141,27 @@ export default function TableDetailScreen() {
         error={reserve.modalError}
         onConfirm={() => user && reserve.confirm(user.id)}
         onCancel={reserve.close}
+      />
+
+      <ConfirmModal
+        visible={cancelModalVisible}
+        title={t('table.cancelReserveConfirmTitle')}
+        message={t('table.cancelReserveConfirm', { name: table.name })}
+        confirmLabel={t('common.confirm')}
+        cancelLabel={t('common.cancel')}
+        loading={deleteReservation.isPending}
+        error={deleteReservation.error ? getErrorMessage(deleteReservation.error) : null}
+        onConfirm={async () => {
+          if (myReservation) {
+            try {
+              await deleteReservation.mutateAsync(myReservation.id);
+              setCancelModalVisible(false);
+            } catch (e) {
+              // error is handled by mutation state
+            }
+          }
+        }}
+        onCancel={() => setCancelModalVisible(false)}
       />
     </AppScreen>
   );

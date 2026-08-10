@@ -82,13 +82,38 @@ export interface Tournament {
   guaranteedPrize: number | null;
   paidPlacesType: 'percent' | 'fixed' | null;
   paidPlacesValue: number | null;
-  blindStructure: { type: 'level' | 'break' }[] | null;
+  blindStructure: BlindStructureItem[] | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   reservedCount?: number;
   playersCount?: number;
 }
+
+export interface BlindLevelItem {
+  type: 'level';
+  level: number;
+  smallBlind: number;
+  bigBlind: number;
+  ante: number;
+  durationMin: number;
+}
+
+export interface BlindBreakItem {
+  type: 'break';
+  durationMin: number;
+  afterLevel: number;
+}
+
+export type BlindStructureItem = BlindLevelItem | BlindBreakItem;
+
+export interface BlindStructureSummary {
+  levelCount: number;
+  breakCount: number;
+  estimatedDurationMin: number;
+  finalLevel: BlindLevelItem | null;
+}
+
 
 export interface TableReservation {
   id: number;

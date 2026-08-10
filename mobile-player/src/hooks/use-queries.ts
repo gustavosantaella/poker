@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchMe, updateProfile, UpdateProfilePayload } from '@/api/auth';
 import {
   createTableReservation,
+  deleteTableReservation,
   fetchMyTableReservations,
   fetchTable,
   fetchTableReservations,
@@ -9,6 +10,7 @@ import {
 } from '@/api/tables';
 import {
   createTournamentReservation,
+  deleteTournamentReservation,
   fetchMyTournamentReservations,
   fetchTournament,
   fetchTournamentReservations,
@@ -46,9 +48,22 @@ export function useCreateTableReservation(tableId: number) {
     mutationFn: (userId: number) => createTableReservation(tableId, userId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['table-reservations', tableId] });
+      void qc.invalidateQueries({ queryKey: ['my-table-reservations'] });
     },
   });
 }
+
+export function useDeleteTableReservation(tableId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reservationId: number) => deleteTableReservation(tableId, reservationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['table-reservations', tableId] });
+      void qc.invalidateQueries({ queryKey: ['my-table-reservations'] });
+    },
+  });
+}
+
 
 export function useTournaments() {
   return useQuery({ queryKey: ['tournaments'], queryFn: fetchTournaments });
@@ -84,10 +99,24 @@ export function useCreateTournamentReservation(tournamentId: number) {
     mutationFn: (userId: number) => createTournamentReservation(tournamentId, userId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['tournament-reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['my-tournament-reservations'] });
       void qc.invalidateQueries({ queryKey: ['tournaments'] });
     },
   });
 }
+
+export function useDeleteTournamentReservation(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reservationId: number) => deleteTournamentReservation(tournamentId, reservationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tournament-reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['my-tournament-reservations'] });
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
 
 export function useMe() {
   return useQuery({ queryKey: ['me'], queryFn: fetchMe });

@@ -28,3 +28,11 @@ export async function createTableReservation(
   const res = await apiClient.post(`/tables/${tableId}/reservations`, { userId });
   return res.data.data as TableReservation;
 }
+
+export async function deleteTableReservation(
+  tableId: number,
+  reservationId: number,
+): Promise<void> {
+  await apiClient.delete(`/tables/${tableId}/reservations/${reservationId}`);
+}
+
