@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Tournament } from '@/api/types';
+import { Tournament, TournamentReservation } from '@/api/types';
 import { BlindStructurePreview } from '@/components/features/BlindStructurePreview';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
+import { AppModal } from '@/components/ui/AppModal';
 import { AppSelect } from '@/components/ui/AppSelect';
 import { AppText } from '@/components/ui/AppText';
 import { AppTextField } from '@/components/ui/AppTextField';
@@ -21,6 +22,7 @@ import {
   usePauseTournament,
   usePlayers,
   usePrizes,
+  useRebuyReservation,
   useRemoveReservation,
   useRemoveTournamentChip,
   useReservations,
@@ -133,11 +135,11 @@ export function TournamentActionsSheet({
         ) : section === 'structure' ? (
           <StructureView tournament={tournament} countdown={countdown} />
         ) : section === 'reservations' ? (
-          <ReservationsView tournamentId={tournament.id} onError={setError} />
+          <ReservationsView tournamentId={tournament.id} startingStack={tournament.startingStack} onError={setError} />
         ) : section === 'chips' ? (
           <ChipsView tournamentId={tournament.id} onError={setError} />
         ) : section === 'players' ? (
-          <PlayersView tournamentId={tournament.id} />
+          <PlayersView tournament={tournament} onError={setError} />
         ) : (
           <PrizesView tournament={tournament} onError={setError} />
         )}
@@ -248,7 +250,15 @@ function StructureView({
   );
 }
 
-function ReservationsView({ tournamentId, onError }: { tournamentId: number; onError: (m: string) => void }) {
+function ReservationsView({
+  tournamentId,
+  startingStack,
+  onError,
+}: {
+  tournamentId: number;
+  startingStack: number;
+  onError: (m: string) => void;
+}) {
   const { t } = useI18n();
   const { data: reservations, isLoading } = useReservations(tournamentId);
   const { data: players } = usePlayers();
@@ -256,6 +266,9 @@ function ReservationsView({ tournamentId, onError }: { tournamentId: number; onE
   const update = useUpdateReservation(tournamentId);
   const remove = useRemoveReservation(tournamentId);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [stackTarget, setStackTarget] = useState<TournamentReservation | null>(null);
+  const [stackInput, setStackInput] = useState('');
+  const [stackError, setStackError] = useState<string | null>(null);
 
   const playerOptions = (players ?? []).map((p) => ({ label: p.name, value: String(p.id) }));
 
@@ -266,6 +279,9 @@ function ReservationsView({ tournamentId, onError }: { tournamentId: number; onE
         ? t('tournament.reservationRejected')
         : t('tournament.reservationPending');
 
+  /** Stack efectivo: el configurado por el admin o, por defecto, el del torneo. */
+  const effectiveStack = (r: TournamentReservation) => r.stack ?? startingStack;
+
   const handleAdd = async () => {
     if (!selectedPlayer) return;
     try {
@@ -275,6 +291,35 @@ function ReservationsView({ tournamentId, onError }: { tournamentId: number; onE
       onError(getErrorMessage(e));
     }
   };
+
+  const openStackModal = (reservation: TournamentReservation) => {
+    setStackTarget(reservation);
+    setStackInput(String(effectiveStack(reservation)));
+    setStackError(null);
+  };
+
+  const closeStackModal = () => {
+    setStackTarget(null);
+    setStackInput('');
+    setStackError(null);
+  };
+
+  const handleAccept = async () => {
+    if (!stackTarget) return;
+    const stack = Number(stackInput.trim());
+    if (!Number.isInteger(stack) || stack < 1) {
+      setStackError(t('tournament.invalidStack'));
+      return;
+    }
+    try {
+      await update.mutateAsync({ id: stackTarget.id, status: 'accepted', stack });
+      closeStackModal();
+    } catch (e) {
+      setStackError(getErrorMessage(e));
+    }
+  };
+
+  const editingAccepted = stackTarget?.status === 'accepted';
 
   return (
     <View>
@@ -302,17 +347,22 @@ function ReservationsView({ tournamentId, onError }: { tournamentId: number; onE
               </AppText>
               <AppText variant="caption">
                 {r.user?.email ?? ''} • {statusLabel(r.status)}
+                {r.status === 'accepted'
+                  ? ` • ${t('tournament.stackLabel')}: ${formatNumber(effectiveStack(r))} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })}`
+                  : ''}
               </AppText>
             </View>
             <View style={styles.rowActions}>
-              {r.status !== 'accepted' ? (
+              {r.status === 'accepted' ? (
+                <AppButton title="" size="sm" variant="ghost" icon="pencil-outline" onPress={() => openStackModal(r)} />
+              ) : (
                 <AppButton
                   title={t('tournament.reservationAccept')}
                   size="sm"
                   variant="success"
-                  onPress={() => update.mutateAsync({ id: r.id, status: 'accepted' })}
+                  onPress={() => openStackModal(r)}
                 />
-              ) : null}
+              )}
               {r.status !== 'rejected' ? (
                 <AppButton
                   title={t('tournament.reservationReject')}
@@ -326,6 +376,46 @@ function ReservationsView({ tournamentId, onError }: { tournamentId: number; onE
           </AppCard>
         ))
       )}
+
+      <AppModal
+        visible={stackTarget != null}
+        title={editingAccepted ? t('tournament.editStack') : t('tournament.acceptPlayer')}
+        onClose={closeStackModal}
+        footer={
+          <>
+            <AppButton
+              title={t('common.cancel')}
+              variant="secondary"
+              style={{ flex: 1 }}
+              onPress={closeStackModal}
+              disabled={update.isPending}
+            />
+            <AppButton
+              title={editingAccepted ? t('common.save') : t('tournament.reservationAccept')}
+              variant="success"
+              style={{ flex: 1 }}
+              onPress={handleAccept}
+              loading={update.isPending}
+            />
+          </>
+        }
+      >
+        {stackTarget ? (
+          <View>
+            <AppText variant="body" weight="semibold" style={styles.modalPlayer}>
+              {stackTarget.user?.name ?? `#${stackTarget.userId}`}
+            </AppText>
+            <AppTextField
+              label={t('tournament.stackLabel')}
+              keyboardType="number-pad"
+              value={stackInput}
+              onChangeText={setStackInput}
+              helper={t('tournament.stackDefaultHelper', { stack: formatNumber(startingStack) })}
+              error={stackError ?? undefined}
+            />
+          </View>
+        ) : null}
+      </AppModal>
     </View>
   );
 }
@@ -405,10 +495,60 @@ function ChipsView({ tournamentId, onError }: { tournamentId: number; onError: (
     </View>
   );
 }
-function PlayersView({ tournamentId }: { tournamentId: number }) {
+function PlayersView({ tournament, onError }: { tournament: Tournament; onError: (m: string) => void }) {
   const { t } = useI18n();
-  const { data: reservations, isLoading } = useReservations(tournamentId);
+  const { data: reservations, isLoading } = useReservations(tournament.id);
+  const remove = useRemoveReservation(tournament.id);
+  const rebuy = useRebuyReservation(tournament.id);
+  const [deleteTarget, setDeleteTarget] = useState<TournamentReservation | null>(null);
+  const [rebuyTarget, setRebuyTarget] = useState<TournamentReservation | null>(null);
+  const [rebuyStackInput, setRebuyStackInput] = useState('');
+  const [rebuyError, setRebuyError] = useState<string | null>(null);
+
   const accepted = (reservations ?? []).filter((r) => r.status === 'accepted');
+
+  /** Rebuy deshabilitado si el torneo no permite re-entradas o si se alcanzo el maximo por jugador. */
+  const rebuyDisabled = (r: TournamentReservation) =>
+    !tournament.reEntryEnabled ||
+    (tournament.maxReEntries !== null && tournament.maxReEntries !== 0 && r.reEntries >= tournament.maxReEntries);
+
+  const openRebuyModal = (r: TournamentReservation) => {
+    setRebuyTarget(r);
+    setRebuyStackInput(String(tournament.startingStack));
+    setRebuyError(null);
+  };
+
+  const closeRebuyModal = () => {
+    setRebuyTarget(null);
+    setRebuyStackInput('');
+    setRebuyError(null);
+  };
+
+  const handleRebuy = async () => {
+    if (!rebuyTarget) return;
+    const stack = Number(rebuyStackInput.trim());
+    if (!Number.isInteger(stack) || stack < 1) {
+      setRebuyError(t('tournament.invalidStack'));
+      return;
+    }
+    try {
+      await rebuy.mutateAsync({ id: rebuyTarget.id, stack });
+      closeRebuyModal();
+    } catch (e) {
+      setRebuyError(getErrorMessage(e));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await remove.mutateAsync(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch (e) {
+      onError(getErrorMessage(e));
+    }
+  };
+
   return (
     <View>
       {isLoading ? (
@@ -419,32 +559,112 @@ function PlayersView({ tournamentId }: { tournamentId: number }) {
         </AppText>
       ) : (
         accepted.map((r) => (
-          <ListItem key={r.id} title={r.user?.name ?? `#${r.userId}`} subtitle={r.user?.email ?? ''} icon="person" />
+          <ListItem
+            key={r.id}
+            title={r.user?.name ?? `#${r.userId}`}
+            subtitle={`${r.user?.email ?? ''} • ${t('tournament.stackLabel')}: ${formatNumber(r.stack ?? tournament.startingStack)} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })}`}
+            icon="person"
+            right={
+              <View style={styles.rowActions}>
+                {tournament.reEntryEnabled ? (
+                  <AppButton
+                    title={t('tournament.rebuy')}
+                    size="sm"
+                    variant="ghost"
+                    disabled={rebuyDisabled(r)}
+                    onPress={() => openRebuyModal(r)}
+                  />
+                ) : null}
+                <AppButton
+                  title=""
+                  size="sm"
+                  variant="ghost"
+                  icon="trash-outline"
+                  onPress={() => setDeleteTarget(r)}
+                />
+              </View>
+            }
+          />
         ))
       )}
+
+      <AppModal
+        visible={rebuyTarget != null}
+        title={t('tournament.rebuyTitle')}
+        onClose={closeRebuyModal}
+        footer={
+          <>
+            <AppButton
+              title={t('common.cancel')}
+              variant="secondary"
+              style={{ flex: 1 }}
+              onPress={closeRebuyModal}
+              disabled={rebuy.isPending}
+            />
+            <AppButton
+              title={t('tournament.rebuy')}
+              variant="success"
+              style={{ flex: 1 }}
+              onPress={handleRebuy}
+              loading={rebuy.isPending}
+            />
+          </>
+        }
+      >
+        {rebuyTarget ? (
+          <View>
+            <AppText variant="body" weight="semibold" style={styles.modalPlayer}>
+              {rebuyTarget.user?.name ?? `#${rebuyTarget.userId}`}
+            </AppText>
+            <AppTextField
+              label={t('tournament.stackLabel')}
+              keyboardType="number-pad"
+              value={rebuyStackInput}
+              onChangeText={setRebuyStackInput}
+              helper={t('tournament.stackDefaultHelper', { stack: formatNumber(tournament.startingStack) })}
+              error={rebuyError ?? undefined}
+            />
+          </View>
+        ) : null}
+      </AppModal>
+
+      <ConfirmModal
+        visible={deleteTarget != null}
+        title={t('tournament.deletePlayerTitle')}
+        message={t('tournament.deletePlayerConfirm', {
+          name: deleteTarget?.user?.name ?? `#${deleteTarget?.userId ?? ''}`,
+        })}
+        confirmLabel={t('common.delete')}
+        destructive
+        loading={remove.isPending}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </View>
   );
 }
 
-/** Distribucion por defecto de premios a partir de la pre-config del formulario. */
-function buildDefaultPrizes(tournament: Tournament): { place: number; amount: number }[] {
-  const total = tournament.guaranteedPrize ?? 0;
-  if (total <= 0) return [];
-  let places = tournament.paidPlacesValue ?? 0;
-  if (tournament.paidPlacesType === 'percent' && places > 0) {
+/** Cantidad de puestos pagados segun la configuracion del torneo (% del campo de jugadores o cantidad fija). */
+function getPaidPlacesCount(tournament: Tournament): number {
+  const value = tournament.paidPlacesValue ?? 0;
+  if (tournament.paidPlacesType === 'percent' && value > 0) {
     const players = tournament.maxPlayers ?? 45;
-    places = Math.max(1, Math.round((players * places) / 100));
+    return Math.min(Math.max(Math.round((players * value) / 100), 1), 50);
   }
-  places = Math.min(places, 50);
-  if (places <= 0) return [];
-  if (places === 1) return [{ place: 1, amount: total }];
-  const weights = Array.from({ length: places }, (_, i) => places - i);
+  return Math.min(Math.max(value, 0), 50);
+}
+
+/** Distribucion proporcional por defecto del premio garantizado entre los puestos pagados. */
+function buildDefaultPrizes(placeCount: number, total: number): { place: number; amount: number }[] {
+  if (total <= 0 || placeCount <= 0) return [];
+  if (placeCount === 1) return [{ place: 1, amount: total }];
+  const weights = Array.from({ length: placeCount }, (_, i) => placeCount - i);
   const weightSum = weights.reduce((a, b) => a + b, 0);
   const result: { place: number; amount: number }[] = [];
   let assigned = 0;
   weights.forEach((w, i) => {
     const place = i + 1;
-    const amount = i === places - 1 ? total - assigned : Math.round((total * w) / weightSum);
+    const amount = i === placeCount - 1 ? total - assigned : Math.round((total * w) / weightSum);
     result.push({ place, amount });
     assigned += amount;
   });
@@ -457,24 +677,39 @@ function PrizesView({ tournament, onError }: { tournament: Tournament; onError: 
   const update = useUpdatePrizes(tournament.id);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
 
-  const source = prizes && prizes.length > 0 ? prizes : buildDefaultPrizes(tournament);
+  // La cantidad de puestos pagados SIEMPRE sale de la configuracion del torneo (% o fijo).
+  const placeCount = getPaidPlacesCount(tournament);
+  const defaultByPlace = new Map(
+    buildDefaultPrizes(placeCount, tournament.guaranteedPrize ?? 0).map((p) => [p.place, p.amount]),
+  );
+  const savedByPlace = new Map((prizes ?? []).map((p) => [p.place, p.amount]));
 
   useEffect(() => {
-    if (!isLoading && Object.keys(amounts).length === 0) {
+    if (!isLoading && Object.keys(amounts).length === 0 && placeCount > 0) {
       const next: Record<string, string> = {};
-      source.forEach((prize) => {
-        next[prize.place] = String(prize.amount);
-      });
+      for (let place = 1; place <= placeCount; place++) {
+        next[place] = String(savedByPlace.get(place) ?? defaultByPlace.get(place) ?? '');
+      }
       setAmounts(next);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, prizes]);
+  }, [isLoading, prizes, placeCount]);
+
+  const placesInfo =
+    tournament.paidPlacesType === 'percent'
+      ? t('tournament.paidPlacesInfoPercent', {
+          count: placeCount,
+          percent: tournament.paidPlacesValue ?? 0,
+          players: tournament.maxPlayers ?? 45,
+        })
+      : t('tournament.paidPlacesInfoFixed', { count: placeCount });
 
   const handleSave = async () => {
     try {
-      const list = Object.keys(amounts)
-        .map((place) => ({ place: Number(place), amount: Number(amounts[place] ?? "0") || 0 }))
-        .sort((a, b) => a.place - b.place);
+      const list = Array.from({ length: placeCount }, (_, i) => ({
+        place: i + 1,
+        amount: Number(amounts[i + 1] ?? '0') || 0,
+      }));
       await update.mutateAsync(list);
     } catch (e) {
       onError(getErrorMessage(e));
@@ -485,29 +720,35 @@ function PrizesView({ tournament, onError }: { tournament: Tournament; onError: 
     <View>
       {isLoading ? (
         <LoadingView />
-      ) : source.length === 0 ? (
+      ) : placeCount === 0 ? (
         <AppText variant="caption" center style={styles.empty}>
           {t('tournament.noPrizes')}
         </AppText>
       ) : (
-        source.map((prize) => (
-          <AppTextField
-            key={prize.place}
-            label={t('tournament.prizePlace', { place: prize.place })}
-            keyboardType="decimal-pad"
-            value={amounts[prize.place] ?? String(prize.amount)}
-            onChangeText={(v) => setAmounts((prev) => ({ ...prev, [prize.place]: v }))}
+        <>
+          <AppText variant="caption" weight="semibold" style={styles.prizesInfo}>
+            {placesInfo}
+          </AppText>
+          {Array.from({ length: placeCount }, (_, i) => {
+            const place = i + 1;
+            return (
+              <AppTextField
+                key={place}
+                label={t('tournament.prizePlace', { place })}
+                keyboardType="decimal-pad"
+                value={amounts[place] ?? String(defaultByPlace.get(place) ?? '')}
+                onChangeText={(v) => setAmounts((prev) => ({ ...prev, [place]: v }))}
+              />
+            );
+          })}
+          <AppButton
+            title={t('tournament.savePrizes')}
+            onPress={handleSave}
+            loading={update.isPending}
+            style={styles.saveBtn}
           />
-        ))
+        </>
       )}
-      {source.length > 0 ? (
-        <AppButton
-          title={t('tournament.savePrizes')}
-          onPress={handleSave}
-          loading={update.isPending}
-          style={styles.saveBtn}
-        />
-      ) : null}
     </View>
   );
 }
@@ -522,4 +763,6 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1 },
   rowActions: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   saveBtn: { marginTop: 12 },
+  modalPlayer: { marginBottom: 12 },
+  prizesInfo: { marginBottom: 12 },
 });

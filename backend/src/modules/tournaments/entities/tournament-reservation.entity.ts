@@ -27,4 +27,12 @@ export class TournamentReservation extends BaseEntity {
 
   @Column({ type: 'enum', enum: ReservationStatus, default: ReservationStatus.PENDING })
   status: ReservationStatus;
+
+  /** Stack con el que entrara el jugador. Null = usa el startingStack del torneo. */
+  @Column({ type: 'int', nullable: true })
+  stack: number | null;
+
+  /** Cantidad de rebuys (re-entradas) realizados por el jugador. */
+  @Column({ type: 'int', default: 0 })
+  reEntries: number = 0;
 }

@@ -26,6 +26,11 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
   const canControl =
     running || paused || tournament.status === 'scheduled' || tournament.status === 'registering';
 
+  // Recaudado aprox.: cada buy-in (los que ya estan jugando) + cada rebuy paga buy-in + fee.
+  const collected =
+    (tournament.buyIn + tournament.fee) *
+    ((tournament.playersCount ?? 0) + (tournament.currentReEntries ?? 0));
+
   const handleStartPause = () => {
     if (running) void pause.mutateAsync(tournament.id).catch(() => undefined);
     else if (paused) void resume.mutateAsync(tournament.id).catch(() => undefined);
@@ -71,28 +76,69 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
             <AppText variant="caption" color={colors.textSecondary}>
               {t('table.buyIn')}
             </AppText>
-            <AppText variant="body" weight="semibold">
+            <AppText variant="body" weight="semibold" numberOfLines={1}>
               {formatCurrency(tournament.buyIn)}
               {tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}
             </AppText>
           </View>
           <View style={styles.metaItem}>
             <AppText variant="caption" color={colors.textSecondary}>
-              {t('tournament.stack')}
-            </AppText>
-            <AppText variant="body" weight="semibold">
-              {formatNumber(tournament.startingStack)}
-            </AppText>
-          </View>
-          <View style={styles.metaItem}>
-            <AppText variant="caption" color={colors.textSecondary}>
               {t('tournament.players')}
             </AppText>
-            <AppText variant="body" weight="semibold">
+            <AppText variant="body" weight="semibold" numberOfLines={1}>
               {tournament.maxPlayers == null ? t('tournament.unlimited') : formatNumber(tournament.maxPlayers)}
             </AppText>
           </View>
         </View>
+
+        <View style={styles.metaRow}>
+          <View style={styles.metaItem}>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {t('tournament.reserved')}
+            </AppText>
+            <AppText variant="body" weight="semibold" numberOfLines={1}>
+              {formatNumber(tournament.reservedCount ?? 0)}
+            </AppText>
+          </View>
+          <View style={styles.metaItem}>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {t('tournament.playing')}
+            </AppText>
+            <AppText variant="body" weight="semibold" numberOfLines={1}>
+              {formatNumber(tournament.playersCount ?? 0)}
+            </AppText>
+          </View>
+        </View>
+
+        <View style={styles.metaRow}>
+          <View style={styles.metaItem}>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {t('tournament.rebuys')}
+            </AppText>
+            <AppText variant="body" weight="semibold" numberOfLines={1}>
+              {formatNumber(tournament.currentReEntries ?? 0)}
+            </AppText>
+          </View>
+          <View style={styles.metaItem}>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {t('tournament.collected')}
+            </AppText>
+            <AppText variant="body" weight="semibold" numberOfLines={1}>
+              {formatCurrency(collected)}
+            </AppText>
+          </View>
+        </View>
+
+        {tournament.guaranteedPrize != null ? (
+          <View style={[styles.footerRow, { borderTopColor: colors.border }]}>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {t('tournament.guaranteedPrize')}
+            </AppText>
+            <AppText variant="body" weight="semibold">
+              {formatCurrency(tournament.guaranteedPrize)}
+            </AppText>
+          </View>
+        ) : null}
 
         <View style={styles.actions}>
           {canControl ? (
@@ -129,6 +175,15 @@ const styles = StyleSheet.create({
   liveBar: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 10, alignSelf: 'flex-start' },
   meta: { flexDirection: 'row', gap: 12 },
   metaItem: { flex: 1 },
+  metaRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 10 },
   iconBtn: { minWidth: 36 },
 });

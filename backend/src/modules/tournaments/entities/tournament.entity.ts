@@ -119,6 +119,12 @@ export class Tournament extends BaseEntity {
   @Column({ type: 'datetime', nullable: true })
   levelStartedAt: Date | null;
 
+  /** Total de reservas (calculado a partir de tournament_reservations, no persistido). */
+  reservedCount?: number;
+
+  /** Total de jugadores aceptados (calculado a partir de tournament_reservations, no persistido). */
+  playersCount?: number;
+
   @Column({ default: true })
   isActive: boolean;
 }

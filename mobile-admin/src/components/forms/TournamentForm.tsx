@@ -241,20 +241,20 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
           ? 0
           : values.maxReEntries != null
             ? Number(values.maxReEntries)
-            : 0
-        : 0,
+            : null
+        : null,
       lateRegistrationEnabled: values.lateRegistrationEnabled,
       lateRegistrationUntilLevel:
         values.lateRegistrationEnabled && values.lateRegistrationUntilLevel != null
           ? Number(values.lateRegistrationUntilLevel)
-          : 0,
+          : null,
       addOnEnabled: values.addOnEnabled,
-      addOnAmount: values.addOnEnabled && values.addOnAmount != null ? Number(values.addOnAmount) : 0,
-      addOnStack: values.addOnEnabled && values.addOnStack != null ? Number(values.addOnStack) : 0,
-      addOnUntilLevel: values.addOnEnabled && values.addOnUntilLevel != null ? Number(values.addOnUntilLevel) : 0,
+      addOnAmount: values.addOnEnabled && values.addOnAmount != null ? Number(values.addOnAmount) : null,
+      addOnStack: values.addOnEnabled && values.addOnStack != null ? Number(values.addOnStack) : null,
+      addOnUntilLevel: values.addOnEnabled && values.addOnUntilLevel != null ? Number(values.addOnUntilLevel) : null,
       guaranteedPrize: values.guaranteedPrize != null ? Number(values.guaranteedPrize) : null,
       paidPlacesType: values.paidPlacesType,
-      paidPlacesValue: values.paidPlacesValue != null ? Number(values.paidPlacesValue) : 0,
+      paidPlacesValue: values.paidPlacesValue != null ? Number(values.paidPlacesValue) : null,
       adminFeeType: values.adminFeeType,
       adminFeeValue: values.adminFeeValue != null ? Number(values.adminFeeValue) : null,
       blindConfig: {

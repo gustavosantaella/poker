@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
-import { CrudService } from '../../common/services/crud.service';
+import { CrudOptions, CrudService } from '../../common/services/crud.service';
+import { Paginated } from '../../common/types/paginated';
 import { Chip } from '../chips/entities/chip.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 import { buildBlindStructure } from './blind-structure.builder';
-import { CreateReservationDto, UpdateReservationDto } from './dto/reservation.dto';
+import { CreateReservationDto, RebuyDto, UpdateReservationDto } from './dto/reservation.dto';
 import { CreateTournamentChipDto } from './dto/tournament-chip.dto';
 import { UpdatePrizesDto } from './dto/tournament-prize.dto';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
@@ -31,6 +32,57 @@ export class TournamentsService extends CrudService<Tournament> {
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
   ) {
     super(repository);
+  }
+
+  /** Listado de torneos enriqueciendo cada item con el conteo de reservas y jugadores aceptados. */
+  async findAll(options: CrudOptions<Tournament> = {}): Promise<Paginated<Tournament>> {
+    const result = await super.findAll(options);
+    if (result.items.length === 0) return result;
+
+    const ids = result.items.map((t) => t.id);
+    const rows = await this.reservationsRepo
+      .createQueryBuilder('r')
+      .select('r.tournament_id', 'tournamentId')
+      .addSelect('COUNT(*)', 'reserved')
+      .addSelect("SUM(CASE WHEN r.status = 'accepted' THEN 1 ELSE 0 END)", 'playing')
+      .where('r.tournament_id IN (:...ids)', { ids })
+      .groupBy('r.tournament_id')
+      .getRawMany();
+    const countsByTournament = new Map<number, { reserved: number; playing: number }>();
+    for (const row of rows) {
+      countsByTournament.set(Number(row.tournamentId), {
+        reserved: Number(row.reserved ?? 0),
+        playing: Number(row.playing ?? 0),
+      });
+    }
+
+    return {
+      ...result,
+      items: result.items.map((t) => {
+        const counts = countsByTournament.get(t.id) ?? { reserved: 0, playing: 0 };
+        return { ...t, reservedCount: counts.reserved, playersCount: counts.playing };
+      }),
+    };
+  }
+
+  /** Detalle de torneo con los conteos de reservas y jugadores aceptados. */
+  async findOne(id: number, relations?: string[]): Promise<Tournament> {
+    const tournament = await super.findOne(id, relations);
+    const counts = await this.getReservationCounts(id);
+    return { ...tournament, reservedCount: counts.reserved, playersCount: counts.playing };
+  }
+
+  private async getReservationCounts(tournamentId: number): Promise<{ reserved: number; playing: number }> {
+    const row = await this.reservationsRepo
+      .createQueryBuilder('r')
+      .select('COUNT(*)', 'reserved')
+      .addSelect("SUM(CASE WHEN r.status = 'accepted' THEN 1 ELSE 0 END)", 'playing')
+      .where('r.tournament_id = :id', { id: tournamentId })
+      .getRawOne();
+    return {
+      reserved: Number(row?.reserved ?? 0),
+      playing: Number(row?.playing ?? 0),
+    };
   }
 
   async create(data: DeepPartial<Tournament>): Promise<Tournament> {
@@ -164,7 +216,41 @@ export class TournamentsService extends CrudService<Tournament> {
       throw new NotFoundException('Reservation not found');
     }
     reservation.status = dto.status;
+    if (dto.stack !== undefined && dto.stack !== null) {
+      reservation.stack = dto.stack;
+    } else if (dto.status === ReservationStatus.ACCEPTED && reservation.stack == null) {
+      // Por defecto, el jugador entra con el stack configurado en el torneo.
+      const tournament = await this.findOne(tournamentId);
+      reservation.stack = tournament.startingStack;
+    }
     const saved = await this.reservationsRepo.save(reservation);
+    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+  }
+
+  /** Registra un rebuy (re-entrada): stack nuevo + incrementa contadores por jugador y del torneo. */
+  async rebuy(tournamentId: number, reservationId: number, dto: RebuyDto) {
+    const tournament = await this.findOne(tournamentId);
+    if (!tournament.reEntryEnabled) {
+      throw new BadRequestException('Re-entry is not enabled for this tournament');
+    }
+    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found');
+    }
+    if (reservation.status !== ReservationStatus.ACCEPTED) {
+      throw new BadRequestException('Only accepted players can rebuy');
+    }
+    const current = reservation.reEntries ?? 0;
+    if (tournament.maxReEntries !== null && tournament.maxReEntries !== 0 && current >= tournament.maxReEntries) {
+      throw new BadRequestException('Max re-entries reached for this player');
+    }
+    reservation.reEntries = current + 1;
+    reservation.stack = dto.stack ?? tournament.startingStack;
+    const saved = await this.reservationsRepo.save(reservation);
+    await this.repository.update(
+      { id: tournamentId },
+      { currentReEntries: (tournament.currentReEntries ?? 0) + 1 },
+    );
     return this.reservationsRepo.findOne({ where: { id: saved.id } });
   }
 

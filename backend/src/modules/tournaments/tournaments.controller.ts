@@ -4,7 +4,7 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 import { GenerateStructureDto } from './dto/blind-structure.dto';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
-import { CreateReservationDto, UpdateReservationDto } from './dto/reservation.dto';
+import { CreateReservationDto, RebuyDto, UpdateReservationDto } from './dto/reservation.dto';
 import { CreateTournamentChipDto } from './dto/tournament-chip.dto';
 import { UpdatePrizesDto } from './dto/tournament-prize.dto';
 import { Tournament } from './entities/tournament.entity';
@@ -90,6 +90,15 @@ export class TournamentsController {
     @Body() dto: UpdateReservationDto,
   ) {
     return this.service.updateReservation(id, reservationId, dto);
+  }
+
+  @Post(':id/reservations/:reservationId/rebuy')
+  rebuy(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('reservationId', ParseIntPipe) reservationId: number,
+    @Body() dto: RebuyDto,
+  ) {
+    return this.service.rebuy(id, reservationId, dto);
   }
 
   @Delete(':id/reservations/:reservationId')

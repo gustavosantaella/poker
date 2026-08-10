@@ -33,6 +33,7 @@ import {
   fetchTournaments,
   nextTournamentLevel,
   pauseTournament,
+  rebuyReservation,
   removeReservation,
   removeTournamentChip,
   resumeTournament,
@@ -288,6 +289,7 @@ export function useCreateReservation(tournamentId: number) {
     mutationFn: (userId: number) => createReservation(tournamentId, userId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
     },
   });
 }
@@ -295,10 +297,11 @@ export function useCreateReservation(tournamentId: number) {
 export function useUpdateReservation(tournamentId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: ReservationStatus }) =>
-      updateReservation(tournamentId, id, status),
+    mutationFn: ({ id, status, stack }: { id: number; status: ReservationStatus; stack?: number }) =>
+      updateReservation(tournamentId, id, status, stack),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
     },
   });
 }
@@ -309,6 +312,18 @@ export function useRemoveReservation(tournamentId: number) {
     mutationFn: (id: number) => removeReservation(tournamentId, id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
+export function useRebuyReservation(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, stack }: { id: number; stack?: number }) => rebuyReservation(tournamentId, id, stack),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
     },
   });
 }

@@ -84,13 +84,29 @@ export async function updateReservation(
   tournamentId: number,
   reservationId: number,
   status: ReservationStatus,
+  stack?: number,
 ): Promise<TournamentReservation> {
-  const res = await apiClient.patch(`/tournaments/${tournamentId}/reservations/${reservationId}`, { status });
+  const res = await apiClient.patch(
+    `/tournaments/${tournamentId}/reservations/${reservationId}`,
+    stack != null ? { status, stack } : { status },
+  );
   return res.data.data as TournamentReservation;
 }
 
 export async function removeReservation(tournamentId: number, reservationId: number): Promise<void> {
   await apiClient.delete(`/tournaments/${tournamentId}/reservations/${reservationId}`);
+}
+
+export async function rebuyReservation(
+  tournamentId: number,
+  reservationId: number,
+  stack?: number,
+): Promise<TournamentReservation> {
+  const res = await apiClient.post(
+    `/tournaments/${tournamentId}/reservations/${reservationId}/rebuy`,
+    stack != null ? { stack } : {},
+  );
+  return res.data.data as TournamentReservation;
 }
 
 export async function fetchTournamentChips(tournamentId: number): Promise<TournamentChip[]> {

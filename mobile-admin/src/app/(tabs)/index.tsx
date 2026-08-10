@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { StatCard } from '@/components/features/StatCard';
 import { TableListItem } from '@/components/features/TableListItem';
@@ -18,16 +19,26 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useI18n();
-  const { data: stats, isLoading: statsLoading } = useDashboardStats();
-  const { data: tables } = useTables();
-  const { data: tournaments } = useTournaments();
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useDashboardStats();
+  const { data: tables, refetch: refetchTables } = useTables();
+  const { data: tournaments, refetch: refetchTournaments } = useTournaments();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchStats(), refetchTables(), refetchTournaments()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const greeting = user ? t('home.hello', { name: user.name.split(' ')[0] }) : t('home.dashboard');
   const recentTables = tables?.items.slice(0, 3) ?? [];
   const recentTournaments = tournaments?.items.slice(0, 3) ?? [];
 
   return (
-    <AppScreen>
+    <AppScreen refreshing={refreshing} onRefresh={handleRefresh}>
       <AppHeader title={greeting} subtitle="PokeLAP Admin" />
 
       {statsLoading ? (

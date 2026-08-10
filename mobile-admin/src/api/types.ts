@@ -115,6 +115,9 @@ export interface Tournament {
   fee: number;
   startingStack: number;
   maxPlayers: number | null;
+  /** Total de reservas y jugadores aceptados (calculados a partir de las reservas). */
+  reservedCount?: number;
+  playersCount?: number;
   registrationOpen: boolean;
   reEntryEnabled: boolean;
   maxReEntries: number | null;
@@ -137,6 +140,8 @@ export interface Tournament {
   startedAt: string | null;
   currentLevel: number | null;
   levelStartedAt: string | null;
+  /** Total de rebuys realizados en el torneo. */
+  currentReEntries: number;
 }
 
 export interface DashboardStats {
@@ -203,16 +208,16 @@ export interface TournamentPayload {
   maxPlayers?: number | null;
   registrationOpen?: boolean;
   reEntryEnabled?: boolean;
-  maxReEntries?: number;
+  maxReEntries?: number | null;
   lateRegistrationEnabled?: boolean;
-  lateRegistrationUntilLevel?: number;
+  lateRegistrationUntilLevel?: number | null;
   addOnEnabled?: boolean;
-  addOnAmount?: number;
-  addOnStack?: number;
-  addOnUntilLevel?: number;
+  addOnAmount?: number | null;
+  addOnStack?: number | null;
+  addOnUntilLevel?: number | null;
   guaranteedPrize?: number | null;
   paidPlacesType?: 'percent' | 'fixed';
-  paidPlacesValue?: number;
+  paidPlacesValue?: number | null;
   adminFeeType?: 'percent' | 'fixed';
   adminFeeValue?: number | null;
   blindConfig: BlindConfig;
@@ -226,6 +231,10 @@ export interface TournamentReservation {
   userId: number;
   user: User;
   status: ReservationStatus;
+  /** Stack inicial del jugador (fichas). Null = usa el startingStack del torneo. */
+  stack: number | null;
+  /** Cantidad de rebuys (re-entradas) realizados por el jugador. */
+  reEntries: number;
   createdAt: string;
   updatedAt: string;
 }

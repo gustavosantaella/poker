@@ -434,6 +434,7 @@ async function run(): Promise<void> {
     if (reservationCount === 0 && spec.reservations) {
       const { count, accepted, rejected } = spec.reservations;
       const toCreate = Math.min(count, players.length);
+      let seedReEntries = 0;
       for (let i = 0; i < toCreate; i++) {
         const status =
           i < accepted
@@ -441,9 +442,21 @@ async function run(): Promise<void> {
             : i < accepted + rejected
               ? ReservationStatus.REJECTED
               : ReservationStatus.PENDING;
+        const reEntries =
+          status === ReservationStatus.ACCEPTED && tournament.reEntryEnabled && i % 4 === 0 ? 1 : 0;
+        seedReEntries += reEntries;
         await reservationRepo.save(
-          reservationRepo.create({ tournamentId: tournament.id, userId: players[i].id, status }),
+          reservationRepo.create({
+            tournamentId: tournament.id,
+            userId: players[i].id,
+            status,
+            stack: status === ReservationStatus.ACCEPTED ? tournament.startingStack : null,
+            reEntries,
+          }),
         );
+      }
+      if (seedReEntries > 0) {
+        await tournamentRepo.update(tournament.id, { currentReEntries: seedReEntries });
       }
       console.log(`Seed: ${toCreate} reservations for "${spec.name}"`);
     }
