@@ -21,6 +21,7 @@ import { getErrorMessage } from '@/utils/error';
 import { BlindStructurePreview } from '@/components/features/BlindStructurePreview';
 import { summarizeStructure } from '@/utils/blind-structure';
 import { spacing } from '@/theme/spacing';
+import { useTournamentCountdown } from '@/hooks/use-tournament-countdown';
 
 export default function TournamentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +35,14 @@ export default function TournamentDetailScreen() {
 
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const deleteReservation = useDeleteTournamentReservation(tournamentId);
+  const countdown = useTournamentCountdown(tournament);
+
+  const current = countdown.currentItem;
+  const currentLabel = current
+    ? current.type === 'break'
+      ? t('tournament.breakShort')
+      : t('tournament.levelShort', { level: current.level })
+    : null;
 
   const myReservation = (reservations ?? []).find((r) => r.userId === user?.id);
   const alreadyReserved = myReservation !== undefined;
@@ -153,9 +162,14 @@ export default function TournamentDetailScreen() {
 
       {tournament.blindStructure && tournament.blindStructure.length > 0 ? (
         <AppCard style={styles.structureCard}>
-          <AppText variant="subheader" style={styles.cardTitle}>
+          <AppText variant="subtitle" style={styles.cardTitle}>
             {t('structure.title')}
           </AppText>
+          {currentLabel && tournament.status === 'running' ? (
+            <AppText variant="body" weight="semibold" color={colors.primary} style={styles.currentLine}>
+              ▶ {t('tournament.currentItem', { label: currentLabel, time: countdown.time })}
+            </AppText>
+          ) : null}
           <BlindStructurePreview
             items={tournament.blindStructure}
             summary={summarizeStructure(tournament.blindStructure)}
@@ -170,6 +184,7 @@ export default function TournamentDetailScreen() {
                 : null
             }
             reEntryUnlimited={tournament.reEntryEnabled && tournament.maxReEntries === 0}
+            currentIndex={tournament.currentLevel}
           />
         </AppCard>
       ) : null}
@@ -233,5 +248,6 @@ const styles = StyleSheet.create({
   reserveBtn: { marginTop: 16 },
   structureCard: { marginTop: spacing.md },
   cardTitle: { marginBottom: spacing.sm },
+  currentLine: { marginBottom: spacing.sm },
 });
 

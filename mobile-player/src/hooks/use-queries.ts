@@ -7,6 +7,7 @@ import {
   fetchTable,
   fetchTableReservations,
   fetchTables,
+  removeTableReservation,
 } from '@/api/tables';
 import {
   createTournamentReservation,
@@ -15,6 +16,7 @@ import {
   fetchTournament,
   fetchTournamentReservations,
   fetchTournaments,
+  removeTournamentReservation,
 } from '@/api/tournaments';
 
 export function useTables() {
@@ -40,6 +42,17 @@ export function useTableReservations(tableId: number) {
 
 export function useMyTableReservations() {
   return useQuery({ queryKey: ['my-table-reservations'], queryFn: fetchMyTableReservations });
+}
+
+export function useRemoveTableReservation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tableId, reservationId }: { tableId: number; reservationId: number }) =>
+      removeTableReservation(tableId, reservationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['my-table-reservations'] });
+    },
+  });
 }
 
 export function useCreateTableReservation(tableId: number) {
@@ -90,6 +103,17 @@ export function useMyTournamentReservations() {
   return useQuery({
     queryKey: ['my-tournament-reservations'],
     queryFn: fetchMyTournamentReservations,
+  });
+}
+
+export function useRemoveTournamentReservation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tournamentId, reservationId }: { tournamentId: number; reservationId: number }) =>
+      removeTournamentReservation(tournamentId, reservationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['my-tournament-reservations'] });
+    },
   });
 }
 

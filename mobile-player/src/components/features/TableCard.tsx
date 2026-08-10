@@ -7,24 +7,32 @@ import { AppButton } from '@/components/ui/AppButton';
 import { Badge } from '@/components/ui/Badge';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
+import { ReservationState } from '@/utils/reservation';
 import { formatCurrency } from '@/utils/format';
 
 export function TableCard({
   table,
   onPress,
   onReserve,
-  reserved = false,
+  state = null,
 }: {
   table: PokerTable;
   onPress: () => void;
   onReserve: () => void;
-  reserved?: boolean;
+  state?: ReservationState;
 }) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const online = table.mode === 'online';
   const modeBg = online ? colors.primary : colors.success;
   const modeFg = colors.onPrimary;
+
+  const button =
+    state === 'playing'
+      ? { title: t('table.playing'), variant: 'success' as const, icon: 'checkmark' as const }
+      : state === 'reserved'
+        ? { title: t('table.reserved'), variant: 'secondary' as const, icon: 'hourglass-outline' as const }
+        : { title: t('table.reserve'), variant: 'primary' as const, icon: 'add' as const };
 
   return (
     <AppCard onPress={onPress} style={styles.card}>
@@ -37,9 +45,7 @@ export function TableCard({
 
       <View style={styles.header}>
         <View style={styles.titleWrap}>
-          <AppText variant="subtitle" numberOfLines={1}>
-            {table.name}
-          </AppText>
+          <AppText variant="subtitle" numberOfLines={1}>{table.name}</AppText>
           <AppText variant="caption">{table.gameType?.name ?? t('table.noGameType')}</AppText>
         </View>
         <Badge label={t(`status.${table.status}`)} tone={table.status === 'open' ? 'success' : 'neutral'} />
@@ -61,12 +67,12 @@ export function TableCard({
       </View>
 
       <AppButton
-        title={reserved ? t('table.reserved') : t('table.reserve')}
-        icon={reserved ? 'checkmark' : 'add'}
-        variant={reserved ? 'success' : 'primary'}
+        title={button.title}
+        icon={button.icon}
+        variant={button.variant}
         size="sm"
         fullWidth
-        disabled={reserved}
+        disabled={state !== null}
         onPress={onReserve}
         style={styles.reserveBtn}
       />
@@ -77,14 +83,8 @@ export function TableCard({
 const styles = StyleSheet.create({
   card: { marginBottom: 12 },
   modeBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: -16,
-    marginHorizontal: -16,
-    marginBottom: 12,
-    paddingVertical: 7,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    marginTop: -16, marginHorizontal: -16, marginBottom: 12, paddingVertical: 7,
   },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 },
   titleWrap: { flex: 1, marginRight: 8 },

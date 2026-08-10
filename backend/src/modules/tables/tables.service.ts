@@ -38,7 +38,11 @@ export class TablesService extends CrudService<PokerTable> {
   // ---- Reservas de mesa ----
 
   myReservations(userId: number) {
-    return this.reservationsRepo.find({ where: { userId }, order: { createdAt: 'DESC' } });
+    return this.reservationsRepo.find({
+      where: { userId },
+      relations: ['table'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
 

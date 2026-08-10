@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useMyTournamentReservations, useTournaments } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
+import { ReservationState, tournamentState } from '@/utils/reservation';
 
 export default function TournamentsScreen() {
   const router = useRouter();
@@ -21,19 +22,18 @@ export default function TournamentsScreen() {
   const tournaments = data?.items ?? [];
   const reserve = useReserve((target, userId) => createTournamentReservation(target.id, userId));
 
-  const reservedIds = useMemo(() => {
-    const set = new Set<number>();
-    (myReservations ?? []).forEach((r) => set.add(r.tournamentId));
-    reserve.reservedIds.forEach((id) => set.add(id));
-    return set;
+  const stateFor = useMemo(() => {
+    const rows = myReservations ?? [];
+    return (tournamentId: number): ReservationState => {
+      const server = tournamentState(rows, tournamentId);
+      if (server) return server;
+      return reserve.reservedIds.has(tournamentId) ? 'reserved' : null;
+    };
   }, [myReservations, reserve.reservedIds]);
 
   return (
     <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-      <AppHeader
-        title={t('tournaments.title')}
-        subtitle={t('tournaments.count', { count: data?.total ?? 0 })}
-      />
+      <AppHeader title={t('tournaments.title')} subtitle={t('tournaments.count', { count: data?.total ?? 0 })} />
       {isLoading ? (
         <LoadingView />
       ) : tournaments.length === 0 ? (
@@ -43,7 +43,7 @@ export default function TournamentsScreen() {
           <TournamentCard
             key={tournament.id}
             tournament={tournament}
-            reserved={reservedIds.has(tournament.id)}
+            state={stateFor(tournament.id)}
             onPress={() => router.push(`/tournament/${tournament.id}`)}
             onReserve={() => reserve.open({ id: tournament.id, name: tournament.name })}
           />

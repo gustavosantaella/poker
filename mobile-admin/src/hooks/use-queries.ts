@@ -17,7 +17,9 @@ import {
   createTable,
   deleteTable,
   fetchTable,
+  fetchTableReservations,
   fetchTables,
+  removeTableReservation,
   updateTable,
 } from '@/api/tables';
 import {
@@ -72,6 +74,24 @@ export function useTable(id?: number) {
     queryFn: () => fetchTable(id as number),
     enabled: !!id,
     retry: false,
+  });
+}
+
+export function useTableReservations(tableId: number) {
+  return useQuery({
+    queryKey: ['table-reservations', tableId],
+    queryFn: () => fetchTableReservations(tableId),
+    enabled: tableId > 0,
+  });
+}
+
+export function useRemoveTableReservation(tableId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reservationId: number) => removeTableReservation(tableId, reservationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['table-reservations', tableId] });
+    },
   });
 }
 

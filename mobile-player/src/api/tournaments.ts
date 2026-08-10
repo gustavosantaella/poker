@@ -29,6 +29,13 @@ export async function createTournamentReservation(
   return res.data.data as TournamentReservation;
 }
 
+export async function removeTournamentReservation(
+  tournamentId: number,
+  reservationId: number,
+): Promise<void> {
+  await apiClient.delete(`/tournaments/${tournamentId}/reservations/${reservationId}`);
+}
+
 export async function deleteTournamentReservation(
   tournamentId: number,
   reservationId: number,

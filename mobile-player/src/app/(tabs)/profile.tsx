@@ -11,6 +11,12 @@ import { AppText } from '@/components/ui/AppText';
 import { AppTextField } from '@/components/ui/AppTextField';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useAuth } from '@/hooks/use-auth';
+import {
+  useMyTableReservations,
+  useMyTournamentReservations,
+  useRemoveTableReservation,
+  useRemoveTournamentReservation,
+} from '@/hooks/use-queries';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { getErrorMessage } from '@/utils/error';
@@ -30,6 +36,49 @@ export default function ProfileScreen() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const { data: myTables } = useMyTableReservations();
+  const { data: myTournaments } = useMyTournamentReservations();
+  const removeTableRes = useRemoveTableReservation();
+  const removeTournamentRes = useRemoveTournamentReservation();
+  const [removeTarget, setRemoveTarget] = useState<{ type: 'table' | 'tournament'; reservationId: number; name: string } | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+
+  const myReservationsRows = [
+    ...(myTables ?? [])
+      .filter((r) => r.status !== 'cancelled')
+      .map((r) => ({
+        key: `t-${r.id}`,
+        name: r.table?.name ?? `#${r.tableId}`,
+        status: r.status === 'confirmed' ? t('table.playing') : t('table.reserved'),
+        reservationId: r.id,
+        type: 'table' as const,
+      })),
+    ...(myTournaments ?? []).map((r) => ({
+      key: `m-${r.id}`,
+      name: r.tournament?.name ?? `#${r.tournamentId}`,
+      status: r.status === 'accepted' ? t('tournament.playing') : t('tournament.reserved'),
+      reservationId: r.id,
+      type: 'tournament' as const,
+    })),
+  ];
+
+  const handleRemoveConfirm = async () => {
+    if (!removeTarget) return;
+    setRemoveError(null);
+    try {
+      if (removeTarget.type === 'table') {
+        const res = (myTables ?? []).find((r) => r.id === removeTarget.reservationId);
+        if (res) await removeTableRes.mutateAsync({ tableId: res.tableId, reservationId: res.id });
+      } else {
+        const res = (myTournaments ?? []).find((r) => r.id === removeTarget.reservationId);
+        if (res) await removeTournamentRes.mutateAsync({ tournamentId: res.tournamentId, reservationId: res.id });
+      }
+      setRemoveTarget(null);
+    } catch (e) {
+      setRemoveError(getErrorMessage(e));
+    }
+  };
 
   const openEdit = () => {
     setAlias(user?.alias ?? '');
@@ -111,6 +160,38 @@ export default function ProfileScreen() {
         <InfoRow icon="call-outline" label={t('profile.phone')} value={user?.phone ?? '—'} />
       </View>
 
+      <AppText variant="subtitle" style={styles.sectionTitle}>
+        {t('profile.myReservations')}
+      </AppText>
+      <View style={[styles.reservationsCard, { borderColor: colors.border }]}>
+        {myReservationsRows.length === 0 ? (
+          <AppText variant="caption" center style={styles.emptyReservations}>
+            {t('profile.noReservations')}
+          </AppText>
+        ) : (
+          myReservationsRows.map((row) => (
+            <View key={row.key} style={[styles.reservationRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.reservationInfo}>
+                <AppText variant="body" weight="medium" numberOfLines={1}>
+                  {row.name}
+                </AppText>
+                <AppText variant="caption">{row.status}</AppText>
+              </View>
+              <AppButton
+                title=""
+                size="sm"
+                variant="ghost"
+                icon="trash-outline"
+                onPress={() => {
+                  setRemoveError(null);
+                  setRemoveTarget({ type: row.type, reservationId: row.reservationId, name: row.name });
+                }}
+              />
+            </View>
+          ))
+        )}
+      </View>
+
       <AppButton
         title={t('profile.edit')}
         icon="create-outline"
@@ -176,6 +257,19 @@ export default function ProfileScreen() {
       </AppModal>
 
       <ConfirmModal
+        visible={removeTarget != null}
+        title={t('profile.removeReservation')}
+        message={t('profile.removeReservationConfirm', { name: removeTarget?.name ?? '' })}
+        confirmLabel={t('profile.removeReservation')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        loading={removeTableRes.isPending || removeTournamentRes.isPending}
+        error={removeError}
+        onConfirm={handleRemoveConfirm}
+        onCancel={() => setRemoveTarget(null)}
+      />
+
+      <ConfirmModal
         visible={confirmLogout}
         title={t('common.logout')}
         message={t('profile.logoutConfirm')}
@@ -215,6 +309,17 @@ const styles = StyleSheet.create({
   infoValue: { flex: 1 },
   editBtn: { marginTop: 16 },
   logoutBtn: { marginTop: 8 },
+  sectionTitle: { marginTop: 20, marginBottom: 8 },
+  reservationsCard: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 16 },
+  emptyReservations: { paddingVertical: 16 },
+  reservationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  reservationInfo: { flex: 1, marginRight: 8 },
   photoLabel: { marginBottom: 8 },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   thumb: { width: 64, height: 64, borderRadius: 32 },

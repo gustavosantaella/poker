@@ -56,6 +56,23 @@ export type TournamentStatus =
   | 'completed'
   | 'cancelled';
 
+export interface BlindLevelItem {
+  type: 'level';
+  level: number;
+  smallBlind: number;
+  bigBlind: number;
+  ante: number;
+  durationMin: number;
+}
+
+export interface BlindBreakItem {
+  type: 'break';
+  afterLevel: number;
+  durationMin: number;
+}
+
+export type BlindStructureItem = BlindLevelItem | BlindBreakItem;
+
 export interface Tournament {
   id: number;
   name: string;
@@ -83,29 +100,15 @@ export interface Tournament {
   paidPlacesType: 'percent' | 'fixed' | null;
   paidPlacesValue: number | null;
   blindStructure: BlindStructureItem[] | null;
+  currentLevel: number | null;
+  levelStartedAt: string | null;
+  startedAt: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   reservedCount?: number;
   playersCount?: number;
 }
-
-export interface BlindLevelItem {
-  type: 'level';
-  level: number;
-  smallBlind: number;
-  bigBlind: number;
-  ante: number;
-  durationMin: number;
-}
-
-export interface BlindBreakItem {
-  type: 'break';
-  durationMin: number;
-  afterLevel: number;
-}
-
-export type BlindStructureItem = BlindLevelItem | BlindBreakItem;
 
 export interface BlindStructureSummary {
   levelCount: number;
@@ -120,6 +123,7 @@ export interface TableReservation {
   tableId: number;
   userId: number;
   user: User;
+  table?: PokerTable;
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
@@ -130,6 +134,7 @@ export interface TournamentReservation {
   tournamentId: number;
   userId: number;
   user: User;
+  tournament?: Tournament;
   status: 'pending' | 'accepted' | 'rejected';
   stack: number | null;
   reEntries: number;

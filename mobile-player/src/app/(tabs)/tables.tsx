@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useMyTableReservations, useTables } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
+import { ReservationState, tableState } from '@/utils/reservation';
 
 export default function TablesScreen() {
   const router = useRouter();
@@ -21,13 +22,13 @@ export default function TablesScreen() {
   const tables = data?.items ?? [];
   const reserve = useReserve((target, userId) => createTableReservation(target.id, userId));
 
-  const reservedIds = useMemo(() => {
-    const set = new Set<number>();
-    (myReservations ?? []).forEach((r) => {
-      if (r.status !== 'cancelled') set.add(r.tableId);
-    });
-    reserve.reservedIds.forEach((id) => set.add(id));
-    return set;
+  const stateFor = useMemo(() => {
+    const rows = myReservations ?? [];
+    return (tableId: number): ReservationState => {
+      const server = tableState(rows, tableId);
+      if (server) return server;
+      return reserve.reservedIds.has(tableId) ? 'reserved' : null;
+    };
   }, [myReservations, reserve.reservedIds]);
 
   return (
@@ -42,7 +43,7 @@ export default function TablesScreen() {
           <TableCard
             key={table.id}
             table={table}
-            reserved={reservedIds.has(table.id)}
+            state={stateFor(table.id)}
             onPress={() => router.push(`/table/${table.id}`)}
             onReserve={() => reserve.open({ id: table.id, name: table.name })}
           />

@@ -193,7 +193,11 @@ export class TournamentsService extends CrudService<Tournament> {
   }
 
   myReservations(userId: number) {
-    return this.reservationsRepo.find({ where: { userId }, order: { createdAt: 'DESC' } });
+    return this.reservationsRepo.find({
+      where: { userId },
+      relations: ['tournament'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
 

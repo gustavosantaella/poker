@@ -29,6 +29,10 @@ export async function createTableReservation(
   return res.data.data as TableReservation;
 }
 
+export async function removeTableReservation(tableId: number, reservationId: number): Promise<void> {
+  await apiClient.delete(`/tables/${tableId}/reservations/${reservationId}`);
+}
+
 export async function deleteTableReservation(
   tableId: number,
   reservationId: number,

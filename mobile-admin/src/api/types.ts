@@ -250,6 +250,16 @@ export interface TournamentReservation {
   updatedAt: string;
 }
 
+export interface TableReservation {
+  id: number;
+  tableId: number;
+  userId: number;
+  user: User;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TournamentChip {
   id: number;
   tournamentId: number;

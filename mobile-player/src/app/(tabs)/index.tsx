@@ -16,6 +16,7 @@ import { useMyTableReservations, useMyTournamentReservations, useTables, useTour
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
+import { ReservationState, tableState, tournamentState } from '@/utils/reservation';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -33,20 +34,22 @@ export default function HomeScreen() {
   const reserveTable = useReserve((target, userId) => createTableReservation(target.id, userId));
   const reserveTournament = useReserve((target, userId) => createTournamentReservation(target.id, userId));
 
-  const tableReservedIds = useMemo(() => {
-    const set = new Set<number>();
-    (myTableReservations ?? []).forEach((r) => {
-      if (r.status !== 'cancelled') set.add(r.tableId);
-    });
-    reserveTable.reservedIds.forEach((id) => set.add(id));
-    return set;
+  const stateForTable = useMemo(() => {
+    const rows = myTableReservations ?? [];
+    return (id: number): ReservationState => {
+      const server = tableState(rows, id);
+      if (server) return server;
+      return reserveTable.reservedIds.has(id) ? 'reserved' : null;
+    };
   }, [myTableReservations, reserveTable.reservedIds]);
 
-  const tournamentReservedIds = useMemo(() => {
-    const set = new Set<number>();
-    (myTournamentReservations ?? []).forEach((r) => set.add(r.tournamentId));
-    reserveTournament.reservedIds.forEach((id) => set.add(id));
-    return set;
+  const stateForTournament = useMemo(() => {
+    const rows = myTournamentReservations ?? [];
+    return (id: number): ReservationState => {
+      const server = tournamentState(rows, id);
+      if (server) return server;
+      return reserveTournament.reservedIds.has(id) ? 'reserved' : null;
+    };
   }, [myTournamentReservations, reserveTournament.reservedIds]);
 
   const handleRefresh = async () => {
@@ -75,7 +78,7 @@ export default function HomeScreen() {
           <TableCard
             key={table.id}
             table={table}
-            reserved={tableReservedIds.has(table.id)}
+            state={stateForTable(table.id)}
             onPress={() => router.push(`/table/${table.id}`)}
             onReserve={() => reserveTable.open({ id: table.id, name: table.name })}
           />
@@ -90,7 +93,7 @@ export default function HomeScreen() {
         <TournamentCard
           key={tournament.id}
           tournament={tournament}
-          reserved={tournamentReservedIds.has(tournament.id)}
+          state={stateForTournament(tournament.id)}
           onPress={() => router.push(`/tournament/${tournament.id}`)}
           onReserve={() => reserveTournament.open({ id: tournament.id, name: tournament.name })}
         />
