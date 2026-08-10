@@ -139,11 +139,12 @@ export class TournamentsService extends CrudService<Tournament> {
   // ---------------- Estado en vivo ----------------
 
   /**
-   * Mantiene vivo un torneo en curso: si el tiempo del nivel/descanso actual ya
-   * se agotó, avanza automáticamente al siguiente item a partir de los
-   * timestamps (startedAt / levelStartedAt) y la estructura. Así, cada lectura
-   * devuelve un estado con cuenta regresiva real, sin depender de que el admin
-   * esté presionando "siguiente nivel".
+   * Calcula la posición en vivo de un torneo en curso: si el tiempo del
+   * nivel/descanso actual ya se agotó, devuelve el torneo avanzado al siguiente
+   * item a partir de los timestamps (startedAt / levelStartedAt) y la estructura.
+   * Es una función pura: NO persiste el avance (la persistencia la hace
+   * nextLevel), así se evita que una lectura compita con "siguiente nivel" y
+   * se salten los descansos.
    */
   private async syncLiveStatus(tournament: Tournament): Promise<Tournament> {
     if (tournament.status !== TournamentStatus.RUNNING) {
@@ -192,12 +193,7 @@ export class TournamentsService extends CrudService<Tournament> {
     }
 
     if (advanced) {
-      await this.repository.update(tournament.id, {
-        currentLevel: current,
-        levelStartedAt: new Date(levelStartMs),
-      } as DeepPartial<Tournament>);
-      tournament.currentLevel = current;
-      tournament.levelStartedAt = new Date(levelStartMs);
+      return { ...tournament, currentLevel: current, levelStartedAt: new Date(levelStartMs) };
     }
     return tournament;
   }
@@ -221,7 +217,15 @@ export class TournamentsService extends CrudService<Tournament> {
     if (tournament.status !== TournamentStatus.RUNNING) {
       throw new BadRequestException('Tournament is not running');
     }
-    return super.update(id, { status: TournamentStatus.PAUSED } as DeepPartial<Tournament>);
+    // Confirmar la posición en vivo antes de pausar (el estado persistido puede estar atrasado).
+    const raw = await super.findOne(id);
+    const live = await this.syncLiveStatus(raw);
+    const patch: DeepPartial<Tournament> = { status: TournamentStatus.PAUSED };
+    if (live.currentLevel != null && live.currentLevel !== raw.currentLevel) {
+      patch.currentLevel = live.currentLevel;
+      patch.levelStartedAt = live.levelStartedAt;
+    }
+    return super.update(id, patch);
   }
 
   async resume(id: number): Promise<Tournament> {
@@ -236,12 +240,29 @@ export class TournamentsService extends CrudService<Tournament> {
   }
 
   async nextLevel(id: number): Promise<Tournament> {
-    const tournament = await this.findOne(id);
-    const items = tournament.blindStructure ?? [];
+    // Estado persistido (sin sincronización): es la referencia para avanzar.
+    const raw = await super.findOne(id);
+    const items = raw.blindStructure ?? [];
     if (items.length === 0) {
       throw new BadRequestException('Tournament has no blind structure');
     }
-    const current = tournament.currentLevel ?? 0;
+    const rawIndex = raw.currentLevel ?? 0;
+
+    // Posición en vivo: el tiempo vence niveles/descansos automáticamente.
+    const live = await this.syncLiveStatus(raw);
+
+    // Si el tiempo ya avanzó al siguiente item (p. ej. un descanso), se confirma
+    // ese estado y NO se avanza de nuevo: evita saltarse los descansos.
+    if (live.currentLevel != null && live.currentLevel > rawIndex) {
+      await this.repository.update(
+        { id, currentLevel: rawIndex },
+        { currentLevel: live.currentLevel, levelStartedAt: live.levelStartedAt },
+      );
+      return this.findOne(id);
+    }
+
+    // Avance manual: pasar al siguiente item (nivel o descanso).
+    const current = live.currentLevel ?? rawIndex;
     const next = current + 1;
     if (next >= items.length) {
       // Avance condicional: si otra peticion ya completo el torneo, no se pisa.
