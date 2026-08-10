@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "PokeLAP Admin",
-    "slug": "pokelap-admin",
+    "slug": "pokerpro-admin",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -42,6 +42,13 @@
     ],
     "experiments": {
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fd36c178-a6ee-477d-a1d5-dc03ff98ca44"
+      }
+    },
+    "owner": "gustavosant"
   }
 }
