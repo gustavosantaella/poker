@@ -14,6 +14,7 @@ export const en = {
   'tabs.tables': 'Tables',
   'tabs.tournaments': 'Tournaments',
   'tabs.profile': 'Profile',
+  'tabs.calendar': 'Calendar',
 
   'mode.live': 'Live',
   'mode.online': 'Online',
@@ -54,6 +55,14 @@ export const en = {
   'home.upcomingTournaments': 'Upcoming tournaments',
   'home.seeAll': 'See all',
   'home.empty': 'Nothing here yet',
+
+  'calendar.title': 'Calendar',
+  'calendar.subtitle': 'Tournaments and tables',
+  'calendar.today': 'Today',
+  'calendar.eventsOn': 'Events on {date}',
+  'calendar.noEvents': 'No events on this day',
+  'calendar.openNow': 'Open now',
+  'calendar.tournament': 'Tournament',
 
   'tables.title': 'Cash tables',
   'tables.count': '{count} tables',
@@ -173,6 +182,7 @@ export const es: Record<TranslationKey, string> = {
   'tabs.tables': 'Mesas',
   'tabs.tournaments': 'Torneos',
   'tabs.profile': 'Perfil',
+  'tabs.calendar': 'Calendario',
 
   'mode.live': 'En vivo',
   'mode.online': 'Online',
@@ -213,6 +223,14 @@ export const es: Record<TranslationKey, string> = {
   'home.upcomingTournaments': 'Próximos torneos',
   'home.seeAll': 'Ver todos',
   'home.empty': 'Nada por aquí todavía',
+
+  'calendar.title': 'Calendario',
+  'calendar.subtitle': 'Torneos y mesas',
+  'calendar.today': 'Hoy',
+  'calendar.eventsOn': 'Eventos del {date}',
+  'calendar.noEvents': 'Sin eventos este día',
+  'calendar.openNow': 'Abierta ahora',
+  'calendar.tournament': 'Torneo',
 
   'tables.title': 'Mesas cash',
   'tables.count': '{count} mesas',
