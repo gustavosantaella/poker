@@ -45,8 +45,15 @@ export function TournamentCard({
       : undefined;
   
   const online = tournament.mode === 'online';
-  const modeBg = online ? colors.primary : colors.success;
-  const modeFg = colors.onPrimary;
+  const isGoldCard = tournament.status === 'running';
+  const titleColor = isGoldCard ? '#1E1602' : undefined;
+  const subtextColor = isGoldCard ? 'rgba(30, 22, 2, 0.76)' : colors.textSecondary;
+  const bodyTextColor = isGoldCard ? '#1E1602' : undefined;
+  const dateColor = isGoldCard ? '#1E1602' : colors.primary;
+  const guaranteedBg = isGoldCard ? 'rgba(0, 0, 0, 0.08)' : colors.warningMuted;
+  const guaranteedText = isGoldCard ? '#1E1602' : colors.warning;
+  const modeBg = isGoldCard ? 'rgba(0, 0, 0, 0.12)' : (online ? colors.primary : colors.success);
+  const modeFg = isGoldCard ? '#1E1602' : colors.onPrimary;
   const closed = state === null && !canReserveTournament(tournament);
 
   const button =
@@ -59,7 +66,7 @@ export function TournamentCard({
           : { title: t('tournament.reserve'), variant: 'primary' as const, icon: 'add' as const };
 
   return (
-    <AppCard onPress={onPress} style={styles.card}>
+    <AppCard onPress={onPress} style={styles.card} variant={isGoldCard ? 'gold' : 'metallic'}>
       <View style={[styles.modeBar, { backgroundColor: modeBg }]}>
         <Ionicons name={online ? 'globe-outline' : 'location-outline'} size={13} color={modeFg} />
         <AppText variant="caption" weight="semibold" color={modeFg}>
@@ -72,36 +79,39 @@ export function TournamentCard({
           <Image source={{ uri: avatarUrl }} style={styles.adminAvatar} />
         ) : null}
         <View style={styles.titleWrap}>
-          <AppText variant="subtitle" numberOfLines={1}>{tournament.name}</AppText>
-          <AppText variant="caption">{tournament.gameType?.name ?? t('table.noGameType')}</AppText>
+          <AppText variant="subtitle" numberOfLines={1} style={titleColor ? { color: titleColor } : undefined}>{tournament.name}</AppText>
+          <AppText variant="caption" style={{ color: subtextColor }}>{tournament.gameType?.name ?? t('table.noGameType')}</AppText>
         </View>
-        <Badge label={t(`status.${tournament.status}`)} tone={tournament.status === 'registering' ? 'primary' : 'neutral'} />
+        <Badge
+          label={t(`status.${tournament.status}`)}
+          tone={tournament.status === 'registering' ? 'primary' : 'neutral'}
+        />
       </View>
 
       <View style={styles.dateRow}>
-        <Ionicons name="calendar-outline" size={15} color={colors.primary} />
-        <AppText variant="body" weight="semibold" color={colors.primary}>{formatDateTime(tournament.startDate)}</AppText>
+        <Ionicons name="calendar-outline" size={15} color={dateColor} />
+        <AppText variant="body" weight="semibold" color={dateColor}>{formatDateTime(tournament.startDate)}</AppText>
       </View>
 
       <View style={styles.meta}>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>{t('tournament.buyIn')}</AppText>
-          <AppText variant="body" weight="semibold">{formatCurrency(tournament.buyIn, tournament.currency)}{tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee, tournament.currency)}` : ''}</AppText>
+          <AppText variant="caption" style={{ color: subtextColor }}>{t('tournament.buyIn')}</AppText>
+          <AppText variant="body" weight="semibold" style={bodyTextColor ? { color: bodyTextColor } : undefined}>{formatCurrency(tournament.buyIn, tournament.currency)}{tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee, tournament.currency)}` : ''}</AppText>
         </View>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>{t('tournament.stack')}</AppText>
-          <AppText variant="body" weight="semibold">{formatNumber(tournament.startingStack)}</AppText>
+          <AppText variant="caption" style={{ color: subtextColor }}>{t('tournament.stack')}</AppText>
+          <AppText variant="body" weight="semibold" style={bodyTextColor ? { color: bodyTextColor } : undefined}>{formatNumber(tournament.startingStack)}</AppText>
         </View>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>{t('tournament.players')}</AppText>
-          <AppText variant="body" weight="semibold">{tournament.maxPlayers == null ? t('tournament.unlimited') : formatNumber(tournament.maxPlayers)}</AppText>
+          <AppText variant="caption" style={{ color: subtextColor }}>{t('tournament.players')}</AppText>
+          <AppText variant="body" weight="semibold" style={bodyTextColor ? { color: bodyTextColor } : undefined}>{tournament.maxPlayers == null ? t('tournament.unlimited') : formatNumber(tournament.maxPlayers)}</AppText>
         </View>
       </View>
 
       {tournament.guaranteedPrize != null ? (
-        <View style={[styles.guaranteed, { backgroundColor: colors.warningMuted }]}>
-          <Ionicons name="trophy" size={15} color={colors.warning} />
-          <AppText variant="body" weight="bold" color={colors.warning}>
+        <View style={[styles.guaranteed, { backgroundColor: guaranteedBg }]}>
+          <Ionicons name="trophy" size={15} color={guaranteedText} />
+          <AppText variant="body" weight="bold" color={guaranteedText}>
             {t('tournament.guaranteed')}: {formatCurrency(tournament.guaranteedPrize, tournament.currency)}
           </AppText>
         </View>
@@ -110,7 +120,7 @@ export function TournamentCard({
       <AppButton
         title={button.title}
         icon={button.icon}
-        variant={button.variant}
+        variant={isGoldCard ? 'primary' : button.variant}
         size="sm"
         fullWidth
         disabled={state !== null || closed}
