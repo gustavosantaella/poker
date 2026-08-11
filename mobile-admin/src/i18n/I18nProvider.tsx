@@ -15,7 +15,7 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 /** Provee el idioma activo (default 'en'), persistido en AsyncStorage. */
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>('es');
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
