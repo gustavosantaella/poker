@@ -8,6 +8,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
+import { useSidebar } from '@/hooks/use-sidebar';
 import { useMyTableReservations, useTables } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -17,6 +18,7 @@ export default function TablesScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const { user } = useAuth();
+  const { openSidebar } = useSidebar();
   const { data, isLoading, isRefetching, refetch } = useTables();
   const { data: myReservations } = useMyTableReservations();
   const tables = data?.items ?? [];
@@ -33,7 +35,7 @@ export default function TablesScreen() {
 
   return (
     <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-      <AppHeader title={t('tables.title')} subtitle={t('tables.count', { count: data?.total ?? 0 })} />
+      <AppHeader title={t('tables.title')} subtitle={t('tables.count', { count: data?.total ?? 0 })} menu onMenuPress={openSidebar} />
       {isLoading ? (
         <LoadingView />
       ) : tables.length === 0 ? (

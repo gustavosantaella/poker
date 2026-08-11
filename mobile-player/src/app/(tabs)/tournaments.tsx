@@ -8,6 +8,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
+import { useSidebar } from '@/hooks/use-sidebar';
 import { useMyTournamentReservations, useTournaments } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -17,6 +18,7 @@ export default function TournamentsScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const { user } = useAuth();
+  const { openSidebar } = useSidebar();
   const { data, isLoading, isRefetching, refetch } = useTournaments();
   const { data: myReservations } = useMyTournamentReservations();
   // Filtro defensivo: aunque el backend ya excluya 'completed', nunca mostrar
@@ -35,7 +37,7 @@ export default function TournamentsScreen() {
 
   return (
     <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-      <AppHeader title={t('tournaments.title')} subtitle={t('tournaments.count', { count: tournaments.length })} />
+      <AppHeader title={t('tournaments.title')} subtitle={t('tournaments.count', { count: tournaments.length })} menu onMenuPress={openSidebar} />
       {isLoading ? (
         <LoadingView />
       ) : tournaments.length === 0 ? (

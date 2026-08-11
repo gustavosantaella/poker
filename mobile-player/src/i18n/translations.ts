@@ -66,6 +66,8 @@ export const en = {
   'calendar.tournament': 'Tournament',
   'admins.count': '{count} admins',
   'admins.empty': 'No admins available yet',
+  'sidebar.sectionMain': 'Main',
+  'sidebar.sectionMore': 'More',
 
   'tables.title': 'Cash tables',
   'tables.count': '{count} tables',
@@ -242,6 +244,8 @@ export const es: Record<TranslationKey, string> = {
   'calendar.tournament': 'Torneo',
   'admins.count': '{count} administradores',
   'admins.empty': 'Aún no hay administradores',
+  'sidebar.sectionMain': 'Principal',
+  'sidebar.sectionMore': 'Más',
 
   'tables.title': 'Mesas cash',
   'tables.count': '{count} mesas',

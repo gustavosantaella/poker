@@ -9,23 +9,32 @@ export function AppHeader({
   title,
   subtitle,
   showBack,
+  menu,
   right,
   onBack,
+  onMenuPress,
 }: {
   title: string;
   subtitle?: string;
   showBack?: boolean;
+  menu?: boolean;
   right?: ReactNode;
   onBack?: () => void;
+  onMenuPress?: () => void;
 }) {
   const { colors } = useTheme();
+  const left = menu ? (
+    <Pressable onPress={onMenuPress} hitSlop={8} style={styles.leftBtn}>
+      <Ionicons name="menu" size={24} color={colors.primary} />
+    </Pressable>
+  ) : showBack ? (
+    <Pressable onPress={onBack} hitSlop={8} style={styles.leftBtn}>
+      <Ionicons name="chevron-back" size={24} color={colors.primary} />
+    </Pressable>
+  ) : null;
   return (
     <View style={styles.row}>
-      {showBack ? (
-        <Pressable onPress={onBack} hitSlop={8} style={styles.back}>
-          <Ionicons name="chevron-back" size={24} color={colors.primary} />
-        </Pressable>
-      ) : null}
+      {left}
       <View style={styles.titles}>
         <AppText variant="title" color={colors.primary} numberOfLines={1}>
           {title}
@@ -43,7 +52,7 @@ export function AppHeader({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.md },
-  back: { marginLeft: -spacing.xs },
+  leftBtn: { marginLeft: -spacing.xs, paddingRight: spacing.xs },
   titles: { flex: 1 },
   right: {},
 });

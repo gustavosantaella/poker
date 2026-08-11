@@ -13,6 +13,7 @@ import { AppText } from '@/components/ui/AppText';
 import { AppTextField } from '@/components/ui/AppTextField';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useAuth } from '@/hooks/use-auth';
+import { useSidebar } from '@/hooks/use-sidebar';
 import {
   useMyTableReservations,
   useMyTournamentReservations,
@@ -35,6 +36,7 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const { t } = useI18n();
   const { user, updateProfile, logout } = useAuth();
+  const { openSidebar } = useSidebar();
 
   const [editOpen, setEditOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -160,7 +162,7 @@ export default function ProfileScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title={t('profile.title')} />
+      <AppHeader title={t('profile.title')} menu onMenuPress={openSidebar} />
 
       <View style={styles.avatarWrap}>
         {user?.photoUrl ? (

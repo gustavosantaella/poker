@@ -12,6 +12,7 @@ import { AppText } from '@/components/ui/AppText';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
+import { useSidebar } from '@/hooks/use-sidebar';
 import { useMyTableReservations, useMyTournamentReservations, useTables, useTournaments } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const { t } = useI18n();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { openSidebar } = useSidebar();
   const { data: tablesData, isLoading: tablesLoading, refetch: refetchTables, isRefetching: tablesRefetching } =
     useTables();
   const { data: tournamentsData, refetch: refetchTournaments, isRefetching: tournamentsRefetching } =
@@ -60,7 +62,7 @@ export default function HomeScreen() {
 
   return (
     <AppScreen refreshing={tablesRefetching || tournamentsRefetching} onRefresh={handleRefresh}>
-      <AppHeader title={t('home.hello', { name: greeting })} />
+      <AppHeader title={t('home.hello', { name: greeting })} menu onMenuPress={openSidebar} />
 
       <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.primary, borderWidth: 1 }]}>
         <AppText variant="title" color={colors.primary} style={styles.heroTitle}>{t('home.heroTitle')}</AppText>

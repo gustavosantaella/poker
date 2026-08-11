@@ -201,7 +201,7 @@ export default function CalendarScreen() {
         await Promise.all([refetchTournaments(), refetchTables()]);
       }}
     >
-      <AppHeader title={t('calendar.title')} subtitle={t('calendar.subtitle')} />
+      <AppHeader title={t('calendar.title')} subtitle={t('calendar.subtitle')} showBack onBack={() => router.back()} />
 
       <View style={styles.monthNav}>
         <Pressable

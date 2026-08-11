@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '@/hooks/use-auth';
+import { SidebarProvider } from '@/hooks/use-sidebar';
 import { I18nProvider } from '@/i18n/I18nProvider';
 import { ThemeProvider, useTheme } from '@/theme';
 
@@ -33,7 +34,9 @@ export default function RootLayout() {
       <I18nProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <RootNavigator />
+            <SidebarProvider>
+              <RootNavigator />
+            </SidebarProvider>
           </AuthProvider>
         </QueryClientProvider>
       </I18nProvider>

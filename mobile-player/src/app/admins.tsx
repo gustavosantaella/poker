@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Image, StyleSheet, View } from 'react-native';
 import { API_URL } from '@/api/config';
 import { AppCard } from '@/components/ui/AppCard';
@@ -20,6 +21,7 @@ function buildAvatarUrl(path?: string | null): string | undefined {
 
 /** Módulo del staff: lista todos los usuarios admin con su foto. */
 export default function AdminsScreen() {
+  const router = useRouter();
   const { colors } = useTheme();
   const { t } = useI18n();
   const { data, isLoading, isRefetching, refetch } = useAdmins();
@@ -27,7 +29,12 @@ export default function AdminsScreen() {
 
   return (
     <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-      <AppHeader title={t('tabs.admins')} subtitle={t('admins.count', { count: data?.total ?? 0 })} />
+      <AppHeader
+        title={t('tabs.admins')}
+        subtitle={t('admins.count', { count: data?.total ?? 0 })}
+        showBack
+        onBack={() => router.back()}
+      />
       {isLoading ? (
         <LoadingView />
       ) : admins.length === 0 ? (
