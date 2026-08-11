@@ -76,10 +76,6 @@ export function TournamentStructureSection({
 
   const buildConfig = (w: TournamentFormValues): BlindConfig => ({
     startingStack: Number(w.startingStack) || 0,
-    startingBigBlind:
-      w.startingBigBlind != null && String(w.startingBigBlind) !== ''
-        ? Number(w.startingBigBlind)
-        : undefined,
     levelDurationMin: Number(w.levelDurationMin) || 20,
     numberOfLevels:
       w.numberOfLevels != null && String(w.numberOfLevels) !== '' ? Number(w.numberOfLevels) : undefined,
@@ -136,11 +132,6 @@ export function TournamentStructureSection({
       <SectionHeader title={t('structure.title')} />
       <AppCard>
         <FormNumberField name="startingStack" label={t('structure.startingStack')} />
-        <FormNumberField
-          name="startingBigBlind"
-          label={t('structure.startingBigBlind')}
-          helper={t('structure.startingBigBlindHelper')}
-        />
         <View style={styles.row}>
           <View style={styles.col}>
             <FormNumberField name="levelDurationMin" label={t('structure.minutesPerLevel')} />

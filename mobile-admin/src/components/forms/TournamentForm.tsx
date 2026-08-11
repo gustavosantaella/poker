@@ -218,7 +218,6 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         paidPlacesValue: tournament.paidPlacesValue ?? 15,
         adminFeeType: tournament.adminFeeType ?? 'percent',
         adminFeeValue: tournament.adminFeeValue ?? undefined,
-        startingBigBlind: bc?.startingBigBlind ?? undefined,
         levelDurationMin: bc?.levelDurationMin ?? 20,
         numberOfLevels: bc?.numberOfLevels ?? undefined,
         growth: bc?.growth ?? 'normal',
@@ -255,7 +254,6 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         paidPlacesValue: 15,
         adminFeeType: 'percent',
         adminFeeValue: undefined,
-        startingBigBlind: undefined,
         levelDurationMin: 20,
         numberOfLevels: undefined,
         growth: 'normal',
@@ -302,7 +300,6 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       adminFeeValue: values.adminFeeValue != null ? Number(values.adminFeeValue) : null,
       blindConfig: {
         startingStack: Number(values.startingStack),
-        startingBigBlind: values.startingBigBlind != null ? Number(values.startingBigBlind) : undefined,
         levelDurationMin: Number(values.levelDurationMin),
         numberOfLevels: values.numberOfLevels != null ? Number(values.numberOfLevels) : undefined,
         growth: values.growth,
