@@ -10,7 +10,7 @@ import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TOURNAMENT_STATUS_VALUES, MODE_VALUES } from '@/constants';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
-import { useCreateTournament, useGameTypes, useTournament, useUpdateTournament } from '@/hooks/use-queries';
+import { useClubs, useCreateTournament, useGameTypes, useTournament, useUpdateTournament } from '@/hooks/use-queries';
 import { TranslationKey } from '@/i18n';
 import { useI18n } from '@/i18n/I18nProvider';
 import { createTournamentSchema, TournamentFormValues } from '@/schemas/tournament.schema';
@@ -147,6 +147,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const { data: gameTypes, isLoading: gameTypesLoading } = useGameTypes();
+  const { data: clubs } = useClubs();
   const { data: tournament, isLoading: tournamentLoading } = useTournament(tournamentId ?? 0);
   const createTournament = useCreateTournament();
   const updateTournament = useUpdateTournament();
@@ -163,6 +164,9 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
   }
 
   const gameTypeOptions = (gameTypes ?? []).map((g) => ({ label: g.name, value: String(g.id) }));
+  // El selector de club solo aparece si hay clubs registrados.
+  const clubsList = clubs?.items ?? [];
+  const clubOptions = clubsList.map((c) => ({ label: c.name, value: String(c.id) }));
 
   const statusOptions = TOURNAMENT_STATUS_VALUES.map((value) => ({
     label: t(`status.${value}` as TranslationKey),
@@ -195,6 +199,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         name: tournament.name,
         gameTypeId: tournament.gameTypeId ?? 0,
         startDate: tournament.startDate,
+        clubId: tournament.clubId ?? undefined,
         status: tournament.status,
         mode: tournament.mode,
         currency: tournament.currency ?? DEFAULT_CURRENCY,
@@ -232,6 +237,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         name: '',
         gameTypeId: 0,
         startDate: defaultStartDate(),
+        clubId: undefined,
         status: 'registering',
         mode: 'live',
         currency: DEFAULT_CURRENCY,
@@ -270,6 +276,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       name: values.name,
       gameTypeId: Number(values.gameTypeId),
       startDate: values.startDate,
+      clubId: values.clubId != null ? Number(values.clubId) : null,
       status: values.status,
       mode: values.mode,
       currency: values.currency,
@@ -355,6 +362,14 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
             <FormTextField name="name" label={t('tournament.name')} placeholder={t('tournament.namePlaceholder')} />
             <FormSelect name="gameTypeId" label={t('tournament.gameType')} placeholder={t('tournament.gameTypePlaceholder')} options={gameTypeOptions} />
             <FormDateField name="startDate" label={t('tournament.startDate')} />
+            {clubsList.length > 0 ? (
+              <FormSelect
+                name="clubId"
+                label={t('form.club')}
+                placeholder={t('form.noClub')}
+                options={clubOptions}
+              />
+            ) : null}
             <FormSegmented name="status" label={t('tournament.status')} options={statusOptions} />
             <FormSegmented name="mode" label={t('tournament.mode')} options={modeOptions} />
             <FormSwitch

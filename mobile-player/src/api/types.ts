@@ -1,5 +1,32 @@
 export type UserRole = 'admin' | 'manager' | 'player';
 
+export interface Club {
+  id: number;
+  code: string;
+  name: string;
+  photoUrl: string | null;
+  address: string | null;
+  phone: string | null;
+  adminUserId: number;
+  createdByUserId: number;
+  createdAt: string;
+  updatedAt: string;
+  tablesCount?: number;
+  tournamentsCount?: number;
+  membersCount?: number;
+}
+
+export type ClubMembershipStatus = 'pending' | 'accepted' | 'rejected';
+
+export interface ClubMembership {
+  id: number;
+  clubId: number;
+  userId: number;
+  status: ClubMembershipStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -45,6 +72,7 @@ export interface PokerTable {
   currency: string;
   notes: string | null;
   isActive: boolean;
+  clubId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -108,6 +136,7 @@ export interface Tournament {
   levelStartedAt: string | null;
   startedAt: string | null;
   isActive: boolean;
+  clubId?: number | null;
   createdAt: string;
   updatedAt: string;
   reservedCount?: number;

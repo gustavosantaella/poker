@@ -12,8 +12,12 @@ export class TablesController {
   constructor(private readonly service: TablesService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.service.findAll({ ...pagination, order: { createdAt: 'DESC' } });
+  findAll(@Query() pagination: PaginationDto, @Query('clubId') clubId?: number) {
+    return this.service.findAll({
+      ...pagination,
+      where: clubId ? { clubId } : undefined,
+      order: { createdAt: 'DESC' },
+    });
   }
 
   @Get('my-reservations')
@@ -27,8 +31,8 @@ export class TablesController {
   }
 
   @Post()
-  create(@Body() dto: CreateTableDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateTableDto, @CurrentUser() user: User) {
+    return this.service.create({ ...dto, createdByUserId: user.id });
   }
 
   @Patch(':id')

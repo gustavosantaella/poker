@@ -10,7 +10,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { ReservationState } from '@/utils/reservation';
 import { formatCurrency } from '@/utils/format';
-import { useAdminProfile } from '@/hooks/use-queries';
+import { useAdminProfile, useClub } from '@/hooks/use-queries';
 
 const SERVER_BASE = API_URL.replace(/\/api$/, '');
 function buildAvatarUrl(path?: string | null): string | undefined {
@@ -33,6 +33,16 @@ export function TableCard({
   const { colors } = useTheme();
   const { t } = useI18n();
   const { data: admin } = useAdminProfile();
+  const { data: club } = useClub(table.clubId ?? 0);
+
+  // Si la mesa pertenece a un club, se muestra la imagen del club (no la del admin).
+  const avatarUrl = table.clubId
+    ? club?.photoUrl
+      ? buildAvatarUrl(club.photoUrl)
+      : undefined
+    : admin?.photoUrl
+      ? buildAvatarUrl(admin.photoUrl)
+      : undefined;
   
   const online = table.mode === 'online';
   const modeBg = online ? colors.primary : colors.success;
@@ -55,8 +65,8 @@ export function TableCard({
       </View>
 
       <View style={styles.header}>
-        {admin?.photoUrl ? (
-          <Image source={{ uri: buildAvatarUrl(admin?.photoUrl) }} style={styles.adminAvatar} />
+        {avatarUrl ? (
+          <Image source={{ uri: avatarUrl }} style={styles.adminAvatar} />
         ) : null}
         <View style={styles.titleWrap}>
           <AppText variant="subtitle" numberOfLines={1}>{table.name}</AppText>

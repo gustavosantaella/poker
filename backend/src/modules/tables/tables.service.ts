@@ -17,7 +17,7 @@ export class TablesService extends CrudService<PokerTable> {
     super(repository);
   }
 
-  async create(dto: CreateTableDto): Promise<PokerTable> {
+  async create(dto: CreateTableDto & { createdByUserId?: number }): Promise<PokerTable> {
     this.validateBlinds(dto.smallBlind, dto.bigBlind);
     if (dto.maxBuyIn < dto.minBuyIn) {
       throw new BadRequestException('maxBuyIn must be greater than or equal to minBuyIn');

@@ -1,9 +1,10 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { BlindLevelItem, BlindBreakItem, TournamentChip } from '@/api/types';
 import { createTournamentReservation } from '@/api/tournaments';
+import { API_URL } from '@/api/config';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
 import { AppHeader } from '@/components/ui/AppHeader';
@@ -15,7 +16,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useDeleteTournamentReservation, useRebuyTournamentReservation, useTournament, useTournamentChips, useTournamentPrizes, useTournamentReservations } from '@/hooks/use-queries';
+import { useClub, useDeleteTournamentReservation, useRebuyTournamentReservation, useTournament, useTournamentChips, useTournamentPrizes, useTournamentReservations } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useTournamentCountdown } from '@/hooks/use-tournament-countdown';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -26,6 +27,13 @@ import { summarizeStructure } from '@/utils/blind-structure';
 import { formatChips, formatCurrency, formatDateTime, formatDuration, formatNumber } from '@/utils/format';
 import { canReserveTournament, ReservationState } from '@/utils/reservation';
 import { buildDefaultPrizes, getPaidPlacesCount } from '@/utils/prizes';
+
+const SERVER_BASE = API_URL.replace(/\/api$/, '');
+function buildImageUrl(path?: string | null): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith('http')) return path;
+  return `${SERVER_BASE}${path}`;
+}
 
 type Tab = 'info' | 'structure' | 'prizes' | 'chips';
 
@@ -280,7 +288,9 @@ export default function TournamentDetailScreen() {
         })}
       </View>
       {activeTab === 'info' ? (
-        <AppCard>
+        <>
+          {tournament.clubId != null ? <ClubBanner clubId={tournament.clubId} /> : null}
+          <AppCard>
           <DetailRow label={t('tournament.buyIn')} value={`${formatCurrency(tournament.buyIn, tournament.currency)}${tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee, tournament.currency)}` : ''}`} />
           <DetailRow label={t('tournament.stack')} value={formatNumber(tournament.startingStack)} />
           <DetailRow
@@ -301,6 +311,7 @@ export default function TournamentDetailScreen() {
           <DetailRow label={t('tournament.reEntry')} value={reEntryLabel} />
           <DetailRow label={t('tournament.addOn')} value={addOnLabel} last />
         </AppCard>
+        </>
       ) : activeTab === 'structure' ? (
         <>
           {current ? (
@@ -529,7 +540,46 @@ function PrizesSection({
   );
 }
 
+/** Banner del club al que pertenece el torneo (si tiene club asignado). */
+function ClubBanner({ clubId }: { clubId: number }) {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const { t } = useI18n();
+  const { data: club } = useClub(clubId);
+  if (!club) return null;
+  return (
+    <AppCard onPress={() => router.push(`/clubs/${club.id}`)} style={styles.clubCard}>
+      <View style={styles.clubRow}>
+        {club.photoUrl ? (
+          <Image
+            source={{ uri: buildImageUrl(club.photoUrl) }}
+            style={[styles.clubLogo, { backgroundColor: colors.surfaceMuted }]}
+          />
+        ) : (
+          <View style={[styles.clubLogo, styles.clubLogoPlaceholder, { backgroundColor: colors.primaryMuted }]}>
+            <Ionicons name="business-outline" size={24} color={colors.primary} />
+          </View>
+        )}
+        <View style={styles.clubInfo}>
+          <AppText variant="subtitle" weight="semibold" numberOfLines={1}>
+            {club.name}
+          </AppText>
+          <AppText variant="caption" color={colors.textSecondary}>
+            {t('club.code', { code: club.code })}
+          </AppText>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      </View>
+    </AppCard>
+  );
+}
+
 const styles = StyleSheet.create({
+  clubCard: { marginBottom: 12 },
+  clubRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  clubLogo: { width: 44, height: 44, borderRadius: 22 },
+  clubLogoPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  clubInfo: { flex: 1 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   assignedLine: { marginBottom: 8 },
   rebuyError: { marginBottom: 8 },

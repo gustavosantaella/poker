@@ -17,7 +17,11 @@ export class TournamentsController {
   constructor(private readonly service: TournamentsService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto, @Query('excludeStatus') excludeStatus?: string) {
+  findAll(
+    @Query() pagination: PaginationDto,
+    @Query('excludeStatus') excludeStatus?: string,
+    @Query('clubId') clubId?: number,
+  ) {
     // Permite excluir estados de la lista (p. ej. el player solo quiere torneos
     // distintos de 'completed'). El admin no envía este parámetro y sigue viendo todo.
     const excluded = (excludeStatus ?? '')
@@ -27,7 +31,12 @@ export class TournamentsController {
     const where: FindOptionsWhere<Tournament> | undefined = excluded.length
       ? { status: Not(In(excluded)) }
       : undefined;
-    return this.service.findAll({ ...pagination, where, order: { startDate: 'DESC' } });
+    const baseWhere = where ?? {};
+    return this.service.findAll({
+      ...pagination,
+      where: clubId ? { clubId, ...baseWhere } : baseWhere,
+      order: { startDate: 'DESC' },
+    });
   }
 
   @Post('generate-structure')
@@ -51,8 +60,8 @@ export class TournamentsController {
   }
 
   @Post()
-  create(@Body() dto: CreateTournamentDto) {
-    return this.service.create(dto as DeepPartial<Tournament>);
+  create(@Body() dto: CreateTournamentDto, @CurrentUser() user: User) {
+    return this.service.create({ ...dto, createdByUserId: user.id } as DeepPartial<Tournament>);
   }
 
   @Patch(':id')

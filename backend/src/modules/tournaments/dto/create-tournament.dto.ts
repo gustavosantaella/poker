@@ -41,6 +41,11 @@ export class CreateTournamentDto {
   mode?: TournamentMode;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  clubId?: number;
+
+  @IsOptional()
   @IsIn([...CURRENCIES], { message: 'currency must be one of: USD, VES, EUR' })
   currency?: string;
 

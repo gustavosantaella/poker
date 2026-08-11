@@ -16,6 +16,10 @@ export const createTableSchema = (t: TFunction) =>
       status: z.enum(['open', 'running', 'paused', 'closed']),
       mode: z.enum(['live', 'online']),
       notes: z.string().max(1000).optional(),
+      clubId: z.preprocess(
+        (v) => (v === '' || v == null ? undefined : v),
+        z.coerce.number().int().min(1).optional(),
+      ),
     })
     .refine((data) => data.bigBlind >= data.smallBlind, {
       message: t('validation.bigBlindGTE'),

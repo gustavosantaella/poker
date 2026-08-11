@@ -33,7 +33,6 @@ export class Tournament extends BaseEntity {
 
   @Column({ type: 'datetime' })
   startDate: Date;
-
   @Column({ type: 'enum', enum: TournamentStatus, default: TournamentStatus.SCHEDULED })
   status: TournamentStatus;
 
@@ -142,4 +141,12 @@ export class Tournament extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  /** Club al que pertenece el torneo (opcional). */
+  @Column({ name: 'club_id', type: 'int', nullable: true })
+  clubId: number | null;
+
+  /** Usuario que creó el torneo. */
+  @Column({ name: 'created_by_user_id', type: 'int', nullable: true })
+  createdByUserId: number | null;
 }

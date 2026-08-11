@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchAdminProfile, fetchMe, updateProfile, UpdateProfilePayload } from '@/api/auth';
-import { fetchAdmins } from '@/api/users';
+import {
+  fetchClubs,
+  fetchClub,
+  fetchClubTables,
+  fetchClubTournaments,
+  fetchMyClubs,
+  fetchMyClubMemberships,
+  joinClub,
+} from '@/api/clubs';
 import {
   createTableReservation,
   deleteTableReservation,
@@ -175,8 +183,51 @@ export function useRebuyTournamentReservation(tournamentId: number) {
 }
 
 
-export function useAdmins() {
-  return useQuery({ queryKey: ['admins'], queryFn: fetchAdmins });
+export function useClubs() {
+  return useQuery({ queryKey: ['clubs'], queryFn: fetchClubs });
+}
+
+export function useClub(id: number) {
+  return useQuery({
+    queryKey: ['clubs', id],
+    queryFn: () => fetchClub(id),
+    enabled: id > 0,
+  });
+}
+
+export function useClubTables(clubId: number) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'tables'],
+    queryFn: () => fetchClubTables(clubId),
+    enabled: clubId > 0,
+  });
+}
+
+export function useClubTournaments(clubId: number) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'tournaments'],
+    queryFn: () => fetchClubTournaments(clubId),
+    enabled: clubId > 0,
+  });
+}
+
+export function useMyClubs() {
+  return useQuery({ queryKey: ['clubs', 'mine'], queryFn: fetchMyClubs });
+}
+
+export function useMyClubMemberships() {
+  return useQuery({ queryKey: ['clubs', 'memberships'], queryFn: fetchMyClubMemberships });
+}
+
+export function useJoinClub() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (code: string) => joinClub(code),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', 'mine'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', 'memberships'] });
+    },
+  });
 }
 
 export function useMe() {

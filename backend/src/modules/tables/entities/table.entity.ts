@@ -57,4 +57,12 @@ export class PokerTable extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  /** Club al que pertenece la mesa (opcional). */
+  @Column({ name: 'club_id', type: 'int', nullable: true })
+  clubId: number | null;
+
+  /** Usuario que creó la mesa. */
+  @Column({ name: 'created_by_user_id', type: 'int', nullable: true })
+  createdByUserId: number | null;
 }

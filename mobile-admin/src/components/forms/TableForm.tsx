@@ -8,7 +8,7 @@ import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TABLE_STATUS_VALUES, MODE_VALUES } from '@/constants';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
-import { useCreateTable, useGameTypes, useTable, useUpdateTable } from '@/hooks/use-queries';
+import { useCreateTable, useClubs, useGameTypes, useTable, useUpdateTable } from '@/hooks/use-queries';
 import { useI18n } from '@/i18n/I18nProvider';
 import { TranslationKey } from '@/i18n';
 import { createTableSchema, TableFormValues } from '@/schemas/table.schema';
@@ -30,6 +30,7 @@ export function TableForm({ tableId }: TableFormProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const { data: gameTypes, isLoading: gameTypesLoading } = useGameTypes();
+  const { data: clubs } = useClubs();
   const { data: table, isLoading: tableLoading } = useTable(tableId);
   const createTable = useCreateTable();
   const updateTable = useUpdateTable();
@@ -58,6 +59,9 @@ export function TableForm({ tableId }: TableFormProps) {
   }
 
   const gameTypeOptions = (gameTypes ?? []).map((g) => ({ label: g.name, value: String(g.id) }));
+  // El selector de club solo aparece si hay clubs registrados.
+  const clubsList = clubs?.items ?? [];
+  const clubOptions = clubsList.map((c) => ({ label: c.name, value: String(c.id) }));
 
   const defaultValues: TableFormValues = table
     ? {
@@ -72,6 +76,7 @@ export function TableForm({ tableId }: TableFormProps) {
         status: table.status,
         mode: table.mode,
         notes: table.notes ?? '',
+        clubId: table.clubId ?? undefined,
       }
     : {
         name: '',
@@ -85,6 +90,7 @@ export function TableForm({ tableId }: TableFormProps) {
         status: 'open',
         mode: 'live',
         notes: '',
+        clubId: undefined,
       };
 
   const onSubmit = async (values: TableFormValues) => {
@@ -116,6 +122,14 @@ export function TableForm({ tableId }: TableFormProps) {
             />
             <FormSegmented name="mode" label={t('table.mode')} options={modeOptions} />
             <FormNumberField name="seats" label={t('table.seats')} />
+            {clubsList.length > 0 ? (
+              <FormSelect
+                name="clubId"
+                label={t('form.club')}
+                placeholder={t('form.noClub')}
+                options={clubOptions}
+              />
+            ) : null}
             <FormTextField name="notes" label={t('table.notes')} placeholder={t('common.optional')} multiline numberOfLines={3} />
           </AppCard>
 

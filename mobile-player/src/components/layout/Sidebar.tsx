@@ -94,117 +94,117 @@ export function Sidebar({ visible, onClose }: { visible: boolean; onClose: () =>
     { key: 'tables', label: t('tabs.tables'), path: '/tables', icon: 'grid' },
   ];
   const moreItems: SidebarItemDef[] = [
-    { key: 'admins', label: t('tabs.admins'), path: '/admins', icon: 'people', chip: 'aa' },
+    { key: 'clubs', label: t('tabs.clubs'), path: '/clubs', icon: 'business' },
     { key: 'profile', label: t('tabs.profile'), path: '/profile', icon: 'person' },
   ];
 
   return (
 
     <>
-    <Modal transparent statusBarTranslucent animationType="none" visible onRequestClose={onClose}>
-      <View style={styles.root}>
-        <Animated.View
-          style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay, opacity: backdropOpacity }]}
-        >
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        </Animated.View>
+      <Modal transparent statusBarTranslucent animationType="none" visible onRequestClose={onClose}>
+        <View style={styles.root}>
+          <Animated.View
+            style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay, opacity: backdropOpacity }]}
+          >
+            <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+          </Animated.View>
 
-        <Animated.View
-          style={[
-            styles.panel,
-            {
-              width: sidebarWidth,
-              backgroundColor: colors.surface,
-              borderRightColor: colors.border,
-              transform: [{ translateX }],
-            },
-          ]}
-        >
-          <View style={styles.brandRow}>
-            <View style={[styles.logo, { backgroundColor: colors.primary }]}>
-              <AppText variant="caption" weight="bold" color={colors.onPrimary}>
-                AA
-              </AppText>
-            </View>
-            <AppText variant="title" color={colors.primary}>
-              PokeLAP
-            </AppText>
-          </View>
-
-          <View style={styles.brandSuits}>
-            {['♠', '♥', '♦', '♣'].map((suit, i) => (
-              <AppText key={suit} variant="caption" color={i % 2 === 0 ? colors.textMuted : colors.danger}>
-                {suit}
-              </AppText>
-            ))}
-          </View>
-
-          <Pressable style={[styles.userCard, { backgroundColor: colors.surfaceMuted }]} onPress={() => go('/profile')}>
-            {user?.photoUrl ? (
-              <Image source={{ uri: buildAvatarUrl(user.photoUrl) }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.primaryMuted }]}>
-                <Ionicons name="person" size={22} color={colors.primary} />
-              </View>
-            )}
-            <View style={styles.userInfo}>
-              <AppText variant="body" weight="semibold" numberOfLines={1}>
-                {user?.name ?? '…'}
-              </AppText>
-              {user?.alias ? (
-                <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
-                  @{user.alias}
+          <Animated.View
+            style={[
+              styles.panel,
+              {
+                width: sidebarWidth,
+                backgroundColor: colors.surface,
+                borderRightColor: colors.border,
+                transform: [{ translateX }],
+              },
+            ]}
+          >
+            <View style={styles.brandRow}>
+              <View style={[styles.logo, { backgroundColor: colors.primary }]}>
+                <AppText variant="caption" weight="bold" color={colors.onPrimary}>
+                  AA
                 </AppText>
-              ) : null}
+              </View>
+              <AppText variant="title" color={colors.primary}>
+                PokeLAP
+              </AppText>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
 
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <AppText variant="label" style={styles.sectionLabel}>
-              {t('sidebar.sectionMain')}
-            </AppText>
-            {mainItems.map((item) => (
-              <SidebarItemRow
-                key={item.key}
-                icon={item.icon}
-                label={item.label}
-                chip={item.chip}
-                active={isActive(item.path)}
-                onPress={() => go(item.path)}
-              />
-            ))}
+            <View style={styles.brandSuits}>
+              {['♠', '♥', '♦', '♣'].map((suit, i) => (
+                <AppText key={suit} variant="caption" color={i % 2 === 0 ? colors.textMuted : colors.danger}>
+                  {suit}
+                </AppText>
+              ))}
+            </View>
 
-            <AppText variant="label" style={styles.sectionLabel}>
-              {t('sidebar.sectionMore')}
-            </AppText>
-            {moreItems.map((item) => (
-              <SidebarItemRow
-                key={item.key}
-                icon={item.icon}
-                label={item.label}
-                chip={item.chip}
-                active={isActive(item.path)}
-                onPress={() => go(item.path)}
-              />
-            ))}
-          </ScrollView>
+            <Pressable style={[styles.userCard, { backgroundColor: colors.surfaceMuted }]} onPress={() => go('/profile')}>
+              {user?.photoUrl ? (
+                <Image source={{ uri: buildAvatarUrl(user.photoUrl) }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.primaryMuted }]}>
+                  <Ionicons name="person" size={22} color={colors.primary} />
+                </View>
+              )}
+              <View style={styles.userInfo}>
+                <AppText variant="body" weight="semibold" numberOfLines={1}>
+                  {user?.name ?? '…'}
+                </AppText>
+                {user?.alias ? (
+                  <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+                    @{user.alias}
+                  </AppText>
+                ) : null}
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [styles.logoutRow, pressed && { opacity: 0.7 }]}
-            onPress={() => setLogoutConfirm(true)}
-          >
-            <Ionicons name="log-out-outline" size={20} color={colors.danger} />
-            <AppText variant="body" weight="medium" color={colors.danger}>
-              {t('common.logout')}
-            </AppText>
-          </Pressable>
-        </Animated.View>
-      </View>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <AppText variant="label" style={styles.sectionLabel}>
+                {t('sidebar.sectionMain')}
+              </AppText>
+              {mainItems.map((item) => (
+                <SidebarItemRow
+                  key={item.key}
+                  icon={item.icon}
+                  label={item.label}
+                  chip={item.chip}
+                  active={isActive(item.path)}
+                  onPress={() => go(item.path)}
+                />
+              ))}
+
+              <AppText variant="label" style={styles.sectionLabel}>
+                {t('sidebar.sectionMore')}
+              </AppText>
+              {moreItems.map((item) => (
+                <SidebarItemRow
+                  key={item.key}
+                  icon={item.icon}
+                  label={item.label}
+                  chip={item.chip}
+                  active={isActive(item.path)}
+                  onPress={() => go(item.path)}
+                />
+              ))}
+            </ScrollView>
+
+            <Pressable
+              style={({ pressed }) => [styles.logoutRow, pressed && { opacity: 0.7 }]}
+              onPress={() => setLogoutConfirm(true)}
+            >
+              <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+              <AppText variant="body" weight="medium" color={colors.danger}>
+                {t('common.logout')}
+              </AppText>
+            </Pressable>
+          </Animated.View>
+        </View>
 
       </Modal>
 

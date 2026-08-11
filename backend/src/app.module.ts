@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { ChipsModule } from './modules/chips/chips.module';
+import { ClubsModule } from './modules/clubs/clubs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { GameTypesModule } from './modules/game-types/game-types.module';
 import { TablesModule } from './modules/tables/tables.module';
@@ -39,6 +40,7 @@ import configuration from './config/configuration';
     ChipsModule,
     TablesModule,
     TournamentsModule,
+    ClubsModule,
     DashboardModule,
   ],
   controllers: [AppController],

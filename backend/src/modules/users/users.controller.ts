@@ -7,7 +7,7 @@ import { User, UserRole } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('admin/profile')
   getAdminProfile() {
@@ -16,7 +16,7 @@ export class UsersController {
 
   @Get()
   findAll(@Query() pagination: PaginationDto, @Query('role') role?: UserRole) {
-    // Filtro por rol (p. ej. el player lista admins) y nunca exponer datos sensibles.
+    // Filtro por rol (p. ej. el player lista Clubs) y nunca exponer datos sensibles.
     return this.usersService
       .findAll({ ...pagination, where: role ? { role } : undefined, order: { createdAt: 'ASC' } })
       .then((result) => ({ ...result, items: result.items.map((u) => this.usersService.toSafeUser(u)) }));

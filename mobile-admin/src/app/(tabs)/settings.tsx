@@ -5,6 +5,7 @@ import { z } from 'zod';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadAvatar } from '@/api/auth';
 import { API_URL } from '@/api/config';
+import { Club } from '@/api/types';
 import { AppForm } from '@/components/forms/AppForm';
 import { FormTextField } from '@/components/forms/FormTextField';
 import { AppButton } from '@/components/ui/AppButton';
@@ -14,15 +15,17 @@ import { AppModal } from '@/components/ui/AppModal';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { AppSegmentedControl } from '@/components/ui/AppSegmentedControl';
 import { AppText } from '@/components/ui/AppText';
+import { AppTextField } from '@/components/ui/AppTextField';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { ListItem } from '@/components/ui/ListItem';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { useAllGameTypes } from '@/hooks/use-queries';
+import { useAllGameTypes, useClubs, useClubMembers, useCreateClub, useRemoveClubMember, useUpdateClub, useUpdateClubMember } from '@/hooks/use-queries';
 import { useAuth } from '@/hooks/use-auth';
 import { Language } from '@/i18n';
 import { useI18n } from '@/i18n/I18nProvider';
 import { ThemeMode, useTheme } from '@/theme';
 import { getErrorMessage } from '@/utils/error';
+import { formatNumber } from '@/utils/format';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(120),
@@ -59,6 +62,20 @@ export default function SettingsScreen() {
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [photoLocalUri, setPhotoLocalUri] = useState<string | null>(null);
+  const { data: clubs } = useClubs();
+  const createClubMut = useCreateClub();
+  const updateClubMut = useUpdateClub();
+  const [membersClub, setMembersClub] = useState<Club | null>(null);
+  const { data: membersData } = useClubMembers(membersClub?.id ?? 0);
+  const updateMemberMut = useUpdateClubMember(membersClub?.id ?? 0);
+  const removeMemberMut = useRemoveClubMember(membersClub?.id ?? 0);
+  const [clubOpen, setClubOpen] = useState(false);
+  const [clubEditing, setClubEditing] = useState<Club | null>(null);
+  const [clubError, setClubError] = useState<string | null>(null);
+  const [clubName, setClubName] = useState('');
+  const [clubAddress, setClubAddress] = useState('');
+  const [clubPhone, setClubPhone] = useState('');
+  const [clubPhotoUri, setClubPhotoUri] = useState<string | null>(null);
 
   const themeOptions = [
     { label: t('settings.themeLight'), value: 'light' },
@@ -107,6 +124,80 @@ export default function SettingsScreen() {
     router.replace('/login');
   };
 
+  // ---- Clubs ----
+
+  const openCreateClub = () => {
+    setClubError(null);
+    setClubEditing(null);
+    setClubName('');
+    setClubAddress('');
+    setClubPhone('');
+    setClubPhotoUri(null);
+    setClubOpen(true);
+  };
+
+  const openEditClub = (club: Club) => {
+    setClubError(null);
+    setClubEditing(club);
+    setClubName(club.name);
+    setClubAddress(club.address ?? '');
+    setClubPhone(club.phone ?? '');
+    setClubPhotoUri(null);
+    setClubOpen(true);
+  };
+
+  const handlePickClubImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0].uri) {
+      setClubPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const handleSaveClub = async () => {
+    setClubError(null);
+    if (!clubName.trim()) {
+      setClubError(t('settings.clubNameRequired'));
+      return;
+    }
+    try {
+      let photoUrl: string | undefined = undefined;
+      if (clubPhotoUri) {
+        photoUrl = await uploadAvatar(clubPhotoUri);
+      }
+      if (clubEditing) {
+        await updateClubMut.mutateAsync({
+          id: clubEditing.id,
+          payload: {
+            name: clubName.trim(),
+            photoUrl,
+            address: clubAddress.trim() || null,
+            phone: clubPhone.trim() || null,
+          },
+        });
+      } else {
+        await createClubMut.mutateAsync({
+          name: clubName.trim(),
+          photoUrl,
+          address: clubAddress.trim() || null,
+          phone: clubPhone.trim() || null,
+        });
+      }
+      setClubOpen(false);
+      setClubEditing(null);
+      setClubName('');
+      setClubAddress('');
+      setClubPhone('');
+      setClubPhotoUri(null);
+    } catch (error) {
+      setClubError(getErrorMessage(error));
+    }
+  };
+
   return (
     <AppScreen>
       <AppHeader title={t('settings.title')} />
@@ -124,6 +215,38 @@ export default function SettingsScreen() {
         <AppText variant="caption" style={styles.role}>
           {t('settings.role', { role: user?.role ?? 'admin' })}
         </AppText>
+      </AppCard>
+
+      <SectionHeader
+        title={t('settings.clubs')}
+        actionLabel={t('common.add')}
+        onAction={openCreateClub}
+      />
+      <AppCard padded={false}>
+        {(clubs?.items ?? []).length === 0 ? (
+          <AppText variant="caption" style={styles.noClubs}>
+            {t('settings.noClubs')}
+          </AppText>
+        ) : (
+          (clubs?.items ?? []).map((club) => (
+            <ListItem
+              key={club.id}
+              title={club.name}
+              subtitle={`#${club.code} • ${formatNumber(club.membersCount ?? 0)} ${t('settings.clubMembers')}${club.address ? ` • ${club.address}` : ''}`}
+              icon="business-outline"
+              right={
+                <AppButton
+                  title=""
+                  size="sm"
+                  variant="ghost"
+                  icon="people-outline"
+                  onPress={() => setMembersClub(club)}
+                />
+              }
+              onPress={() => openEditClub(club)}
+            />
+          ))
+        )}
       </AppCard>
 
       <SectionHeader title={t('settings.appearance')} />
@@ -180,6 +303,115 @@ export default function SettingsScreen() {
       <AppText variant="caption" center style={styles.version}>
         {t('settings.version')}
       </AppText>
+
+      <AppModal
+        visible={membersClub != null}
+        title={membersClub ? `${membersClub.name} • ${t('settings.clubMembers')}` : ''}
+        onClose={() => setMembersClub(null)}
+      >
+        {membersClub ? (
+          <View>
+            {(membersData ?? []).length === 0 ? (
+              <AppText variant="caption" color={colors.textSecondary} style={styles.noMembers}>
+                {t('settings.clubMembersEmpty')}
+              </AppText>
+            ) : (
+              (membersData ?? []).map((member) => {
+                const isPending = member.status === 'pending';
+                return (
+                  <View key={member.id} style={styles.memberRow}>
+                    <View style={styles.memberInfo}>
+                      <AppText variant="body" weight="medium" numberOfLines={1}>
+                        {member.user?.name ?? `#${member.userId}`}
+                      </AppText>
+                      <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+                        {member.user?.email ?? ''}
+                      </AppText>
+                    </View>
+                    {isPending ? (
+                      <View style={styles.memberActions}>
+                        <AppButton
+                          title={t('settings.clubAccept')}
+                          size="sm"
+                          variant="success"
+                          onPress={() =>
+                            updateMemberMut.mutateAsync({ memberId: member.id, status: 'accepted' })
+                          }
+                        />
+                        <AppButton
+                          title={t('settings.clubReject')}
+                          size="sm"
+                          variant="danger"
+                          onPress={() =>
+                            updateMemberMut.mutateAsync({ memberId: member.id, status: 'rejected' })
+                          }
+                        />
+                      </View>
+                    ) : (
+                      <AppButton
+                        title=""
+                        size="sm"
+                        variant="ghost"
+                        icon="trash-outline"
+                        onPress={() => removeMemberMut.mutateAsync(member.id)}
+                      />
+                    )}
+                  </View>
+                );
+              })
+            )}
+          </View>
+        ) : null}
+      </AppModal>
+
+      <AppModal
+        visible={clubOpen}
+        title={clubEditing ? t('settings.editClub') : t('settings.createClub')}
+        onClose={() => setClubOpen(false)}
+      >
+        {clubOpen ? (
+          <View>
+            <View style={styles.photoContainer}>
+              <Pressable onPress={handlePickClubImage} style={[styles.photoButton, { borderColor: colors.border }]}>
+                {clubPhotoUri ? (
+                  <Image source={{ uri: clubPhotoUri }} style={styles.photoPreview} />
+                ) : (
+                  <AppText color={colors.primary}>{t('settings.clubPhoto')}</AppText>
+                )}
+              </Pressable>
+            </View>
+            <AppTextField
+              label={t('settings.clubName')}
+              value={clubName}
+              onChangeText={setClubName}
+              autoCapitalize="words"
+            />
+            <AppTextField
+              label={t('settings.clubAddress')}
+              value={clubAddress}
+              onChangeText={setClubAddress}
+              autoCapitalize="words"
+            />
+            <AppTextField
+              label={t('settings.clubPhone')}
+              value={clubPhone}
+              onChangeText={setClubPhone}
+              keyboardType="phone-pad"
+            />
+            {clubError ? (
+              <AppText variant="caption" color={colors.danger} style={styles.clubError}>
+                {clubError}
+              </AppText>
+            ) : null}
+            <AppButton
+              title={clubEditing ? t('common.saveChanges') : t('settings.createClub')}
+              onPress={handleSaveClub}
+              loading={createClubMut.isPending || updateClubMut.isPending}
+              fullWidth
+            />
+          </View>
+        ) : null}
+      </AppModal>
 
       <AppModal
         visible={profileOpen}
@@ -277,6 +509,12 @@ const styles = StyleSheet.create({
   role: { marginLeft: 12, marginTop: -4 },
   cardBody: { padding: 16 },
   version: { marginTop: 24 },
+  noClubs: { padding: 16 },
+  clubError: { marginBottom: 12 },
+  memberRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  memberInfo: { flex: 1 },
+  memberActions: { flexDirection: 'row', gap: 6 },
+  noMembers: { paddingVertical: 12 },
   avatar: { width: 40, height: 40, borderRadius: 20 },
   photoContainer: { alignItems: 'center', marginBottom: 20 },
   photoButton: { width: 100, height: 100, borderRadius: 50, borderWidth: 1, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },

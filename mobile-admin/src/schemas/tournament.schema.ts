@@ -37,6 +37,7 @@ export const createTournamentSchema = (t: TFunction) =>
       name: z.string().min(1, t('validation.nameRequired')).max(100),
       gameTypeId: z.coerce.number().int().min(1, t('validation.selectGameType')),
       startDate: z.string().min(1, t('validation.startDateRequired')),
+      clubId: optionalInt(1),
       status: z.enum(['scheduled', 'registering', 'running', 'paused', 'completed', 'cancelled']),
       mode: z.enum(['live', 'online']),
       currency: z.enum(CURRENCIES),

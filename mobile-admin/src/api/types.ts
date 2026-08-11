@@ -15,6 +15,34 @@ export interface User {
   updatedAt: string;
 }
 
+export interface Club {
+  id: number;
+  code: string;
+  name: string;
+  photoUrl: string | null;
+  address: string | null;
+  phone: string | null;
+  adminUserId: number;
+  createdByUserId: number;
+  createdAt: string;
+  updatedAt: string;
+  tablesCount?: number;
+  tournamentsCount?: number;
+  membersCount?: number;
+}
+
+export type ClubMemberStatus = 'pending' | 'accepted' | 'rejected';
+
+export interface ClubMember {
+  id: number;
+  clubId: number;
+  userId: number;
+  user: User;
+  status: ClubMemberStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface GameType {
   id: number;
   name: string;
@@ -57,6 +85,7 @@ export interface PokerTable {
   currency: Currency;
   notes: string | null;
   isActive: boolean;
+  clubId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -152,6 +181,7 @@ export interface Tournament {
   startedAt: string | null;
   currentLevel: number | null;
   levelStartedAt: string | null;
+  clubId?: number | null;
   /** Total de rebuys realizados en el torneo. */
   currentReEntries: number;
 }
@@ -209,6 +239,7 @@ export interface TablePayload {
   currency?: Currency;
   notes?: string;
   isActive?: boolean;
+  clubId?: number | null;
 }
 
 export interface TournamentPayload {
@@ -237,6 +268,7 @@ export interface TournamentPayload {
   paidPlacesValue?: number | null;
   adminFeeType?: 'percent' | 'fixed';
   adminFeeValue?: number | null;
+  clubId?: number | null;
   blindConfig: BlindConfig;
   /** Estructura manual (si el usuario la genero/edito en el formulario). Si se omite, el backend la regenera desde blindConfig. */
   blindStructure?: BlindStructureItem[] | null;

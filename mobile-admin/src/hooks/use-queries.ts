@@ -1,5 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  createClub,
+  fetchClubMembers,
+  fetchClubs,
+  fetchUsers,
+  removeClubMember,
+  updateClub,
+  updateClubMember,
+  CreateClubPayload,
+} from '@/api/clubs';
+import {
   createChip,
   deleteChip,
   fetchChips,
@@ -56,6 +66,66 @@ import {
 
 export function useGameTypes() {
   return useQuery({ queryKey: ['game-types'], queryFn: fetchGameTypes });
+}
+
+export function useClubs() {
+  return useQuery({ queryKey: ['clubs'], queryFn: fetchClubs });
+}
+
+export function useCreateClub() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateClubPayload) => createClub(payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs'] });
+    },
+  });
+}
+
+export function useUpdateClub() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<CreateClubPayload> }) =>
+      updateClub(id, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs'] });
+    },
+  });
+}
+
+export function useClubMembers(clubId: number) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'members'],
+    queryFn: () => fetchClubMembers(clubId),
+    enabled: clubId > 0,
+  });
+}
+
+export function useUpdateClubMember(clubId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ memberId, status }: { memberId: number; status: 'accepted' | 'rejected' }) =>
+      updateClubMember(clubId, memberId, status),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'members'] });
+      void qc.invalidateQueries({ queryKey: ['clubs'] });
+    },
+  });
+}
+
+export function useRemoveClubMember(clubId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (memberId: number) => removeClubMember(clubId, memberId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'members'] });
+      void qc.invalidateQueries({ queryKey: ['clubs'] });
+    },
+  });
+}
+
+export function useUsers() {
+  return useQuery({ queryKey: ['users'], queryFn: fetchUsers });
 }
 
 export function useAllGameTypes() {
