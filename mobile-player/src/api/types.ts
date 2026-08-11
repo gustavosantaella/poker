@@ -139,7 +139,7 @@ export interface TournamentReservation {
   userId: number;
   user: User;
   tournament?: Tournament;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'stood_up' | 'eliminated';
   stack: number | null;
   reEntries: number;
   tableNumber: number | null;

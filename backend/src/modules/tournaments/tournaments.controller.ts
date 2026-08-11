@@ -117,6 +117,22 @@ export class TournamentsController {
     return this.service.rebuy(id, reservationId, dto);
   }
 
+  @Post(':id/reservations/:reservationId/stand-up')
+  standUp(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('reservationId', ParseIntPipe) reservationId: number,
+  ) {
+    return this.service.standUp(id, reservationId);
+  }
+
+  @Post(':id/reservations/:reservationId/eliminate')
+  eliminate(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('reservationId', ParseIntPipe) reservationId: number,
+  ) {
+    return this.service.eliminate(id, reservationId);
+  }
+
   @Delete(':id/reservations/:reservationId')
   removeReservation(
     @Param('id', ParseIntPipe) id: number,

@@ -27,6 +27,7 @@ import {
   createReservation,
   createTournament,
   deleteTournament,
+  eliminateReservation,
   fetchPlayers,
   fetchPrizes,
   fetchReservations,
@@ -39,6 +40,7 @@ import {
   removeReservation,
   removeTournamentChip,
   resumeTournament,
+  standUpReservation,
   startTournament,
   updatePrizes,
   updateReservation,
@@ -364,6 +366,29 @@ export function useRebuyReservation(tournamentId: number) {
       tableNumber?: number;
       seatNumber?: number;
     }) => rebuyReservation(tournamentId, id, stack, tableNumber, seatNumber),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
+export function useStandUpReservation(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reservationId: number) => standUpReservation(tournamentId, reservationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
+/** Eliminar jugador del torneo: deja de contar en "en juego" pero conserva su reserva. */
+export function useEliminateReservation(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reservationId: number) => eliminateReservation(tournamentId, reservationId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
       void qc.invalidateQueries({ queryKey: ['tournaments'] });

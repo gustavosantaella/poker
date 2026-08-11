@@ -15,7 +15,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
-import { useDeleteTournamentReservation, useTournament, useTournamentChips, useTournamentPrizes, useTournamentReservations } from '@/hooks/use-queries';
+import { useDeleteTournamentReservation, useRebuyTournamentReservation, useTournament, useTournamentChips, useTournamentPrizes, useTournamentReservations } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useTournamentCountdown } from '@/hooks/use-tournament-countdown';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -43,28 +43,32 @@ export default function TournamentDetailScreen() {
 
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [rebuyError, setRebuyError] = useState<string | null>(null);
   const deleteReservation = useDeleteTournamentReservation(tournamentId);
+  const rebuy = useRebuyTournamentReservation(tournamentId);
   const countdown = useTournamentCountdown(tournament);
 
   const current = countdown.currentItem;
   const myReservation = (reservations ?? []).find((r) => r.userId === user?.id);
   const alreadyReserved = myReservation !== undefined;
   const isPlaying = myReservation?.status === 'accepted';
-  // Personas que reservaron lugar (pendientes + aceptados; los rechazados no cuentan).
-  const reservedPlayers = (reservations ?? []).filter(
-    (r) => r.status === 'pending' || r.status === 'accepted',
-  ).length;
+  // "Levantado" = como eliminado del torneo, pero con opcion de rebuy para re-entrar.
+  const isStoodUp = myReservation?.status === 'stood_up';
+  // "Eliminado" = fuera del torneo sin rebuy; su reserva sigue contabilizandose.
+  const isEliminated = myReservation?.status === 'eliminated';
 
   const reserve = useReserve((target, userId) => createTournamentReservation(target.id, userId));
 
   const state: ReservationState =
-    alreadyReserved
-      ? isPlaying
-        ? 'playing'
-        : 'reserved'
-      : reserve.reservedIds.has(tournamentId)
-        ? 'reserved'
-        : null;
+    isStoodUp || isEliminated
+      ? 'reserved'
+      : alreadyReserved
+        ? isPlaying
+          ? 'playing'
+          : 'reserved'
+        : reserve.reservedIds.has(tournamentId)
+          ? 'reserved'
+          : null;
 
   if (isLoading) {
     return (
@@ -162,8 +166,16 @@ export default function TournamentDetailScreen() {
         <Badge label={t(`status.${tournament.status}`)} tone={tournament.status === 'registering' ? 'primary' : 'neutral'} />
         {state ? (
           <Badge
-            label={state === 'playing' ? t('tournament.playing') : t('tournament.reserved')}
-            tone={state === 'playing' ? 'success' : 'warning'}
+            label={
+              isEliminated
+                ? t('tournament.eliminated')
+                : isStoodUp
+                  ? t('tournament.stoodUp')
+                  : state === 'playing'
+                    ? t('tournament.playing')
+                    : t('tournament.reserved')
+            }
+            tone={isEliminated ? 'danger' : isStoodUp ? 'warning' : state === 'playing' ? 'success' : 'warning'}
           />
         ) : null}
       </View>
@@ -174,8 +186,45 @@ export default function TournamentDetailScreen() {
         </AppText>
       ) : null}
 
-      {state === 'playing' ? (
+      {isPlaying ? (
         <AppButton title={t('tournament.playing')} icon="checkmark-circle-outline" variant="success" disabled fullWidth style={styles.reserveBtn} />
+      ) : isEliminated ? (
+        <AppButton
+          title={t('tournament.outOfTournament')}
+          icon="close-circle-outline"
+          variant="secondary"
+          disabled
+          fullWidth
+          style={styles.reserveBtn}
+        />
+      ) : isStoodUp ? (
+        tournament.reEntryEnabled ? (
+          <AppButton
+            title={t('tournament.reEnter')}
+            icon="refresh-outline"
+            variant="primary"
+            fullWidth
+            style={styles.reserveBtn}
+            disabled={rebuy.isPending}
+            loading={rebuy.isPending}
+            onPress={() => {
+              if (!myReservation) return;
+              setRebuyError(null);
+              rebuy.mutate(myReservation.id, {
+                onError: (e) => setRebuyError(getErrorMessage(e)),
+              });
+            }}
+          />
+        ) : (
+          <AppButton
+            title={t('tournament.outOfTournament')}
+            icon="close-circle-outline"
+            variant="secondary"
+            disabled
+            fullWidth
+            style={styles.reserveBtn}
+          />
+        )
       ) : myReservation ? (
         <AppButton
           title={t('tournament.cancelReserve')}
@@ -208,6 +257,12 @@ export default function TournamentDetailScreen() {
         />
       )}
 
+      {rebuyError ? (
+        <AppText variant="caption" color={colors.danger} style={styles.rebuyError}>
+          {rebuyError}
+        </AppText>
+      ) : null}
+
       <View style={styles.tabs}>
         {tabs.map((tab) => {
           const active = activeTab === tab.key;
@@ -236,7 +291,7 @@ export default function TournamentDetailScreen() {
             label={t('tournament.playersInPlay')}
             value={formatNumber(tournament.playersCount ?? 0)}
           />
-          <DetailRow label={t('tournament.reservedPlayers')} value={formatNumber(reservedPlayers)} />
+          <DetailRow label={t('tournament.reservedPlayers')} value={formatNumber(tournament.reservedCount ?? 0)} />
           {tournament.guaranteedPrize != null ? (
             <DetailRow label={t('tournament.guaranteed')} value={formatCurrency(tournament.guaranteedPrize, tournament.currency)} />
           ) : null}
@@ -477,6 +532,7 @@ function PrizesSection({
 const styles = StyleSheet.create({
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   assignedLine: { marginBottom: 8 },
+  rebuyError: { marginBottom: 8 },
   reserveBtn: { marginBottom: 12 },
   tabs: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   tab: {

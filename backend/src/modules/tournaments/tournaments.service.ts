@@ -446,8 +446,13 @@ export class TournamentsService extends CrudService<Tournament> {
         reservation.tableNumber = seat.tableNumber;
         reservation.seatNumber = seat.seatNumber;
       }
-    } else if (dto.status === ReservationStatus.REJECTED || dto.status === ReservationStatus.PENDING) {
-      // Clear assignment if rejected or reverted to pending
+    } else if (
+      dto.status === ReservationStatus.REJECTED ||
+      dto.status === ReservationStatus.PENDING ||
+      dto.status === ReservationStatus.STOOD_UP ||
+      dto.status === ReservationStatus.ELIMINATED
+    ) {
+      // Clear assignment if rejected, reverted to pending, stood up, or eliminated
       reservation.tableNumber = null;
       reservation.seatNumber = null;
     }
@@ -466,13 +471,18 @@ export class TournamentsService extends CrudService<Tournament> {
     if (!reservation) {
       throw new NotFoundException('Reservation not found');
     }
-    if (reservation.status !== ReservationStatus.ACCEPTED) {
-      throw new BadRequestException('Only accepted players can rebuy');
+    if (
+      reservation.status !== ReservationStatus.ACCEPTED &&
+      reservation.status !== ReservationStatus.STOOD_UP
+    ) {
+      throw new BadRequestException('Only accepted or stood-up players can rebuy');
     }
     const current = reservation.reEntries ?? 0;
     if (tournament.maxReEntries !== null && tournament.maxReEntries !== 0 && current >= tournament.maxReEntries) {
       throw new BadRequestException('Max re-entries reached for this player');
     }
+    // Re-activa al jugador como activo (vuelve a entrar al torneo).
+    reservation.status = ReservationStatus.ACCEPTED;
     reservation.reEntries = current + 1;
     reservation.stack = dto.stack ?? tournament.startingStack;
 
@@ -492,6 +502,46 @@ export class TournamentsService extends CrudService<Tournament> {
       { id: tournamentId },
       { currentReEntries: (tournament.currentReEntries ?? 0) + 1 },
     );
+    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+  }
+
+  /** "Get up": el jugador se levanta de la mesa. Queda como eliminado del torneo
+   *  (no cuenta como jugador activo) pero conserva la opcion de hacer rebuy
+   *  para volver a entrar como jugador activo. */
+  async standUp(tournamentId: number, reservationId: number) {
+    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found');
+    }
+    if (reservation.status !== ReservationStatus.ACCEPTED) {
+      throw new BadRequestException('Only accepted players can get up');
+    }
+    reservation.status = ReservationStatus.STOOD_UP;
+    reservation.tableNumber = null;
+    reservation.seatNumber = null;
+    reservation.stack = null;
+    const saved = await this.reservationsRepo.save(reservation);
+    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+  }
+
+  /** "Eliminar jugador": lo saca del torneo (deja de contar en los jugadores en juego)
+   *  pero conserva su reserva, que sigue contabilizandose en las reservas. */
+  async eliminate(tournamentId: number, reservationId: number) {
+    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found');
+    }
+    if (
+      reservation.status !== ReservationStatus.ACCEPTED &&
+      reservation.status !== ReservationStatus.STOOD_UP
+    ) {
+      throw new BadRequestException('Only accepted or stood-up players can be eliminated');
+    }
+    reservation.status = ReservationStatus.ELIMINATED;
+    reservation.tableNumber = null;
+    reservation.seatNumber = null;
+    reservation.stack = null;
+    const saved = await this.reservationsRepo.save(reservation);
     return this.reservationsRepo.findOne({ where: { id: saved.id } });
   }
 

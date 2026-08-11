@@ -8,7 +8,7 @@ export class CreateReservationDto {
 }
 
 export class UpdateReservationDto {
-  @IsIn(['pending', 'accepted', 'rejected'])
+  @IsIn(['pending', 'accepted', 'rejected', 'stood_up', 'eliminated'])
   status: ReservationStatus;
 
   /** Stack inicial del jugador (fichas). Si se omite al aceptar, usa el startingStack del torneo. */

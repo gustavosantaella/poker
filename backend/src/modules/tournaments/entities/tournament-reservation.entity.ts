@@ -7,6 +7,10 @@ export enum ReservationStatus {
   PENDING = 'pending',
   ACCEPTED = 'accepted',
   REJECTED = 'rejected',
+  /** "Levantado": como eliminado del torneo (no cuenta como activo) pero conserva opcion de rebuy. */
+  STOOD_UP = 'stood_up',
+  /** "Eliminado": fuera del torneo sin rebuy. Su reserva se conserva (sigue contando en reservas). */
+  ELIMINATED = 'eliminated',
 }
 
 @Entity('tournament_reservations')

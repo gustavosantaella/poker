@@ -54,3 +54,12 @@ export async function deleteTournamentReservation(
   await apiClient.delete(`/tournaments/${tournamentId}/reservations/${reservationId}`);
 }
 
+/** Rebuy (re-entrada): vuelve a entrar al torneo como jugador activo (re-activa la reserva). */
+export async function rebuyTournamentReservation(
+  tournamentId: number,
+  reservationId: number,
+): Promise<TournamentReservation> {
+  const res = await apiClient.post(`/tournaments/${tournamentId}/reservations/${reservationId}/rebuy`);
+  return res.data.data as TournamentReservation;
+}
+

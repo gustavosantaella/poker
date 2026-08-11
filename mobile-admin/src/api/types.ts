@@ -242,7 +242,7 @@ export interface TournamentPayload {
   blindStructure?: BlindStructureItem[] | null;
 }
 
-export type ReservationStatus = 'pending' | 'accepted' | 'rejected';
+export type ReservationStatus = 'pending' | 'accepted' | 'rejected' | 'stood_up' | 'eliminated';
 
 export interface TournamentReservation {
   id: number;

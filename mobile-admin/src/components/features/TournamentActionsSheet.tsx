@@ -17,6 +17,7 @@ import {
   useAddTournamentChip,
   useChips,
   useDeleteTournament,
+  useEliminateReservation,
   usePauseTournament,
   usePrizes,
   useRebuyReservation,
@@ -24,6 +25,7 @@ import {
   useRemoveTournamentChip,
   useReservations,
   useResumeTournament,
+  useStandUpReservation,
   useStartTournament,
   useTournamentChips,
   useUpdatePrizes,
@@ -287,9 +289,11 @@ function ReservationsView({
   const [assignTable, setAssignTable] = useState<string | null>(null);
   const [assignSeat, setAssignSeat] = useState<string | null>(null);
 
-  // El listado de reservas solo muestra a los que AUN no estan jugando
-  // (pendientes/rechazados); los aceptados se gestionan en el listado de jugadores.
-  const pendingReservations = (reservations ?? []).filter((r) => r.status !== 'accepted');
+  // El listado de reservas solo muestra solicitudes pendientes/rechazadas;
+  // los aceptados/levantados/eliminados se gestionan en el listado de jugadores.
+  const pendingReservations = (reservations ?? []).filter(
+    (r) => r.status === 'pending' || r.status === 'rejected',
+  );
 
   const tables = Math.max(1, tableCount || 1);
   const tableOptions = Array.from({ length: tables }, (_, i) => ({
@@ -543,8 +547,11 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
   const remove = useRemoveReservation(tournament.id);
   const rebuy = useRebuyReservation(tournament.id);
   const update = useUpdateReservation(tournament.id);
+  const standUp = useStandUpReservation(tournament.id);
+  const eliminate = useEliminateReservation(tournament.id);
   const [deleteTarget, setDeleteTarget] = useState<TournamentReservation | null>(null);
   const [rebuyTarget, setRebuyTarget] = useState<TournamentReservation | null>(null);
+  const [actionsTarget, setActionsTarget] = useState<TournamentReservation | null>(null);
   const [rebuyStackInput, setRebuyStackInput] = useState('');
   const [rebuyError, setRebuyError] = useState<string | null>(null);
   const [rebuyTable, setRebuyTable] = useState<string | null>(null);
@@ -556,6 +563,10 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
   const [seatError, setSeatError] = useState<string | null>(null);
 
   const accepted = (reservations ?? []).filter((r) => r.status === 'accepted');
+  const stoodUp = (reservations ?? []).filter((r) => r.status === 'stood_up');
+  // Levantados (como eliminados, con opcion de rebuy) y eliminados (sin rebuy) se muestran debajo.
+  const eliminated = (reservations ?? []).filter((r) => r.status === 'eliminated');
+  const players = [...accepted, ...stoodUp, ...eliminated];
 
   const rebuyTables = Math.max(1, tournament.tableCount ?? 1);
   const rebuyTableOptions = Array.from({ length: rebuyTables }, (_, i) => ({
@@ -571,6 +582,35 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
   const rebuyDisabled = (r: TournamentReservation) =>
     !tournament.reEntryEnabled ||
     (tournament.maxReEntries !== null && tournament.maxReEntries !== 0 && r.reEntries >= tournament.maxReEntries);
+
+  const closeActionsModal = () => setActionsTarget(null);
+
+  const handleActionsDelete = () => {
+    if (actionsTarget) setDeleteTarget(actionsTarget);
+    setActionsTarget(null);
+  };
+
+  const handleActionsRebuy = () => {
+    if (actionsTarget) openRebuyModal(actionsTarget);
+    setActionsTarget(null);
+  };
+
+  const handleActionsSeat = () => {
+    if (actionsTarget) openSeatModal(actionsTarget);
+    setActionsTarget(null);
+  };
+
+  /** "Get up": levanta al jugador de la mesa (libera asiento) pero sigue en el torneo. */
+  const handleGetUp = async () => {
+    if (!actionsTarget) return;
+    try {
+      await standUp.mutateAsync(actionsTarget.id);
+      setActionsTarget(null);
+    } catch (e) {
+      setActionsTarget(null);
+      onError(getErrorMessage(e));
+    }
+  };
 
   const openRebuyModal = (r: TournamentReservation) => {
     setRebuyTarget(r);
@@ -612,7 +652,13 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await remove.mutateAsync(deleteTarget.id);
+      if (deleteTarget.status === 'eliminated') {
+        // Definitivo: borra la reserva (deja de contar en reservas).
+        await remove.mutateAsync(deleteTarget.id);
+      } else {
+        // Eliminar del torneo: deja de contar en juego pero conserva su reserva.
+        await eliminate.mutateAsync(deleteTarget.id);
+      }
       setDeleteTarget(null);
     } catch (e) {
       onError(getErrorMessage(e));
@@ -665,9 +711,13 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
       ) : deleteTarget ? (
         <View style={styles.deleteConfirm}>
           <AppText variant="body" color={colors.textSecondary} style={styles.deleteMsg}>
-            {t('tournament.deletePlayerConfirm', {
-              name: deleteTarget.user?.name ?? `#${deleteTarget.userId}`,
-            })}
+            {deleteTarget.status === 'eliminated'
+              ? t('tournament.deleteDefinitiveConfirm', {
+                  name: deleteTarget.user?.name ?? `#${deleteTarget.userId}`,
+                })
+              : t('tournament.deletePlayerConfirm', {
+                  name: deleteTarget.user?.name ?? `#${deleteTarget.userId}`,
+                })}
           </AppText>
           <View style={styles.deleteActions}>
             <AppButton
@@ -675,58 +725,118 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
               variant="secondary"
               style={styles.deleteBtn}
               onPress={() => setDeleteTarget(null)}
-              disabled={remove.isPending}
+              disabled={remove.isPending || eliminate.isPending}
             />
             <AppButton
-              title={t('common.delete')}
+              title={
+                deleteTarget.status === 'eliminated'
+                  ? t('tournament.deleteDefinitiveTitle')
+                  : t('common.delete')
+              }
               variant="danger"
               style={styles.deleteBtn}
               onPress={handleDelete}
-              loading={remove.isPending}
+              loading={remove.isPending || eliminate.isPending}
             />
           </View>
         </View>
-      ) : accepted.length === 0 ? (
+      ) : players.length === 0 ? (
         <AppText variant="caption" center style={styles.empty}>
           {t('tournament.noPlayers')}
         </AppText>
       ) : (
-        accepted.map((r) => (
+        players.map((r) => (
           <ListItem
             key={r.id}
             title={r.user?.name ?? `#${r.userId}`}
-            subtitle={`${r.user?.email ?? ''} • ${t('tournament.stackLabel')}: ${formatNumber(r.stack ?? tournament.startingStack)} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })} • ${t('tournament.assignedTo', { table: r.tableNumber ?? '-', seat: r.seatNumber ?? '-' })}`}
+            subtitle={
+              r.status === 'accepted'
+                ? `${r.user?.email ?? ''} • ${t('tournament.stackLabel')}: ${formatNumber(r.stack ?? tournament.startingStack)} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })} • ${t('tournament.assignedTo', { table: r.tableNumber ?? '-', seat: r.seatNumber ?? '-' })}`
+                : `${r.user?.email ?? ''} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })}`
+            }
             icon="person"
             right={
               <View style={styles.rowActions}>
-                <AppButton
-                  title=""
-                  size="sm"
-                  variant="ghost"
-                  icon="pencil-outline"
-                  onPress={() => openSeatModal(r)}
-                />
-                {tournament.reEntryEnabled ? (
-                  <AppButton
-                    title={t('tournament.rebuy')}
-                    size="sm"
-                    variant="ghost"
-                    disabled={rebuyDisabled(r)}
-                    onPress={() => openRebuyModal(r)}
-                  />
+                {r.status === 'stood_up' ? (
+                  <View style={[styles.statusBadge, { backgroundColor: colors.warningMuted }]}>
+                    <AppText variant="caption" weight="semibold" color={colors.warning}>
+                      {t('tournament.stoodUp')}
+                    </AppText>
+                  </View>
+                ) : null}
+                {r.status === 'eliminated' ? (
+                  <View style={[styles.statusBadge, { backgroundColor: colors.dangerMuted }]}>
+                    <AppText variant="caption" weight="semibold" color={colors.danger}>
+                      {t('tournament.eliminated')}
+                    </AppText>
+                  </View>
                 ) : null}
                 <AppButton
                   title=""
                   size="sm"
                   variant="ghost"
-                  icon="trash-outline"
-                  onPress={() => setDeleteTarget(r)}
+                  icon="eye-outline"
+                  onPress={() => setActionsTarget(r)}
                 />
               </View>
             }
           />
         ))
       )}
+
+      <AppModal
+        visible={actionsTarget != null}
+        title={t('tournament.playerActions')}
+        onClose={closeActionsModal}
+      >
+        {actionsTarget ? (
+          <View style={styles.actionsList}>
+            <AppText variant="body" weight="semibold" style={styles.modalPlayer}>
+              {actionsTarget.user?.name ?? `#${actionsTarget.userId}`}
+            </AppText>
+            <Pressable style={styles.actionRow} onPress={handleActionsDelete}>
+              <Ionicons name="trash-outline" size={20} color={colors.danger} />
+              <AppText variant="body" weight="medium" color={colors.danger} style={styles.actionLabel}>
+                {actionsTarget.status === 'eliminated'
+                  ? t('tournament.deleteDefinitiveTitle')
+                  : t('tournament.deletePlayerTitle')}
+              </AppText>
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            </Pressable>
+            {actionsTarget.status === 'accepted' ? (
+              <Pressable style={styles.actionRow} onPress={handleGetUp}>
+                <Ionicons name="walk-outline" size={20} color={colors.warning} />
+                <AppText variant="body" weight="medium" color={colors.warning} style={styles.actionLabel}>
+                  {t('tournament.getUp')}
+                </AppText>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </Pressable>
+            ) : null}
+            {actionsTarget.status !== 'eliminated' ? (
+              <Pressable
+                style={styles.actionRow}
+                onPress={handleActionsRebuy}
+                disabled={rebuyDisabled(actionsTarget)}
+              >
+                <Ionicons name="refresh-outline" size={20} color={colors.primary} />
+                <AppText variant="body" weight="medium" style={styles.actionLabel}>
+                  {actionsTarget.status === 'stood_up' ? t('tournament.reEnter') : t('tournament.rebuy')}
+                </AppText>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </Pressable>
+            ) : null}
+            {actionsTarget.status === 'accepted' ? (
+              <Pressable style={styles.actionRow} onPress={handleActionsSeat}>
+                <Ionicons name="swap-horizontal-outline" size={20} color={colors.info} />
+                <AppText variant="body" weight="medium" style={styles.actionLabel}>
+                  {t('tournament.changeTable')}
+                </AppText>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+      </AppModal>
 
       <AppModal
         visible={rebuyTarget != null}
@@ -969,10 +1079,14 @@ const styles = StyleSheet.create({
   rowCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
   rowInfo: { flex: 1 },
   rowActions: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   assignRow: { flexDirection: 'row', gap: 8 },
   assignCol: { flex: 1 },
   saveBtn: { marginTop: 12 },
   modalPlayer: { marginBottom: 12 },
+  actionsList: { gap: 4 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  actionLabel: { flex: 1 },
   prizesInfo: { marginBottom: 12 },
   deleteConfirm: { paddingVertical: 8 },
   deleteMsg: { marginBottom: 16 },

@@ -100,6 +100,20 @@ export async function removeReservation(tournamentId: number, reservationId: num
   await apiClient.delete(`/tournaments/${tournamentId}/reservations/${reservationId}`);
 }
 
+export async function standUpReservation(tournamentId: number, reservationId: number): Promise<TournamentReservation> {
+  const res = await apiClient.post(`/tournaments/${tournamentId}/reservations/${reservationId}/stand-up`);
+  return res.data.data as TournamentReservation;
+}
+
+/** Eliminar jugador del torneo: deja de contar en "en juego" pero conserva su reserva. */
+export async function eliminateReservation(
+  tournamentId: number,
+  reservationId: number,
+): Promise<TournamentReservation> {
+  const res = await apiClient.post(`/tournaments/${tournamentId}/reservations/${reservationId}/eliminate`);
+  return res.data.data as TournamentReservation;
+}
+
 export async function rebuyReservation(
   tournamentId: number,
   reservationId: number,

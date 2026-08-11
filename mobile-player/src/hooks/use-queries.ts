@@ -19,6 +19,7 @@ import {
   fetchTournamentPrizes,
   fetchTournamentReservations,
   fetchTournaments,
+  rebuyTournamentReservation,
   removeTournamentReservation,
 } from '@/api/tournaments';
 
@@ -152,6 +153,19 @@ export function useDeleteTournamentReservation(tournamentId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (reservationId: number) => deleteTournamentReservation(tournamentId, reservationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tournament-reservations', tournamentId] });
+      void qc.invalidateQueries({ queryKey: ['my-tournament-reservations'] });
+      void qc.invalidateQueries({ queryKey: ['tournaments'] });
+    },
+  });
+}
+
+/** Rebuy (re-entrada) de la propia reserva: vuelve a entrar al torneo como jugador activo. */
+export function useRebuyTournamentReservation(tournamentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reservationId: number) => rebuyTournamentReservation(tournamentId, reservationId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['tournament-reservations', tournamentId] });
       void qc.invalidateQueries({ queryKey: ['my-tournament-reservations'] });
