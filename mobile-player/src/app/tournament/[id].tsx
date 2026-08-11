@@ -50,6 +50,10 @@ export default function TournamentDetailScreen() {
   const myReservation = (reservations ?? []).find((r) => r.userId === user?.id);
   const alreadyReserved = myReservation !== undefined;
   const isPlaying = myReservation?.status === 'accepted';
+  // Personas que reservaron lugar (pendientes + aceptados; los rechazados no cuentan).
+  const reservedPlayers = (reservations ?? []).filter(
+    (r) => r.status === 'pending' || r.status === 'accepted',
+  ).length;
 
   const reserve = useReserve((target, userId) => createTournamentReservation(target.id, userId));
 
@@ -228,6 +232,11 @@ export default function TournamentDetailScreen() {
             label={t('tournament.players')}
             value={tournament.maxPlayers == null ? t('tournament.unlimited') : `${tournament.playersCount ?? 0} / ${formatNumber(tournament.maxPlayers)}`}
           />
+          <DetailRow
+            label={t('tournament.playersInPlay')}
+            value={formatNumber(tournament.playersCount ?? 0)}
+          />
+          <DetailRow label={t('tournament.reservedPlayers')} value={formatNumber(reservedPlayers)} />
           {tournament.guaranteedPrize != null ? (
             <DetailRow label={t('tournament.guaranteed')} value={formatCurrency(tournament.guaranteedPrize, tournament.currency)} />
           ) : null}
