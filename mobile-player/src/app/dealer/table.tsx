@@ -36,8 +36,7 @@ export default function DealerTableScreen() {
   const assignment = data?.assignment ?? null;
   const seats = data?.seats ?? [];
   const occupied = useMemo(() => seats.filter((s) => s.player), [seats]);
-  const totalSeats =
-    assignment?.table?.seats ?? assignment?.tournament?.tableCount ?? Math.max(seats.length, 1);
+  const totalSeats = assignment?.table?.seats ?? 9; // mesas de torneo: 9 asientos; cash: configurados
   const seatByNumber = useMemo(() => new Map(seats.map((s) => [s.seat, s])), [seats]);
   const actionTime = assignment?.tournament?.actionTimeSec ?? assignment?.table?.actionTimeSec ?? 30;
 

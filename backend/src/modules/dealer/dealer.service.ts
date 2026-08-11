@@ -136,6 +136,7 @@ export class DealerService {
   }
 
   private async buildSeats(assignment: DealerAssignment): Promise<TableSeat[]> {
+    // Mesa de torneo: 9 asientos por mesa (SEATS_PER_TABLE) con las reservas aceptadas.
     if (assignment.tournamentId && assignment.tableNumber) {
       const reservations = await this.tournamentResRepo.find({
         where: {
@@ -144,7 +145,7 @@ export class DealerService {
           status: ReservationStatus.ACCEPTED,
         },
       });
-      const total = assignment.tournament?.tableCount ?? reservations.length;
+      const total = 9;
       return Array.from({ length: total }, (_, i) => {
         const res = reservations.find((r) => r.seatNumber === i + 1);
         return {
