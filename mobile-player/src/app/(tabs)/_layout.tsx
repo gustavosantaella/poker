@@ -38,17 +38,17 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="tables"
-        options={{
-          title: t('tabs.tables'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="grid" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="tournaments"
         options={{
           title: t('tabs.tournaments'),
           tabBarIcon: ({ color, size }) => <Ionicons name="trophy" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tables"
+        options={{
+          title: t('tabs.tables'),
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

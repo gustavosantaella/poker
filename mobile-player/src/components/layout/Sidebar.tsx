@@ -90,8 +90,8 @@ export function Sidebar({ visible, onClose }: { visible: boolean; onClose: () =>
   const mainItems: SidebarItemDef[] = [
     { key: 'home', label: t('tabs.home'), path: '/', icon: 'home' },
     { key: 'calendar', label: t('calendar.title'), path: '/calendar', icon: 'calendar' },
-    { key: 'tables', label: t('tabs.tables'), path: '/tables', icon: 'grid' },
     { key: 'tournaments', label: t('tabs.tournaments'), path: '/tournaments', icon: 'trophy' },
+    { key: 'tables', label: t('tabs.tables'), path: '/tables', icon: 'grid' },
   ];
   const moreItems: SidebarItemDef[] = [
     { key: 'admins', label: t('tabs.admins'), path: '/admins', icon: 'people', chip: 'aa' },

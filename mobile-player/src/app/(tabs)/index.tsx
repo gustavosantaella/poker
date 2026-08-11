@@ -70,6 +70,20 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.sectionHeader}>
+        <AppText variant="subtitle">{t('home.upcomingTournaments')}</AppText>
+        <AppButton title={t('home.seeAll')} variant="ghost" size="sm" onPress={() => router.push('/tournaments')} />
+      </View>
+      {tournaments.map((tournament) => (
+        <TournamentCard
+          key={tournament.id}
+          tournament={tournament}
+          state={stateForTournament(tournament.id)}
+          onPress={() => router.push(`/tournament/${tournament.id}`)}
+          onReserve={() => reserveTournament.open({ id: tournament.id, name: tournament.name })}
+        />
+      ))}
+
+      <View style={styles.sectionHeader}>
         <AppText variant="subtitle">{t('home.availableTables')}</AppText>
         <AppButton title={t('home.seeAll')} variant="ghost" size="sm" onPress={() => router.push('/tables')} />
       </View>
@@ -86,20 +100,6 @@ export default function HomeScreen() {
           />
         ))
       )}
-
-      <View style={styles.sectionHeader}>
-        <AppText variant="subtitle">{t('home.upcomingTournaments')}</AppText>
-        <AppButton title={t('home.seeAll')} variant="ghost" size="sm" onPress={() => router.push('/tournaments')} />
-      </View>
-      {tournaments.map((tournament) => (
-        <TournamentCard
-          key={tournament.id}
-          tournament={tournament}
-          state={stateForTournament(tournament.id)}
-          onPress={() => router.push(`/tournament/${tournament.id}`)}
-          onReserve={() => reserveTournament.open({ id: tournament.id, name: tournament.name })}
-        />
-      ))}
 
       <ConfirmModal
         visible={reserveTable.target != null}
