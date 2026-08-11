@@ -131,6 +131,12 @@ export class CreateTournamentDto {
   @Min(0)
   adminFeeValue?: number;
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  tableCount?: number;
+
   // Blind structure (auto-generated from blindConfig, or fully manual)
   @IsOptional()
   @ValidateNested()

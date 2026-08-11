@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DeepPartial, MoreThan, Repository } from 'typeorm';
 import { CrudOptions, CrudService } from '../../common/services/crud.service';
 import { Paginated } from '../../common/types/paginated';
 import { Chip } from '../chips/entities/chip.entity';
@@ -123,6 +123,15 @@ export class TournamentsService extends CrudService<Tournament> {
       nextStructure = blindStructure as BlindStructureItem[];
     } else if (blindConfig) {
       nextStructure = buildBlindStructure(blindConfig as BuildBlindStructureParams).items;
+    }
+
+    // Si se redujo el numero de mesas, desasignar a los jugadores de las mesas eliminadas.
+    // (se reasignan automaticamente en el proximo accept/rebuy o manualmente).
+    if (dto.tableCount != null && dto.tableCount < (current.tableCount ?? 1)) {
+      await this.reservationsRepo.update(
+        { tournamentId: id, tableNumber: MoreThan(dto.tableCount) },
+        { tableNumber: null, seatNumber: null },
+      );
     }
 
     return super.update(id, {
@@ -302,6 +311,61 @@ export class TournamentsService extends CrudService<Tournament> {
   }
   // ---------------- Reservas ----------------
 
+  /** Asientos disponibles por mesa. */
+  private readonly SEATS_PER_TABLE = 9;
+
+  /**
+   * Asigna automaticamente una mesa (1..tableCount) y un asiento libre (1..SEATS_PER_TABLE)
+   * al jugador aceptado: elige la primera mesa con espacio y el primer asiento libre.
+   */
+  private async autoAssignSeat(
+    tournamentId: number,
+    tableCount: number,
+    excludeReservationId: number,
+  ): Promise<{ tableNumber: number; seatNumber: number }> {
+    const tables = Math.max(1, Math.min(tableCount || 1, 50));
+    const accepted = await this.reservationsRepo.find({
+      where: { tournamentId, status: ReservationStatus.ACCEPTED },
+    });
+    const occupied = new Set(
+      accepted
+        .filter((r) => r.id !== excludeReservationId && r.tableNumber != null && r.seatNumber != null)
+        .map((r) => `${r.tableNumber}-${r.seatNumber}`),
+    );
+
+    for (let tableNumber = 1; tableNumber <= tables; tableNumber++) {
+      for (let seatNumber = 1; seatNumber <= this.SEATS_PER_TABLE; seatNumber++) {
+        if (!occupied.has(`${tableNumber}-${seatNumber}`)) {
+          return { tableNumber, seatNumber };
+        }
+      }
+    }
+    throw new BadRequestException('No seats available: all tables are full');
+  }
+
+  /** Valida que una mesa/asiento manual no esté ocupada por otro jugador aceptado. */
+  private async validateSeatAvailable(
+    tournamentId: number,
+    tableNumber: number,
+    seatNumber: number,
+    excludeReservationId: number,
+  ): Promise<void> {
+    const tournament = await this.repository.findOne({ where: { id: tournamentId } });
+    if (!tournament) throw new NotFoundException('Tournament not found');
+    if (tableNumber < 1 || tableNumber > (tournament.tableCount ?? 1)) {
+      throw new BadRequestException(`Table must be between 1 and ${tournament.tableCount ?? 1}`);
+    }
+    if (seatNumber < 1 || seatNumber > this.SEATS_PER_TABLE) {
+      throw new BadRequestException(`Seat must be between 1 and ${this.SEATS_PER_TABLE}`);
+    }
+    const conflict = await this.reservationsRepo.findOne({
+      where: { tournamentId, status: ReservationStatus.ACCEPTED, tableNumber, seatNumber },
+    });
+    if (conflict && conflict.id !== excludeReservationId) {
+      throw new BadRequestException(`Seat ${seatNumber} on table ${tableNumber} is already taken`);
+    }
+  }
+
   listReservations(tournamentId: number) {
     return this.reservationsRepo.find({ where: { tournamentId }, order: { createdAt: 'ASC' } });
   }
@@ -362,10 +426,32 @@ export class TournamentsService extends CrudService<Tournament> {
     if (dto.stack !== undefined && dto.stack !== null) {
       reservation.stack = dto.stack;
     } else if (dto.status === ReservationStatus.ACCEPTED && reservation.stack == null) {
-      // Por defecto, el jugador entra con el stack configurado en el torneo.
       const tournament = await this.findOne(tournamentId);
       reservation.stack = tournament.startingStack;
     }
+
+    // Auto-assign table/seat when accepting a player
+    if (dto.status === ReservationStatus.ACCEPTED) {
+      const tournament = await this.repository.findOne({ where: { id: tournamentId } });
+      if (!tournament) throw new NotFoundException('Tournament not found');
+
+      if (dto.tableNumber != null && dto.seatNumber != null) {
+        // Manual assignment — validate no conflict
+        await this.validateSeatAvailable(tournamentId, dto.tableNumber, dto.seatNumber, reservationId);
+        reservation.tableNumber = dto.tableNumber;
+        reservation.seatNumber = dto.seatNumber;
+      } else {
+        // Auto-assign
+        const seat = await this.autoAssignSeat(tournamentId, tournament.tableCount, reservationId);
+        reservation.tableNumber = seat.tableNumber;
+        reservation.seatNumber = seat.seatNumber;
+      }
+    } else if (dto.status === ReservationStatus.REJECTED || dto.status === ReservationStatus.PENDING) {
+      // Clear assignment if rejected or reverted to pending
+      reservation.tableNumber = null;
+      reservation.seatNumber = null;
+    }
+
     const saved = await this.reservationsRepo.save(reservation);
     return this.reservationsRepo.findOne({ where: { id: saved.id } });
   }
@@ -389,6 +475,18 @@ export class TournamentsService extends CrudService<Tournament> {
     }
     reservation.reEntries = current + 1;
     reservation.stack = dto.stack ?? tournament.startingStack;
+
+    // Re-assign table/seat on rebuy
+    if (dto.tableNumber != null && dto.seatNumber != null) {
+      await this.validateSeatAvailable(tournamentId, dto.tableNumber, dto.seatNumber, reservationId);
+      reservation.tableNumber = dto.tableNumber;
+      reservation.seatNumber = dto.seatNumber;
+    } else {
+      const seat = await this.autoAssignSeat(tournamentId, tournament.tableCount, reservationId);
+      reservation.tableNumber = seat.tableNumber;
+      reservation.seatNumber = seat.seatNumber;
+    }
+
     const saved = await this.reservationsRepo.save(reservation);
     await this.repository.update(
       { id: tournamentId },

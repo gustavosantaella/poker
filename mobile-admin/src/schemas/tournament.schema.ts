@@ -46,6 +46,7 @@ export const createTournamentSchema = (t: TFunction) =>
       maxPlayers: optionalInt(2, 1000),
       maxPlayersUnlimited: z.boolean(),
       registrationOpen: z.boolean(),
+      tableCount: z.coerce.number().int().min(1, t('validation.tableCountMin')).max(20),
       reEntryEnabled: z.boolean(),
       reEntryUnlimited: z.boolean(),
       maxReEntries: optionalInt(0),

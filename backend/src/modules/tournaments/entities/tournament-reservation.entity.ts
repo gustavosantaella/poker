@@ -35,4 +35,12 @@ export class TournamentReservation extends BaseEntity {
   /** Cantidad de rebuys (re-entradas) realizados por el jugador. */
   @Column({ type: 'int', default: 0 })
   reEntries: number = 0;
+
+  /** Mesa asignada (1..tableCount). */
+  @Column({ type: 'int', nullable: true })
+  tableNumber: number | null;
+
+  /** Asiento en la mesa (1..9). */
+  @Column({ type: 'int', nullable: true })
+  seatNumber: number | null;
 }

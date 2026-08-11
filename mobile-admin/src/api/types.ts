@@ -130,6 +130,7 @@ export interface Tournament {
   reservedCount?: number;
   playersCount?: number;
   registrationOpen: boolean;
+  tableCount: number;
   reEntryEnabled: boolean;
   maxReEntries: number | null;
   lateRegistrationEnabled: boolean;
@@ -222,6 +223,7 @@ export interface TournamentPayload {
   startingStack: number;
   maxPlayers?: number | null;
   registrationOpen?: boolean;
+  tableCount?: number;
   reEntryEnabled?: boolean;
   maxReEntries?: number | null;
   lateRegistrationEnabled?: boolean;
@@ -252,6 +254,9 @@ export interface TournamentReservation {
   stack: number | null;
   /** Cantidad de rebuys (re-entradas) realizados por el jugador. */
   reEntries: number;
+  /** Mesa asignada (1..tableCount) y asiento (1..9). Null = sin asignar. */
+  tableNumber: number | null;
+  seatNumber: number | null;
   createdAt: string;
   updatedAt: string;
 }

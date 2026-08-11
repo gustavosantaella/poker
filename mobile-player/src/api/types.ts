@@ -83,6 +83,7 @@ export interface Tournament {
   status: TournamentStatus;
   mode: GameMode;
   registrationOpen: boolean;
+  tableCount: number;
   currency: string;
   buyIn: number;
   fee: number;
@@ -141,6 +142,8 @@ export interface TournamentReservation {
   status: 'pending' | 'accepted' | 'rejected';
   stack: number | null;
   reEntries: number;
+  tableNumber: number | null;
+  seatNumber: number | null;
   createdAt: string;
   updatedAt: string;
 }

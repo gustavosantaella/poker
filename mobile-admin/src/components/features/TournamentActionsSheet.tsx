@@ -16,10 +16,8 @@ import { LoadingView } from '@/components/ui/LoadingView';
 import {
   useAddTournamentChip,
   useChips,
-  useCreateReservation,
   useDeleteTournament,
   usePauseTournament,
-  usePlayers,
   usePrizes,
   useRebuyReservation,
   useRemoveReservation,
@@ -159,7 +157,12 @@ export function TournamentActionsSheet({
         ) : section === 'structure' ? (
           <StructureView tournament={tournament} countdown={countdown} />
         ) : section === 'reservations' ? (
-          <ReservationsView tournamentId={tournament.id} startingStack={tournament.startingStack} onError={setError} />
+          <ReservationsView
+          tournamentId={tournament.id}
+          startingStack={tournament.startingStack}
+          tableCount={tournament.tableCount ?? 1}
+          onError={setError}
+        />
         ) : section === 'chips' ? (
           <ChipsView tournamentId={tournament.id} onError={setError} />
         ) : section === 'players' ? (
@@ -266,24 +269,37 @@ function StructureView({
 function ReservationsView({
   tournamentId,
   startingStack,
+  tableCount,
   onError,
 }: {
   tournamentId: number;
   startingStack: number;
+  tableCount: number;
   onError: (m: string) => void;
 }) {
   const { t } = useI18n();
   const { data: reservations, isLoading } = useReservations(tournamentId);
-  const { data: players } = usePlayers();
-  const create = useCreateReservation(tournamentId);
   const update = useUpdateReservation(tournamentId);
   const remove = useRemoveReservation(tournamentId);
-  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [stackTarget, setStackTarget] = useState<TournamentReservation | null>(null);
   const [stackInput, setStackInput] = useState('');
   const [stackError, setStackError] = useState<string | null>(null);
+  const [assignTable, setAssignTable] = useState<string | null>(null);
+  const [assignSeat, setAssignSeat] = useState<string | null>(null);
 
-  const playerOptions = (players ?? []).map((p) => ({ label: p.name, value: String(p.id) }));
+  // El listado de reservas solo muestra a los que AUN no estan jugando
+  // (pendientes/rechazados); los aceptados se gestionan en el listado de jugadores.
+  const pendingReservations = (reservations ?? []).filter((r) => r.status !== 'accepted');
+
+  const tables = Math.max(1, tableCount || 1);
+  const tableOptions = Array.from({ length: tables }, (_, i) => ({
+    label: `${t('tournament.tableLabel')} ${i + 1}`,
+    value: String(i + 1),
+  }));
+  const seatOptions = Array.from({ length: 9 }, (_, i) => ({
+    label: `${t('tournament.seatLabel')} ${i + 1}`,
+    value: String(i + 1),
+  }));
 
   const statusLabel = (status: string) =>
     status === 'accepted'
@@ -295,26 +311,20 @@ function ReservationsView({
   /** Stack efectivo: el configurado por el admin o, por defecto, el del torneo. */
   const effectiveStack = (r: TournamentReservation) => r.stack ?? startingStack;
 
-  const handleAdd = async () => {
-    if (!selectedPlayer) return;
-    try {
-      await create.mutateAsync(Number(selectedPlayer));
-      setSelectedPlayer(null);
-    } catch (e) {
-      onError(getErrorMessage(e));
-    }
-  };
-
   const openStackModal = (reservation: TournamentReservation) => {
     setStackTarget(reservation);
     setStackInput(String(effectiveStack(reservation)));
     setStackError(null);
+    setAssignTable(reservation.tableNumber != null ? String(reservation.tableNumber) : null);
+    setAssignSeat(reservation.seatNumber != null ? String(reservation.seatNumber) : null);
   };
 
   const closeStackModal = () => {
     setStackTarget(null);
     setStackInput('');
     setStackError(null);
+    setAssignTable(null);
+    setAssignSeat(null);
   };
 
   const handleAccept = async () => {
@@ -325,7 +335,14 @@ function ReservationsView({
       return;
     }
     try {
-      await update.mutateAsync({ id: stackTarget.id, status: 'accepted', stack });
+      await update.mutateAsync({
+        id: stackTarget.id,
+        status: 'accepted',
+        stack,
+        ...(assignTable != null && assignSeat != null
+          ? { tableNumber: Number(assignTable), seatNumber: Number(assignSeat) }
+          : {}),
+      });
       closeStackModal();
     } catch (e) {
       setStackError(getErrorMessage(e));
@@ -336,23 +353,14 @@ function ReservationsView({
 
   return (
     <View>
-      <AppSelect
-        label={t('tournament.selectPlayer')}
-        placeholder={t('tournament.selectPlayer')}
-        value={selectedPlayer}
-        options={playerOptions}
-        onSelect={setSelectedPlayer}
-      />
-      <AppButton title={t('tournament.addReservation')} size="sm" onPress={handleAdd} loading={create.isPending} />
-
       {isLoading ? (
         <LoadingView />
-      ) : (reservations ?? []).length === 0 ? (
+      ) : pendingReservations.length === 0 ? (
         <AppText variant="caption" center style={styles.empty}>
           {t('tournament.noReservations')}
         </AppText>
       ) : (
-        (reservations ?? []).map((r) => (
+        pendingReservations.map((r) => (
           <AppCard key={r.id} style={styles.rowCard}>
             <View style={styles.rowInfo}>
               <AppText variant="body" weight="medium">
@@ -361,7 +369,7 @@ function ReservationsView({
               <AppText variant="caption">
                 {r.user?.email ?? ''} • {statusLabel(r.status)}
                 {r.status === 'accepted'
-                  ? ` • ${t('tournament.stackLabel')}: ${formatNumber(effectiveStack(r))} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })}`
+                  ? ` • ${t('tournament.stackLabel')}: ${formatNumber(effectiveStack(r))} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })} • ${t('tournament.assignedTo', { table: r.tableNumber ?? '-', seat: r.seatNumber ?? '-' })}`
                   : ''}
               </AppText>
             </View>
@@ -426,6 +434,26 @@ function ReservationsView({
               helper={t('tournament.stackDefaultHelper', { stack: formatNumber(startingStack) })}
               error={stackError ?? undefined}
             />
+            <View style={styles.assignRow}>
+              <View style={styles.assignCol}>
+                <AppSelect
+                  label={t('tournament.tableLabel')}
+                  placeholder={t('tournament.autoAssign')}
+                  value={assignTable}
+                  options={tableOptions}
+                  onSelect={setAssignTable}
+                />
+              </View>
+              <View style={styles.assignCol}>
+                <AppSelect
+                  label={t('tournament.seatLabel')}
+                  placeholder={t('tournament.autoAssign')}
+                  value={assignSeat}
+                  options={seatOptions}
+                  onSelect={setAssignSeat}
+                />
+              </View>
+            </View>
           </View>
         ) : null}
       </AppModal>
@@ -514,12 +542,30 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
   const { data: reservations, isLoading } = useReservations(tournament.id);
   const remove = useRemoveReservation(tournament.id);
   const rebuy = useRebuyReservation(tournament.id);
+  const update = useUpdateReservation(tournament.id);
   const [deleteTarget, setDeleteTarget] = useState<TournamentReservation | null>(null);
   const [rebuyTarget, setRebuyTarget] = useState<TournamentReservation | null>(null);
   const [rebuyStackInput, setRebuyStackInput] = useState('');
   const [rebuyError, setRebuyError] = useState<string | null>(null);
+  const [rebuyTable, setRebuyTable] = useState<string | null>(null);
+  const [rebuySeat, setRebuySeat] = useState<string | null>(null);
+  const [seatTarget, setSeatTarget] = useState<TournamentReservation | null>(null);
+  const [seatStackInput, setSeatStackInput] = useState('');
+  const [seatTable, setSeatTable] = useState<string | null>(null);
+  const [seatSeat, setSeatSeat] = useState<string | null>(null);
+  const [seatError, setSeatError] = useState<string | null>(null);
 
   const accepted = (reservations ?? []).filter((r) => r.status === 'accepted');
+
+  const rebuyTables = Math.max(1, tournament.tableCount ?? 1);
+  const rebuyTableOptions = Array.from({ length: rebuyTables }, (_, i) => ({
+    label: `${t('tournament.tableLabel')} ${i + 1}`,
+    value: String(i + 1),
+  }));
+  const rebuySeatOptions = Array.from({ length: 9 }, (_, i) => ({
+    label: `${t('tournament.seatLabel')} ${i + 1}`,
+    value: String(i + 1),
+  }));
 
   /** Rebuy deshabilitado si el torneo no permite re-entradas o si se alcanzo el maximo por jugador. */
   const rebuyDisabled = (r: TournamentReservation) =>
@@ -530,12 +576,16 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
     setRebuyTarget(r);
     setRebuyStackInput(String(tournament.startingStack));
     setRebuyError(null);
+    setRebuyTable(r.tableNumber != null ? String(r.tableNumber) : null);
+    setRebuySeat(r.seatNumber != null ? String(r.seatNumber) : null);
   };
 
   const closeRebuyModal = () => {
     setRebuyTarget(null);
     setRebuyStackInput('');
     setRebuyError(null);
+    setRebuyTable(null);
+    setRebuySeat(null);
   };
 
   const handleRebuy = async () => {
@@ -546,7 +596,13 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
       return;
     }
     try {
-      await rebuy.mutateAsync({ id: rebuyTarget.id, stack });
+      await rebuy.mutateAsync({
+        id: rebuyTarget.id,
+        stack,
+        ...(rebuyTable != null && rebuySeat != null
+          ? { tableNumber: Number(rebuyTable), seatNumber: Number(rebuySeat) }
+          : {}),
+      });
       closeRebuyModal();
     } catch (e) {
       setRebuyError(getErrorMessage(e));
@@ -560,6 +616,45 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
       setDeleteTarget(null);
     } catch (e) {
       onError(getErrorMessage(e));
+    }
+  };
+
+  /** Editar mesa/asiento (y stack) de un jugador aceptado. */
+  const openSeatModal = (r: TournamentReservation) => {
+    setSeatTarget(r);
+    setSeatStackInput(String(r.stack ?? tournament.startingStack));
+    setSeatTable(r.tableNumber != null ? String(r.tableNumber) : null);
+    setSeatSeat(r.seatNumber != null ? String(r.seatNumber) : null);
+    setSeatError(null);
+  };
+
+  const closeSeatModal = () => {
+    setSeatTarget(null);
+    setSeatStackInput('');
+    setSeatTable(null);
+    setSeatSeat(null);
+    setSeatError(null);
+  };
+
+  const handleSaveSeat = async () => {
+    if (!seatTarget) return;
+    const stack = Number(seatStackInput.trim());
+    if (!Number.isInteger(stack) || stack < 1) {
+      setSeatError(t('tournament.invalidStack'));
+      return;
+    }
+    try {
+      await update.mutateAsync({
+        id: seatTarget.id,
+        status: 'accepted',
+        stack,
+        ...(seatTable != null && seatSeat != null
+          ? { tableNumber: Number(seatTable), seatNumber: Number(seatSeat) }
+          : {}),
+      });
+      closeSeatModal();
+    } catch (e) {
+      setSeatError(getErrorMessage(e));
     }
   };
 
@@ -600,10 +695,17 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
           <ListItem
             key={r.id}
             title={r.user?.name ?? `#${r.userId}`}
-            subtitle={`${r.user?.email ?? ''} • ${t('tournament.stackLabel')}: ${formatNumber(r.stack ?? tournament.startingStack)} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })}`}
+            subtitle={`${r.user?.email ?? ''} • ${t('tournament.stackLabel')}: ${formatNumber(r.stack ?? tournament.startingStack)} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })} • ${t('tournament.assignedTo', { table: r.tableNumber ?? '-', seat: r.seatNumber ?? '-' })}`}
             icon="person"
             right={
               <View style={styles.rowActions}>
+                <AppButton
+                  title=""
+                  size="sm"
+                  variant="ghost"
+                  icon="pencil-outline"
+                  onPress={() => openSeatModal(r)}
+                />
                 {tournament.reEntryEnabled ? (
                   <AppButton
                     title={t('tournament.rebuy')}
@@ -662,6 +764,86 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
               helper={t('tournament.stackDefaultHelper', { stack: formatNumber(tournament.startingStack) })}
               error={rebuyError ?? undefined}
             />
+            <View style={styles.assignRow}>
+              <View style={styles.assignCol}>
+                <AppSelect
+                  label={t('tournament.tableLabel')}
+                  placeholder={t('tournament.autoAssign')}
+                  value={rebuyTable}
+                  options={rebuyTableOptions}
+                  onSelect={setRebuyTable}
+                />
+              </View>
+              <View style={styles.assignCol}>
+                <AppSelect
+                  label={t('tournament.seatLabel')}
+                  placeholder={t('tournament.autoAssign')}
+                  value={rebuySeat}
+                  options={rebuySeatOptions}
+                  onSelect={setRebuySeat}
+                />
+              </View>
+            </View>
+          </View>
+        ) : null}
+      </AppModal>
+
+      <AppModal
+        visible={seatTarget != null}
+        title={t('tournament.editSeat')}
+        onClose={closeSeatModal}
+        footer={
+          <>
+            <AppButton
+              title={t('common.cancel')}
+              variant="secondary"
+              style={{ flex: 1 }}
+              onPress={closeSeatModal}
+              disabled={update.isPending}
+            />
+            <AppButton
+              title={t('common.save')}
+              variant="primary"
+              style={{ flex: 1 }}
+              onPress={handleSaveSeat}
+              loading={update.isPending}
+            />
+          </>
+        }
+      >
+        {seatTarget ? (
+          <View>
+            <AppText variant="body" weight="semibold" style={styles.modalPlayer}>
+              {seatTarget.user?.name ?? `#${seatTarget.userId}`}
+            </AppText>
+            <AppTextField
+              label={t('tournament.stackLabel')}
+              keyboardType="number-pad"
+              value={seatStackInput}
+              onChangeText={setSeatStackInput}
+              helper={t('tournament.stackDefaultHelper', { stack: formatNumber(tournament.startingStack) })}
+              error={seatError ?? undefined}
+            />
+            <View style={styles.assignRow}>
+              <View style={styles.assignCol}>
+                <AppSelect
+                  label={t('tournament.tableLabel')}
+                  placeholder={t('tournament.autoAssign')}
+                  value={seatTable}
+                  options={rebuyTableOptions}
+                  onSelect={setSeatTable}
+                />
+              </View>
+              <View style={styles.assignCol}>
+                <AppSelect
+                  label={t('tournament.seatLabel')}
+                  placeholder={t('tournament.autoAssign')}
+                  value={seatSeat}
+                  options={rebuySeatOptions}
+                  onSelect={setSeatSeat}
+                />
+              </View>
+            </View>
           </View>
         ) : null}
       </AppModal>
@@ -787,6 +969,8 @@ const styles = StyleSheet.create({
   rowCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
   rowInfo: { flex: 1 },
   rowActions: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  assignRow: { flexDirection: 'row', gap: 8 },
+  assignCol: { flex: 1 },
   saveBtn: { marginTop: 12 },
   modalPlayer: { marginBottom: 12 },
   prizesInfo: { marginBottom: 12 },

@@ -85,11 +85,14 @@ export async function updateReservation(
   reservationId: number,
   status: ReservationStatus,
   stack?: number,
+  tableNumber?: number,
+  seatNumber?: number,
 ): Promise<TournamentReservation> {
-  const res = await apiClient.patch(
-    `/tournaments/${tournamentId}/reservations/${reservationId}`,
-    stack != null ? { status, stack } : { status },
-  );
+  const body: Record<string, unknown> = { status };
+  if (stack != null) body.stack = stack;
+  if (tableNumber != null) body.tableNumber = tableNumber;
+  if (seatNumber != null) body.seatNumber = seatNumber;
+  const res = await apiClient.patch(`/tournaments/${tournamentId}/reservations/${reservationId}`, body);
   return res.data.data as TournamentReservation;
 }
 
@@ -101,10 +104,16 @@ export async function rebuyReservation(
   tournamentId: number,
   reservationId: number,
   stack?: number,
+  tableNumber?: number,
+  seatNumber?: number,
 ): Promise<TournamentReservation> {
+  const body: Record<string, unknown> = {};
+  if (stack != null) body.stack = stack;
+  if (tableNumber != null) body.tableNumber = tableNumber;
+  if (seatNumber != null) body.seatNumber = seatNumber;
   const res = await apiClient.post(
     `/tournaments/${tournamentId}/reservations/${reservationId}/rebuy`,
-    stack != null ? { stack } : {},
+    body,
   );
   return res.data.data as TournamentReservation;
 }

@@ -63,6 +63,7 @@ export default function ProfileScreen() {
         key: `t-${r.id}`,
         name: r.table?.name ?? `#${r.tableId}`,
         status: r.status === 'confirmed' ? t('table.playing') : t('table.reserved'),
+        assignment: undefined,
         reservationId: r.id,
         type: 'table' as const,
         removable: r.status === 'pending',
@@ -73,6 +74,10 @@ export default function ProfileScreen() {
         key: `m-${r.id}`,
         name: r.tournament?.name ?? `#${r.tournamentId}`,
         status: r.status === 'accepted' ? t('tournament.playing') : t('tournament.reserved'),
+        assignment:
+          r.status === 'accepted' && r.tableNumber != null && r.seatNumber != null
+            ? t('tournament.assignedTo', { table: r.tableNumber, seat: r.seatNumber })
+            : undefined,
         reservationId: r.id,
         type: 'tournament' as const,
         removable: r.status === 'pending',
@@ -202,6 +207,11 @@ export default function ProfileScreen() {
                   {row.name}
                 </AppText>
                 <AppText variant="caption">{row.status}</AppText>
+                {row.assignment ? (
+                  <AppText variant="caption" color={colors.primary}>
+                    {row.assignment}
+                  </AppText>
+                ) : null}
               </View>
               {row.removable ? (
                 <AppButton

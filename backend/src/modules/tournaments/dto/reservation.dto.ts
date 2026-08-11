@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { ReservationStatus } from '../entities/tournament-reservation.entity';
 
 export class CreateReservationDto {
@@ -16,6 +16,19 @@ export class UpdateReservationDto {
   @IsInt()
   @Min(1)
   stack?: number;
+
+  /** Mesa asignada manualmente (1..tableCount). Si se omite, se asigna automáticamente. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  tableNumber?: number;
+
+  /** Asiento asignado manualmente (1..9). Si se omite, se asigna automáticamente. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(9)
+  seatNumber?: number;
 }
 
 export class RebuyDto {
@@ -24,4 +37,17 @@ export class RebuyDto {
   @IsInt()
   @Min(1)
   stack?: number;
+
+  /** Mesa asignada manualmente (1..tableCount). Si se omite, se asigna automáticamente. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  tableNumber?: number;
+
+  /** Asiento asignado manualmente (1..9). Si se omite, se asigna automáticamente. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(9)
+  seatNumber?: number;
 }

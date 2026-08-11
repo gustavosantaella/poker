@@ -319,8 +319,19 @@ export function useCreateReservation(tournamentId: number) {
 export function useUpdateReservation(tournamentId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status, stack }: { id: number; status: ReservationStatus; stack?: number }) =>
-      updateReservation(tournamentId, id, status, stack),
+    mutationFn: ({
+      id,
+      status,
+      stack,
+      tableNumber,
+      seatNumber,
+    }: {
+      id: number;
+      status: ReservationStatus;
+      stack?: number;
+      tableNumber?: number;
+      seatNumber?: number;
+    }) => updateReservation(tournamentId, id, status, stack, tableNumber, seatNumber),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
       void qc.invalidateQueries({ queryKey: ['tournaments'] });
@@ -342,7 +353,17 @@ export function useRemoveReservation(tournamentId: number) {
 export function useRebuyReservation(tournamentId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, stack }: { id: number; stack?: number }) => rebuyReservation(tournamentId, id, stack),
+    mutationFn: ({
+      id,
+      stack,
+      tableNumber,
+      seatNumber,
+    }: {
+      id: number;
+      stack?: number;
+      tableNumber?: number;
+      seatNumber?: number;
+    }) => rebuyReservation(tournamentId, id, stack, tableNumber, seatNumber),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
       void qc.invalidateQueries({ queryKey: ['tournaments'] });

@@ -164,6 +164,12 @@ export default function TournamentDetailScreen() {
         ) : null}
       </View>
 
+      {isPlaying && myReservation?.tableNumber != null && myReservation?.seatNumber != null ? (
+        <AppText variant="caption" color={colors.primary} style={styles.assignedLine}>
+          {t('tournament.assignedTo', { table: myReservation.tableNumber, seat: myReservation.seatNumber })}
+        </AppText>
+      ) : null}
+
       {state === 'playing' ? (
         <AppButton title={t('tournament.playing')} icon="checkmark-circle-outline" variant="success" disabled fullWidth style={styles.reserveBtn} />
       ) : myReservation ? (
@@ -461,6 +467,7 @@ function PrizesSection({
 
 const styles = StyleSheet.create({
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  assignedLine: { marginBottom: 8 },
   reserveBtn: { marginBottom: 12 },
   tabs: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   tab: {

@@ -204,6 +204,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         maxPlayers: tournament.maxPlayers ?? undefined,
         maxPlayersUnlimited: tournament.maxPlayers == null,
         registrationOpen: tournament.registrationOpen,
+        tableCount: tournament.tableCount ?? 1,
         reEntryEnabled: tournament.reEntryEnabled,
         reEntryUnlimited: tournament.maxReEntries === 0,
         maxReEntries: tournament.maxReEntries ?? undefined,
@@ -240,6 +241,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         maxPlayers: 9,
         maxPlayersUnlimited: false,
         registrationOpen: true,
+        tableCount: 1,
         reEntryEnabled: true,
         reEntryUnlimited: false,
         maxReEntries: 2,
@@ -276,6 +278,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       startingStack: Number(values.startingStack),
       maxPlayers: values.maxPlayersUnlimited ? null : values.maxPlayers == null ? 9 : Number(values.maxPlayers),
       registrationOpen: values.registrationOpen,
+      tableCount: Number(values.tableCount),
       reEntryEnabled: values.reEntryEnabled,
       maxReEntries: values.reEntryEnabled
         ? values.reEntryUnlimited
@@ -360,6 +363,11 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
               description={t('tournament.unlimitedPlayersDesc')}
             />
             <MaxPlayersField />
+            <FormNumberField
+              name="tableCount"
+              label={t('tournament.tableCount')}
+              helper={t('tournament.tableCountHelper')}
+            />
             <FormSwitch name="registrationOpen" label={t('tournament.registrationOpen')} description={t('tournament.registrationOpenDesc')} />
           </AppCard>
 

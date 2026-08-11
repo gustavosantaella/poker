@@ -137,6 +137,9 @@ export class Tournament extends BaseEntity {
   /** Total de jugadores aceptados (calculado a partir de tournament_reservations, no persistido). */
   playersCount?: number;
 
+  @Column({ type: 'int', default: 1 })
+  tableCount: number = 1;
+
   @Column({ default: true })
   isActive: boolean;
 }
