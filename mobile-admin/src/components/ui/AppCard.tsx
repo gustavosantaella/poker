@@ -3,42 +3,91 @@ import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native'
 import { useTheme } from '@/theme';
 import { radius } from '@/theme/radius';
 import { spacing } from '@/theme/spacing';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export interface AppCardProps {
   children: ReactNode;
   onPress?: () => void;
   padded?: boolean;
   style?: StyleProp<ViewStyle>;
+  variant?: 'default' | 'metallic' | 'gold';
 }
 
-/** Tarjeta con superficie del tema, borde suave y radio consistente. */
-export function AppCard({ children, onPress, padded = true, style }: AppCardProps) {
-  const { colors } = useTheme();
+/** Tarjeta con soporte para degradados metálicos, de oro y superficies del tema. */
+export function AppCard({ children, onPress, padded = true, style, variant = 'metallic' }: AppCardProps) {
+  const { colors, isDark } = useTheme();
+
+  const getGradientColors = (): [string, string, ...string[]] => {
+    if (!isDark) {
+      return [colors.surface, colors.surface];
+    }
+    if (variant === 'gold') {
+      return ['#7A581C', '#BD9A5A', '#F7DF9E', '#E4C17C', '#BD9A5A', '#7A581C']; // Oro metalizado reflectivo
+    }
+    if (variant === 'metallic') {
+      return ['#0B0E14', '#1F2736', '#2F3C54', '#1F2736', '#0B0E14']; // Titanio/Cromo oscuro reflectivo
+    }
+    return [colors.surface, colors.surface];
+  };
+
+  const getBorderColor = () => {
+    if (variant === 'gold') return '#E8C887';
+    return colors.border;
+  };
+
+  const gradientColors = getGradientColors();
+
+  const content = (
+    <View style={{ padding: padded ? spacing.md : 0, flex: 1 }}>
+      {children}
+    </View>
+  );
 
   const cardStyle = [
     styles.card,
     {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      padding: padded ? spacing.md : 0,
+      borderColor: getBorderColor(),
     },
     style,
   ];
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => [cardStyle, pressed && { opacity: 0.9 }]}>
-        {children}
-      </Pressable>
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={cardStyle}
+      >
+        <Pressable
+          onPress={onPress}
+          style={({ pressed }) => [
+            { flex: 1, borderRadius: radius.lg },
+            pressed && { opacity: 0.88 }
+          ]}
+        >
+          {content}
+        </Pressable>
+      </LinearGradient>
     );
   }
 
-  return <View style={cardStyle}>{children}</View>;
+  return (
+    <LinearGradient
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={cardStyle}
+    >
+      {content}
+    </LinearGradient>
+  );
 }
 
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     borderWidth: 1,
+    overflow: 'hidden',
   },
 });

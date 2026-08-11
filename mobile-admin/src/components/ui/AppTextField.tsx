@@ -30,6 +30,7 @@ export function AppTextField({
 }: AppTextFieldProps) {
   const { colors } = useTheme();
   const [secure, setSecure] = useState(!!secureTextEntry);
+  const [isFocused, setIsFocused] = useState(false);
 
   return (
     <View style={styles.wrap}>
@@ -43,7 +44,7 @@ export function AppTextField({
           styles.inputWrap,
           {
             backgroundColor: colors.surface,
-            borderColor: error ? colors.danger : colors.border,
+            borderColor: error ? colors.danger : (isFocused ? colors.primary : colors.border),
           },
         ]}
       >
@@ -51,6 +52,14 @@ export function AppTextField({
           {...props}
           secureTextEntry={secure}
           placeholderTextColor={colors.textMuted}
+          onFocus={(e) => {
+            setIsFocused(true);
+            if (props.onFocus) props.onFocus(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            if (props.onBlur) props.onBlur(e);
+          }}
           style={[
             styles.input,
             { color: colors.textPrimary },

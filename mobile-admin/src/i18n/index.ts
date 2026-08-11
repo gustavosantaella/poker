@@ -3,7 +3,7 @@ import { translations, TranslationKey } from './translations';
 export type { Language, TranslationKey } from './translations';
 
 /** Almacen de idioma a nivel de modulo (util para modulos no-React como schemas/error.ts). */
-let currentLanguage: keyof typeof translations = 'en';
+let currentLanguage: keyof typeof translations = 'es';
 
 export function setCurrentLanguage(language: keyof typeof translations): void {
   currentLanguage = language;

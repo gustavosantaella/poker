@@ -24,7 +24,22 @@ export function TableStatusBadge({ status }: { status: TableStatus }) {
   return <AppBadge label={t(`status.${status}` as TranslationKey)} tone={TABLE_TONES[status]} />;
 }
 
-export function TournamentStatusBadge({ status }: { status: TournamentStatus }) {
+export function TournamentStatusBadge({
+  status,
+  color,
+  backgroundColor,
+}: {
+  status: TournamentStatus;
+  color?: string;
+  backgroundColor?: string;
+}) {
   const { t } = useI18n();
-  return <AppBadge label={t(`status.${status}` as TranslationKey)} tone={TOURNAMENT_TONES[status]} />;
+  return (
+    <AppBadge
+      label={t(`status.${status}` as TranslationKey)}
+      tone={TOURNAMENT_TONES[status]}
+      color={color}
+      backgroundColor={backgroundColor}
+    />
+  );
 }
