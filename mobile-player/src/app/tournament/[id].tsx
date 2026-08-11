@@ -93,7 +93,7 @@ export default function TournamentDetailScreen() {
       : `× ${tournament.maxReEntries ?? 0}`
     : '—';
   const addOnLabel = tournament.addOnEnabled
-    ? `${formatCurrency(tournament.addOnAmount ?? 0)} (+${formatNumber(tournament.addOnStack ?? 0)})`
+    ? `${formatCurrency(tournament.addOnAmount ?? 0, tournament.currency)} (+${formatNumber(tournament.addOnStack ?? 0)})`
     : '—';  const tabs: { key: Tab; label: string }[] = [
     { key: 'info', label: t('tournament.info') },
     { key: 'structure', label: t('tournament.structure') },
@@ -198,14 +198,14 @@ export default function TournamentDetailScreen() {
       </View>
       {activeTab === 'info' ? (
         <AppCard>
-          <DetailRow label={t('tournament.buyIn')} value={`${formatCurrency(tournament.buyIn)}${tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}`} />
+          <DetailRow label={t('tournament.buyIn')} value={`${formatCurrency(tournament.buyIn, tournament.currency)}${tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee, tournament.currency)}` : ''}`} />
           <DetailRow label={t('tournament.stack')} value={formatNumber(tournament.startingStack)} />
           <DetailRow
             label={t('tournament.players')}
             value={tournament.maxPlayers == null ? t('tournament.unlimited') : `${tournament.playersCount ?? 0} / ${formatNumber(tournament.maxPlayers)}`}
           />
           {tournament.guaranteedPrize != null ? (
-            <DetailRow label={t('tournament.guaranteed')} value={formatCurrency(tournament.guaranteedPrize)} />
+            <DetailRow label={t('tournament.guaranteed')} value={formatCurrency(tournament.guaranteedPrize, tournament.currency)} />
           ) : null}
           {tournament.paidPlacesValue != null ? (
             <DetailRow label={t('tournament.paidPlaces')} value={formatNumber(tournament.paidPlacesValue)} />
@@ -298,7 +298,7 @@ export default function TournamentDetailScreen() {
       ) : activeTab === 'chips' ? (
         <ChipsSection chips={tournamentChips ?? []} />
       ) : (
-        <PrizesSection prizes={prizes ?? []} />
+        <PrizesSection prizes={prizes ?? []} currency={tournament.currency} />
       )}
 
       <ConfirmModal
@@ -389,7 +389,7 @@ function ChipsSection({ chips }: { chips: TournamentChip[] }) {
   );
 }
 
-function PrizesSection({ prizes }: { prizes: { place: number; amount: number }[] }) {
+function PrizesSection({ prizes, currency }: { prizes: { place: number; amount: number }[]; currency: string }) {
   const { colors } = useTheme();
   const { t } = useI18n();
   if (prizes.length === 0) {
@@ -417,7 +417,7 @@ function PrizesSection({ prizes }: { prizes: { place: number; amount: number }[]
               {i + 1}º
             </AppText>
           </View>
-          <AppText variant="body" weight="semibold">{formatCurrency(p.amount)}</AppText>
+          <AppText variant="body" weight="semibold">{formatCurrency(p.amount, currency)}</AppText>
         </View>
       ))}
     </AppCard>

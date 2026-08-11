@@ -9,6 +9,7 @@ import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TOURNAMENT_STATUS_VALUES, MODE_VALUES } from '@/constants';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
 import { useCreateTournament, useGameTypes, useTournament, useUpdateTournament } from '@/hooks/use-queries';
 import { TranslationKey } from '@/i18n';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -146,6 +147,8 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
     value,
   }));
 
+  const currencyOptions = CURRENCIES.map((value) => ({ label: value, value }));
+
   const paidPlacesOptions = [
     { label: t('tournament.percent'), value: 'percent' },
     { label: t('tournament.fixed'), value: 'fixed' },
@@ -167,6 +170,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         startDate: tournament.startDate,
         status: tournament.status,
         mode: tournament.mode,
+        currency: tournament.currency ?? DEFAULT_CURRENCY,
         buyIn: tournament.buyIn,
         fee: tournament.fee,
         startingStack: tournament.startingStack,
@@ -203,6 +207,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         startDate: defaultStartDate(),
         status: 'registering',
         mode: 'live',
+        currency: DEFAULT_CURRENCY,
         buyIn: 50,
         fee: 5,
         startingStack: 10000,
@@ -240,6 +245,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       startDate: values.startDate,
       status: values.status,
       mode: values.mode,
+      currency: values.currency,
       buyIn: Number(values.buyIn),
       fee: Number(values.fee ?? 0),
       startingStack: Number(values.startingStack),
@@ -328,6 +334,11 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
 
           <SectionHeader title={t('tournament.cost')} />
           <AppCard>
+            <FormSelect
+              name="currency"
+              label={t('tournament.currency')}
+              options={currencyOptions}
+            />
             <View style={styles.row}>
               <View style={styles.col}>
                 <FormNumberField name="buyIn" label={t('tournament.buyIn')} />

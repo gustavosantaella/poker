@@ -38,7 +38,7 @@ export function TableListItem({ table, onPress }: { table: PokerTable; onPress: 
             {t('table.buyIn')}
           </AppText>
           <AppText variant="body" weight="semibold">
-            {formatCurrency(table.minBuyIn)} – {formatCurrency(table.maxBuyIn)}
+            {formatCurrency(table.minBuyIn, table.currency)} – {formatCurrency(table.maxBuyIn, table.currency)}
           </AppText>
         </View>
         <View style={styles.metaItem}>

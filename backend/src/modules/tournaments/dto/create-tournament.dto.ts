@@ -15,6 +15,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { CURRENCIES } from '../../../common/constants/currencies';
 import { TournamentMode, TournamentStatus } from '../entities/tournament.entity';
 import { BlindStructureItemDto, GenerateStructureDto } from './blind-structure.dto';
 
@@ -38,6 +39,10 @@ export class CreateTournamentDto {
   @IsOptional()
   @IsEnum(TournamentMode)
   mode?: TournamentMode;
+
+  @IsOptional()
+  @IsIn([...CURRENCIES], { message: 'currency must be one of: USD, VES, EUR' })
+  currency?: string;
 
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'buyIn must be a valid number' })
   @Min(0)

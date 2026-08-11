@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CURRENCIES } from '@/constants/currencies';
 import { TFunction } from '@/i18n';
 
 export const createTableSchema = (t: TFunction) =>
@@ -6,6 +7,7 @@ export const createTableSchema = (t: TFunction) =>
     .object({
       name: z.string().min(1, t('validation.nameRequired')).max(100),
       gameTypeId: z.coerce.number().int().min(1, t('validation.selectGameType')),
+      currency: z.enum(CURRENCIES),
       smallBlind: z.coerce.number().min(0, t('validation.mustBeZeroOrMore')),
       bigBlind: z.coerce.number().min(0, t('validation.mustBeZeroOrMore')),
       minBuyIn: z.coerce.number().min(0, t('validation.mustBeZeroOrMore')),

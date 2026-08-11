@@ -72,7 +72,7 @@ export function TableCard({
         </View>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>{t('table.buyIn')}</AppText>
-          <AppText variant="body" weight="semibold">{formatCurrency(table.minBuyIn)} – {formatCurrency(table.maxBuyIn)}</AppText>
+          <AppText variant="body" weight="semibold">{formatCurrency(table.minBuyIn, table.currency)} – {formatCurrency(table.maxBuyIn, table.currency)}</AppText>
         </View>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>{t('table.seats')}</AppText>

@@ -42,6 +42,7 @@ export interface PokerTable {
   seats: number;
   status: TableStatus;
   mode: GameMode;
+  currency: string;
   notes: string | null;
   isActive: boolean;
   createdAt: string;
@@ -82,6 +83,7 @@ export interface Tournament {
   status: TournamentStatus;
   mode: GameMode;
   registrationOpen: boolean;
+  currency: string;
   buyIn: number;
   fee: number;
   startingStack: number;

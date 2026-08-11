@@ -78,8 +78,8 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
               {t('table.buyIn')}
             </AppText>
             <AppText variant="body" weight="semibold" numberOfLines={1}>
-              {formatCurrency(tournament.buyIn)}
-              {tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}
+              {formatCurrency(tournament.buyIn, tournament.currency)}
+              {tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee, tournament.currency)}` : ''}
             </AppText>
           </View>
           <View style={styles.metaItem}>
@@ -125,7 +125,7 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
               {t('tournament.collected')}
             </AppText>
             <AppText variant="body" weight="semibold" numberOfLines={1}>
-              {formatCurrency(collected)}
+              {formatCurrency(collected, tournament.currency)}
             </AppText>
           </View>
         </View>
@@ -136,7 +136,7 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
               {t('tournament.guaranteedPrize')}
             </AppText>
             <AppText variant="body" weight="semibold">
-              {formatCurrency(tournament.guaranteedPrize)}
+              {formatCurrency(tournament.guaranteedPrize, tournament.currency)}
             </AppText>
           </View>
         ) : null}

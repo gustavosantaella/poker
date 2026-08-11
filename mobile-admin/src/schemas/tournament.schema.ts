@@ -1,4 +1,5 @@
 import { z, ZodIssueCode } from 'zod';
+import { CURRENCIES } from '@/constants/currencies';
 import { TFunction } from '@/i18n';
 
 const optionalInt = (min: number, max?: number) =>
@@ -38,6 +39,7 @@ export const createTournamentSchema = (t: TFunction) =>
       startDate: z.string().min(1, t('validation.startDateRequired')),
       status: z.enum(['scheduled', 'registering', 'running', 'paused', 'completed', 'cancelled']),
       mode: z.enum(['live', 'online']),
+      currency: z.enum(CURRENCIES),
       buyIn: z.coerce.number().min(0, t('validation.mustBeZeroOrMore')),
       fee: z.coerce.number().min(0).optional(),
       startingStack: z.coerce.number().int().min(100, t('validation.startingStackMin')),

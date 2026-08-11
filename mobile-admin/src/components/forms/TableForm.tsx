@@ -7,6 +7,7 @@ import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TABLE_STATUS_VALUES, MODE_VALUES } from '@/constants';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
 import { useCreateTable, useGameTypes, useTable, useUpdateTable } from '@/hooks/use-queries';
 import { useI18n } from '@/i18n/I18nProvider';
 import { TranslationKey } from '@/i18n';
@@ -46,6 +47,8 @@ export function TableForm({ tableId }: TableFormProps) {
     value,
   }));
 
+  const currencyOptions = CURRENCIES.map((value) => ({ label: value, value }));
+
   if (gameTypesLoading || (tableId && tableLoading) || (tableId && !table)) {
     return (
       <AppCard>
@@ -60,6 +63,7 @@ export function TableForm({ tableId }: TableFormProps) {
     ? {
         name: table.name,
         gameTypeId: table.gameTypeId ?? 0,
+        currency: table.currency ?? DEFAULT_CURRENCY,
         smallBlind: table.smallBlind,
         bigBlind: table.bigBlind,
         minBuyIn: table.minBuyIn,
@@ -72,6 +76,7 @@ export function TableForm({ tableId }: TableFormProps) {
     : {
         name: '',
         gameTypeId: 0,
+        currency: DEFAULT_CURRENCY,
         smallBlind: 1,
         bigBlind: 2,
         minBuyIn: 100,
@@ -116,6 +121,11 @@ export function TableForm({ tableId }: TableFormProps) {
 
           <SectionHeader title={t('table.blinds')} />
           <AppCard>
+            <FormSelect
+              name="currency"
+              label={t('table.currency')}
+              options={currencyOptions}
+            />
             <View style={styles.row}>
               <View style={styles.col}>
                 <FormNumberField name="smallBlind" label={t('table.smallBlind')} />

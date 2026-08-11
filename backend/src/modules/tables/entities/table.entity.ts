@@ -1,4 +1,5 @@
 ﻿import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { DEFAULT_CURRENCY } from '../../../common/constants/currencies';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { DecimalTransformer } from '../../../common/entities/decimal.transformer';
 import { GameType } from '../../game-types/entities/game-type.entity';
@@ -47,6 +48,9 @@ export class PokerTable extends BaseEntity {
 
   @Column({ type: 'enum', enum: TableMode, default: TableMode.LIVE })
   mode: TableMode;
+
+  @Column({ type: 'varchar', length: 3, default: DEFAULT_CURRENCY })
+  currency: string;
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;

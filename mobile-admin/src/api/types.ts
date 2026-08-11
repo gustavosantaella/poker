@@ -1,3 +1,5 @@
+import { Currency } from '@/constants/currencies';
+
 export type UserRole = 'admin' | 'manager';
 
 export interface User {
@@ -52,6 +54,7 @@ export interface PokerTable {
   seats: number;
   status: TableStatus;
   mode: GameMode;
+  currency: Currency;
   notes: string | null;
   isActive: boolean;
   createdAt: string;
@@ -118,6 +121,7 @@ export interface Tournament {
   startDate: string;
   status: TournamentStatus;
   mode: GameMode;
+  currency: Currency;
   buyIn: number;
   fee: number;
   startingStack: number;
@@ -201,6 +205,7 @@ export interface TablePayload {
   seats?: number;
   status?: TableStatus;
   mode?: GameMode;
+  currency?: Currency;
   notes?: string;
   isActive?: boolean;
 }
@@ -211,6 +216,7 @@ export interface TournamentPayload {
   startDate: string;
   status?: TournamentStatus;
   mode?: GameMode;
+  currency?: Currency;
   buyIn: number;
   fee?: number;
   startingStack: number;

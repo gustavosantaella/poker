@@ -1,4 +1,5 @@
-import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { CURRENCIES } from '../../../common/constants/currencies';
 import { TableMode, TableStatus } from '../entities/table.entity';
 
 export class CreateTableDto {
@@ -40,6 +41,10 @@ export class CreateTableDto {
   @IsOptional()
   @IsEnum(TableMode)
   mode?: TableMode;
+
+  @IsOptional()
+  @IsIn([...CURRENCIES], { message: 'currency must be one of: USD, VES, EUR' })
+  currency?: string;
 
   @IsOptional()
   @IsString()

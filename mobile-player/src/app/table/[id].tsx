@@ -84,7 +84,7 @@ export default function TableDetailScreen() {
         <DetailRow label={t('table.blinds')} value={`${table.smallBlind}/${table.bigBlind}`} />
         <DetailRow
           label={t('table.buyIn')}
-          value={`${formatCurrency(table.minBuyIn)} – ${formatCurrency(table.maxBuyIn)}`}
+          value={`${formatCurrency(table.minBuyIn, table.currency)} – ${formatCurrency(table.maxBuyIn, table.currency)}`}
         />
         <DetailRow label={t('table.seats')} value={String(table.seats)} />
         {table.notes ? <DetailRow label={t('common.optional')} value={table.notes} last /> : null}

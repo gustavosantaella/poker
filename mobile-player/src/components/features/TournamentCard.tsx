@@ -76,7 +76,7 @@ export function TournamentCard({
       <View style={styles.meta}>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>{t('tournament.buyIn')}</AppText>
-          <AppText variant="body" weight="semibold">{formatCurrency(tournament.buyIn)}{tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee)}` : ''}</AppText>
+          <AppText variant="body" weight="semibold">{formatCurrency(tournament.buyIn, tournament.currency)}{tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee, tournament.currency)}` : ''}</AppText>
         </View>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>{t('tournament.stack')}</AppText>
@@ -92,7 +92,7 @@ export function TournamentCard({
         <View style={[styles.guaranteed, { backgroundColor: colors.warningMuted }]}>
           <Ionicons name="trophy" size={15} color={colors.warning} />
           <AppText variant="body" weight="bold" color={colors.warning}>
-            {t('tournament.guaranteed')}: {formatCurrency(tournament.guaranteedPrize)}
+            {t('tournament.guaranteed')}: {formatCurrency(tournament.guaranteedPrize, tournament.currency)}
           </AppText>
         </View>
       ) : null}
