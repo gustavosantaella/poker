@@ -14,6 +14,7 @@ import {
   TournamentReservation,
 } from '../tournaments/entities/tournament-reservation.entity';
 import { Tournament } from '../tournaments/entities/tournament.entity';
+import { TournamentsService } from '../tournaments/tournaments.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import { AssignDto } from './dto/assign.dto';
 import { StandUpPlayerDto } from './dto/stand-up-player.dto';
@@ -35,6 +36,7 @@ export class DealerService {
     @InjectRepository(TournamentReservation)
     private readonly tournamentResRepo: Repository<TournamentReservation>,
     @InjectRepository(TableReservation) private readonly tableResRepo: Repository<TableReservation>,
+    private readonly tournamentsService: TournamentsService,
   ) {}
 
   private async requireDealer(dealerId: number): Promise<User> {
@@ -125,6 +127,10 @@ export class DealerService {
     });
     if (!assignment) {
       return { assignment: null, seats: [] };
+    }
+    // Sincroniza la posición en vivo del torneo (avanza niveles/descansos por tiempo).
+    if (assignment.tournamentId) {
+      assignment.tournament = await this.tournamentsService.findOne(assignment.tournamentId);
     }
     return { assignment, seats: await this.buildSeats(assignment) };
   }
