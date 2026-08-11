@@ -4,6 +4,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
+  DEALER = 'dealer',
   PLAYER = 'player',
 }
 
