@@ -58,9 +58,18 @@ export default function RegisterScreen() {
 
   return (
     <AppScreen>
-      <AppText variant="title" center style={styles.title}>
-        {t('auth.createAccount')}
-      </AppText>
+      <View style={styles.head}>
+        <AppText variant="title" color={colors.primary} center style={styles.title}>
+          {t('auth.createAccount')}
+        </AppText>
+        <View style={styles.suitsRow}>
+          {['♠', '♥', '♦', '♣'].map((suit, i) => (
+            <AppText key={suit} variant="caption" color={i % 2 === 0 ? colors.textMuted : colors.danger}>
+              {suit}
+            </AppText>
+          ))}
+        </View>
+      </View>
 
       <AppTextField label={t('auth.alias')} value={alias} onChangeText={setAlias} placeholder={t('auth.aliasPlaceholder')} autoCapitalize="none" />
       <AppTextField label={t('auth.name')} value={name} onChangeText={setName} autoCapitalize="words" />
@@ -86,7 +95,9 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { marginTop: 24, marginBottom: 24 },
+  head: { alignItems: 'center', marginTop: 24, marginBottom: 24, gap: 8 },
+  title: { textTransform: 'uppercase', letterSpacing: 1 },
+  suitsRow: { flexDirection: 'row', gap: 16 },
   error: { marginBottom: 8 },
   link: { marginTop: 16 },
 });

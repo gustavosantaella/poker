@@ -131,6 +131,14 @@ export function Sidebar({ visible, onClose }: { visible: boolean; onClose: () =>
             </AppText>
           </View>
 
+          <View style={styles.brandSuits}>
+            {['♠', '♥', '♦', '♣'].map((suit, i) => (
+              <AppText key={suit} variant="caption" color={i % 2 === 0 ? colors.textMuted : colors.danger}>
+                {suit}
+              </AppText>
+            ))}
+          </View>
+
           <Pressable style={[styles.userCard, { backgroundColor: colors.surfaceMuted }]} onPress={() => go('/profile')}>
             {user?.photoUrl ? (
               <Image source={{ uri: buildAvatarUrl(user.photoUrl) }} style={styles.avatar} />
@@ -276,7 +284,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.md,
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  brandSuits: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: spacing.lg },
   logo: {
     width: 34,
     height: 34,

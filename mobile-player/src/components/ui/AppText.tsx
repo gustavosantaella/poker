@@ -35,10 +35,12 @@ export function AppText({
     textStyle.fontSize = typography.size.xxxl;
     textStyle.fontWeight = typography.weight.bold;
     textStyle.lineHeight = Math.round(typography.size.xxxl * typography.lineHeight.tight);
+    textStyle.letterSpacing = 0.8;
   } else if (variant === 'title') {
     textStyle.fontSize = typography.size.xl;
     textStyle.fontWeight = typography.weight.bold;
     textStyle.lineHeight = Math.round(typography.size.xl * typography.lineHeight.tight);
+    textStyle.letterSpacing = 0.5;
   } else if (variant === 'subtitle') {
     textStyle.fontSize = typography.size.lg;
     textStyle.fontWeight = typography.weight.semibold;

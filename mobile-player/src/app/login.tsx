@@ -40,10 +40,19 @@ export default function LoginScreen() {
   return (
     <AppScreen>
       <View style={styles.hero}>
-        <View style={[styles.logo, { backgroundColor: colors.primaryMuted }]}>
-          <AppText variant="h1" color={colors.primary}>
-            ♠
-          </AppText>
+        <View style={[styles.logo, { borderColor: colors.primary, backgroundColor: colors.primaryMuted }]}>
+          <View style={[styles.logoInner, { borderColor: colors.primary }]}>
+            <AppText variant="h1" color={colors.primary}>
+              ♠
+            </AppText>
+          </View>
+        </View>
+        <View style={styles.suitsRow}>
+          {['♠', '♥', '♦', '♣'].map((suit, i) => (
+            <AppText key={suit} variant="caption" color={i % 2 === 0 ? colors.textMuted : colors.danger} style={styles.suit}>
+              {suit}
+            </AppText>
+          ))}
         </View>
         <AppText variant="title" center>
           {t('auth.welcome')}
@@ -89,13 +98,29 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 32 },
   logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    shadowColor: '#E3B341',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
   },
+  logoInner: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  suitsRow: { flexDirection: 'row', gap: 16, marginBottom: 4 },
+  suit: { fontSize: 18 },
   error: { marginBottom: 8 },
   link: { marginTop: 16 },
 });

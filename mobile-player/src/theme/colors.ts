@@ -1,51 +1,51 @@
 export const palette = {
   light: {
-    background: '#F0F2F5', // Slightly darker off-white for better contrast
+    background: '#F3EFE6', // Marfil cálido
     surface: '#FFFFFF',
-    surfaceMuted: '#E4E7EC',
-    border: '#D1D5DB',
-    textPrimary: '#111827',
-    textSecondary: '#4B5563',
-    textMuted: '#9CA3AF',
-    primary: '#D4AF37', // Gold
-    onPrimary: '#000000', // Black text on gold
-    primaryMuted: '#FDF6E3',
-    accent: '#0F5132', // Casino Green
+    surfaceMuted: '#EAE4D6',
+    border: '#D8CDBB',
+    textPrimary: '#201B12',
+    textSecondary: '#5A5245',
+    textMuted: '#A0947F',
+    primary: '#C79A2E', // Dorado casino
+    onPrimary: '#1F1705',
+    primaryMuted: '#FBF3DD',
+    accent: '#0F5132', // Verde fieltro
     onAccent: '#FFFFFF',
     success: '#1E9E5A',
     successMuted: '#E3F5EC',
     warning: '#D97706',
     warningMuted: '#FDF1E0',
-    danger: '#E32636', // Alizarin Red (Cards)
-    dangerMuted: '#FDEBEB',
+    danger: '#C62B3F', // Rojo naipe
+    dangerMuted: '#FBE9EC',
     info: '#0E7490',
     infoMuted: '#E0F2F5',
-    overlay: 'rgba(0, 0, 0, 0.5)',
+    overlay: 'rgba(28, 24, 12, 0.55)',
     tabBar: '#FFFFFF',
   },
   dark: {
-    background: '#121418', // Deep Charcoal/Black
-    surface: '#1A1D24', // Slightly lighter charcoal for cards
-    surfaceMuted: '#242830',
-    border: '#2A363B', // Subtle gold/green tinted border
-    textPrimary: '#F3F4F6',
-    textSecondary: '#9CA3AF',
-    textMuted: '#6B7280',
-    primary: '#D4AF37', // Casino Gold
-    onPrimary: '#000000', // Black text on gold chips
-    primaryMuted: '#2D2411', // Very dark gold hint
-    accent: '#0F5132', // Casino Green
+    background: '#0A0C10', // Negro terciopelo
+    surface: '#14181F', // Carbón de las cartas
+    surfaceMuted: '#20262F',
+    border: '#2C3630', // Borde con tinte verde/dorado
+    textPrimary: '#F3EDE0', // Marfil
+    textSecondary: '#A9A294',
+    textMuted: '#6F6A5E',
+    primary: '#E3B341', // Dorado brillante
+    onPrimary: '#1A1206',
+    primaryMuted: '#2F2713', // Dorado muy oscuro
+    accent: '#0F5132', // Verde fieltro
     onAccent: '#FFFFFF',
-    success: '#34C07A',
-    successMuted: '#15301F',
+    success: '#38C172',
+    successMuted: '#14301F',
     warning: '#F0A63B',
     warningMuted: '#33270F',
-    danger: '#E32636', // Vibrant Playing Card Red
-    dangerMuted: '#3A1A1A',
+    danger: '#E5455B', // Rojo naipe vibrante
+    dangerMuted: '#3A1B22',
     info: '#4FB6D8',
     infoMuted: '#122C33',
-    overlay: 'rgba(0, 0, 0, 0.7)', // Darker overlay for casino vibe
-    tabBar: '#0A0B0E', // Very dark for tab bar
+    overlay: 'rgba(0, 0, 0, 0.74)',
+    tabBar: '#0B0E12',
   },
 } as const;
 

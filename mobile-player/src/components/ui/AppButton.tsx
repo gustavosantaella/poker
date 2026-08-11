@@ -75,13 +75,13 @@ export function AppButton({
           borderWidth: variant === 'ghost' ? 1 : variant === 'primary' ? 1 : 0,
           borderColor: variant === 'ghost' ? colors.primary : variant === 'primary' ? colors.primaryMuted : undefined,
           alignSelf: fullWidth ? 'stretch' : 'auto',
-          // Casino-style shadows for primary action
+          // Casino-style glow for primary action
           ...(variant === 'primary' && !isDisabled && {
             shadowColor: colors.primary,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 6,
-            elevation: 4,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.45,
+            shadowRadius: 10,
+            elevation: 6,
           })
         },
         style,

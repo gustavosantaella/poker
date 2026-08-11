@@ -45,12 +45,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     overflow: 'hidden',
-    // iOS shadow
+    // iOS shadow (brillo dorado sutil)
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
     // Android elevation
-    elevation: 3,
+    elevation: 4,
   },
   padded: { padding: spacing.md },
 });

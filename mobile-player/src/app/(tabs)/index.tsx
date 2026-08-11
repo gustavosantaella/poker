@@ -17,6 +17,7 @@ import { useMyTableReservations, useMyTournamentReservations, useTables, useTour
 import { useReserve } from '@/hooks/use-reserve';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
+import { radius } from '@/theme/radius';
 import { ReservationState, tableState, tournamentState } from '@/utils/reservation';
 
 export default function HomeScreen() {
@@ -64,9 +65,27 @@ export default function HomeScreen() {
     <AppScreen refreshing={tablesRefetching || tournamentsRefetching} onRefresh={handleRefresh}>
       <AppHeader title={t('home.hello', { name: greeting })} menu onMenuPress={openSidebar} />
 
-      <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.primary, borderWidth: 1 }]}>
-        <AppText variant="title" color={colors.primary} style={styles.heroTitle}>{t('home.heroTitle')}</AppText>
-        <AppText variant="caption" color={colors.textSecondary} style={styles.heroSubtitle}>{t('home.heroSubtitle')}</AppText>
+      <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
+        <View style={[styles.chip, { borderColor: colors.primary, backgroundColor: colors.primaryMuted }]}>
+          <View style={[styles.chipInner, { borderColor: colors.primary }]}>
+            <AppText variant="subtitle" weight="bold" color={colors.primary}>
+              AA
+            </AppText>
+          </View>
+        </View>
+        <AppText variant="title" color={colors.primary} style={styles.heroTitle}>
+          {t('home.heroTitle')}
+        </AppText>
+        <AppText variant="caption" color={colors.textSecondary} style={styles.heroSubtitle}>
+          {t('home.heroSubtitle')}
+        </AppText>
+        <View style={styles.suitsRow}>
+          {['♠', '♥', '♦', '♣'].map((suit, i) => (
+            <AppText key={suit} variant="caption" color={i % 2 === 0 ? colors.textMuted : colors.danger} style={styles.suit}>
+              {suit}
+            </AppText>
+          ))}
+        </View>
       </View>
 
       <View style={styles.sectionHeader}>
@@ -129,24 +148,45 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   hero: {
-    borderRadius: 16,
+    borderRadius: radius.lg,
     padding: 24,
     marginBottom: 16,
     gap: 8,
-    // Add shadow to the hero section
+    alignItems: 'center',
+    borderWidth: 1.5,
+    // Brillo dorado del hero
+    shadowColor: '#E3B341',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  chip: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  chipInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroTitle: {
-    fontWeight: 'bold',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   heroSubtitle: {
     opacity: 0.9,
   },
+  suitsRow: { flexDirection: 'row', gap: 16, marginTop: 4 },
+  suit: { fontSize: 18 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
