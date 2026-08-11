@@ -45,8 +45,12 @@ export function TableCard({
       : undefined;
   
   const online = table.mode === 'online';
-  const modeBg = online ? colors.primary : colors.success;
-  const modeFg = colors.onPrimary;
+  const isGoldCard = table.status === 'running';
+  const titleColor = isGoldCard ? '#1E1602' : undefined;
+  const subtextColor = isGoldCard ? 'rgba(30, 22, 2, 0.76)' : colors.textSecondary;
+  const bodyTextColor = isGoldCard ? '#1E1602' : undefined;
+  const modeBg = isGoldCard ? 'rgba(0, 0, 0, 0.12)' : (online ? colors.primary : colors.success);
+  const modeFg = isGoldCard ? '#1E1602' : colors.onPrimary;
 
   const button =
     state === 'playing'
@@ -56,7 +60,7 @@ export function TableCard({
         : { title: t('table.reserve'), variant: 'primary' as const, icon: 'add' as const };
 
   return (
-    <AppCard onPress={onPress} style={styles.card}>
+    <AppCard onPress={onPress} style={styles.card} variant={isGoldCard ? 'gold' : 'metallic'}>
       <View style={[styles.modeBar, { backgroundColor: modeBg }]}>
         <Ionicons name={online ? 'globe-outline' : 'location-outline'} size={13} color={modeFg} />
         <AppText variant="caption" weight="semibold" color={modeFg}>
@@ -69,31 +73,31 @@ export function TableCard({
           <Image source={{ uri: avatarUrl }} style={styles.adminAvatar} />
         ) : null}
         <View style={styles.titleWrap}>
-          <AppText variant="subtitle" numberOfLines={1}>{table.name}</AppText>
-          <AppText variant="caption">{table.gameType?.name ?? t('table.noGameType')}</AppText>
+          <AppText variant="subtitle" numberOfLines={1} style={titleColor ? { color: titleColor } : undefined}>{table.name}</AppText>
+          <AppText variant="caption" style={{ color: subtextColor }}>{table.gameType?.name ?? t('table.noGameType')}</AppText>
         </View>
         <Badge label={t(`status.${table.status}`)} tone={table.status === 'open' ? 'success' : 'neutral'} />
       </View>
 
       <View style={styles.meta}>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>{t('table.blinds')}</AppText>
-          <AppText variant="body" weight="semibold">{table.smallBlind}/{table.bigBlind}</AppText>
+          <AppText variant="caption" style={{ color: subtextColor }}>{t('table.blinds')}</AppText>
+          <AppText variant="body" weight="semibold" style={bodyTextColor ? { color: bodyTextColor } : undefined}>{table.smallBlind}/{table.bigBlind}</AppText>
         </View>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>{t('table.buyIn')}</AppText>
-          <AppText variant="body" weight="semibold">{formatCurrency(table.minBuyIn, table.currency)} – {formatCurrency(table.maxBuyIn, table.currency)}</AppText>
+          <AppText variant="caption" style={{ color: subtextColor }}>{t('table.buyIn')}</AppText>
+          <AppText variant="body" weight="semibold" style={bodyTextColor ? { color: bodyTextColor } : undefined}>{formatCurrency(table.minBuyIn, table.currency)} – {formatCurrency(table.maxBuyIn, table.currency)}</AppText>
         </View>
         <View style={styles.metaItem}>
-          <AppText variant="caption" color={colors.textSecondary}>{t('table.seats')}</AppText>
-          <AppText variant="body" weight="semibold">{table.seats}</AppText>
+          <AppText variant="caption" style={{ color: subtextColor }}>{t('table.seats')}</AppText>
+          <AppText variant="body" weight="semibold" style={bodyTextColor ? { color: bodyTextColor } : undefined}>{table.seats}</AppText>
         </View>
       </View>
 
       <AppButton
         title={button.title}
         icon={button.icon}
-        variant={button.variant}
+        variant={isGoldCard ? 'primary' : button.variant}
         size="sm"
         fullWidth
         disabled={state !== null}
