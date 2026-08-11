@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { AppForm } from '@/components/forms/AppForm';
 import { FormTextField } from '@/components/forms/FormTextField';
 import { AppButton } from '@/components/ui/AppButton';
@@ -39,63 +39,93 @@ export default function LoginScreen() {
   };
 
   return (
-    <AppScreen>
+    <AppScreen scroll={false} padded={false}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.logoArea}>
-          <View style={[styles.logo, { backgroundColor: colors.primary }]}>
-            <Ionicons name="diamond" size={40} color={colors.onPrimary} />
-          </View>
-          <AppText variant="h1">PokeLAP Admin</AppText>
-          <AppText variant="caption">{t('auth.loginSubtitle')}</AppText>
-        </View>
-
-        <AppForm schema={schema} defaultValues={{ email: '', password: '' }} onSubmit={onSubmit}>
-          {({ handleSubmit, formState }) => (
-            <View style={styles.form}>
-              <AppCard>
-                <FormTextField
-                  name="email"
-                  label={t('auth.email')}
-                  placeholder={t('auth.emailPlaceholder')}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                />
-                <FormTextField
-                  name="password"
-                  label={t('auth.password')}
-                  placeholder={t('auth.passwordPlaceholder')}
-                  secureTextEntry
-                />
-              </AppCard>
-
-              {serverError ? (
-                <AppText variant="caption" color={colors.danger} style={styles.error}>
-                  {serverError}
-                </AppText>
-              ) : null}
-
-              <AppButton title={t('auth.signIn')} onPress={handleSubmit(onSubmit)} loading={formState.isSubmitting} fullWidth />
-              <AppButton
-                title={t('auth.createAccount')}
-                variant="ghost"
-                icon="person-add-outline"
-                onPress={() => router.push('/register')}
-                fullWidth
-              />
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.logoArea}>
+            <View
+              style={[
+                styles.logo,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.primary,
+                  borderWidth: 2,
+                  shadowColor: colors.primary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.45,
+                  shadowRadius: 12,
+                  elevation: 6,
+                },
+              ]}
+            >
+              <Ionicons name="diamond" size={38} color={colors.primary} />
             </View>
-          )}
-        </AppForm>
+            <AppText variant="h1" style={{ color: colors.textPrimary, letterSpacing: 0.5, fontWeight: '700' }}>PokeLAP Admin</AppText>
+            <AppText variant="caption" style={{ color: colors.textSecondary, marginTop: 4 }}>{t('auth.loginSubtitle')}</AppText>
+          </View>
+
+          <AppForm schema={schema} defaultValues={{ email: '', password: '' }} onSubmit={onSubmit}>
+            {({ handleSubmit, formState }) => (
+              <View style={styles.form}>
+                <AppCard>
+                  <FormTextField
+                    name="email"
+                    label={t('auth.email')}
+                    placeholder={t('auth.emailPlaceholder')}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                  />
+                  <FormTextField
+                    name="password"
+                    label={t('auth.password')}
+                    placeholder={t('auth.passwordPlaceholder')}
+                    secureTextEntry
+                  />
+                </AppCard>
+
+                {serverError ? (
+                  <AppText variant="caption" color={colors.danger} style={styles.error}>
+                    {serverError}
+                  </AppText>
+                ) : null}
+
+                <AppButton title={t('auth.signIn')} onPress={handleSubmit(onSubmit)} loading={formState.isSubmitting} fullWidth />
+                <AppButton
+                  title={t('auth.createAccount')}
+                  variant="ghost"
+                  icon="person-add-outline"
+                  onPress={() => router.push('/register')}
+                  fullWidth
+                />
+              </View>
+            )}
+          </AppForm>
+        </ScrollView>
       </KeyboardAvoidingView>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, justifyContent: 'center', maxWidth: layout.maxWidth, width: '100%', alignSelf: 'center' },
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    maxWidth: layout.maxWidth,
+    width: '100%',
+    alignSelf: 'center',
+    padding: layout.screenPadding,
+  },
   logoArea: { alignItems: 'center', marginBottom: 28 },
   logo: {
     width: 72,
