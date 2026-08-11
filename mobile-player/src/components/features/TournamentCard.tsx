@@ -8,7 +8,7 @@ import { AppButton } from '@/components/ui/AppButton';
 import { Badge } from '@/components/ui/Badge';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
-import { ReservationState } from '@/utils/reservation';
+import { ReservationState, canReserveTournament } from '@/utils/reservation';
 import { formatCurrency, formatDateTime, formatNumber } from '@/utils/format';
 import { useAdminProfile } from '@/hooks/use-queries';
 
@@ -37,13 +37,16 @@ export function TournamentCard({
   const online = tournament.mode === 'online';
   const modeBg = online ? colors.primary : colors.success;
   const modeFg = colors.onPrimary;
+  const closed = state === null && !canReserveTournament(tournament);
 
   const button =
     state === 'playing'
       ? { title: t('tournament.playing'), variant: 'success' as const, icon: 'checkmark' as const }
       : state === 'reserved'
         ? { title: t('tournament.reserved'), variant: 'secondary' as const, icon: 'hourglass-outline' as const }
-        : { title: t('tournament.reserve'), variant: 'primary' as const, icon: 'add' as const };
+        : closed
+          ? { title: t('tournament.registrationClosed'), variant: 'secondary' as const, icon: 'lock-closed' as const }
+          : { title: t('tournament.reserve'), variant: 'primary' as const, icon: 'add' as const };
 
   return (
     <AppCard onPress={onPress} style={styles.card}>
@@ -100,7 +103,7 @@ export function TournamentCard({
         variant={button.variant}
         size="sm"
         fullWidth
-        disabled={state !== null}
+        disabled={state !== null || closed}
         onPress={onReserve}
         style={styles.reserveBtn}
       />

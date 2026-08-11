@@ -19,7 +19,9 @@ export default function TournamentsScreen() {
   const { user } = useAuth();
   const { data, isLoading, isRefetching, refetch } = useTournaments();
   const { data: myReservations } = useMyTournamentReservations();
-  const tournaments = data?.items ?? [];
+  // Filtro defensivo: aunque el backend ya excluya 'completed', nunca mostrar
+  // torneos terminados en el listado del player.
+  const tournaments = (data?.items ?? []).filter((trn) => trn.status !== 'completed');
   const reserve = useReserve((target, userId) => createTournamentReservation(target.id, userId));
 
   const stateFor = useMemo(() => {
@@ -33,7 +35,7 @@ export default function TournamentsScreen() {
 
   return (
     <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-      <AppHeader title={t('tournaments.title')} subtitle={t('tournaments.count', { count: data?.total ?? 0 })} />
+      <AppHeader title={t('tournaments.title')} subtitle={t('tournaments.count', { count: tournaments.length })} />
       {isLoading ? (
         <LoadingView />
       ) : tournaments.length === 0 ? (

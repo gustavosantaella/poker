@@ -81,6 +81,7 @@ export interface Tournament {
   startDate: string;
   status: TournamentStatus;
   mode: GameMode;
+  registrationOpen: boolean;
   buyIn: number;
   fee: number;
   startingStack: number;

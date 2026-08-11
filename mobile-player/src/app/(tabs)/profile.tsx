@@ -56,23 +56,25 @@ export default function ProfileScreen() {
 
   const myReservationsRows = [
     ...(myTables ?? [])
-      .filter((r) => r.status === 'pending')
+      .filter((r) => r.status === 'pending' || r.status === 'confirmed')
       .map((r) => ({
         key: `t-${r.id}`,
         name: r.table?.name ?? `#${r.tableId}`,
-        status: t('table.reserved'),
+        status: r.status === 'confirmed' ? t('table.playing') : t('table.reserved'),
         reservationId: r.id,
         type: 'table' as const,
+        removable: r.status === 'pending',
       })),
     ...(myTournaments ?? [])
-      .filter((r) => r.status === 'pending')
+      .filter((r) => r.status === 'pending' || r.status === 'accepted')
       .map((r) => ({
-      key: `m-${r.id}`,
-      name: r.tournament?.name ?? `#${r.tournamentId}`,
-      status: t('tournament.reserved'),
-      reservationId: r.id,
-      type: 'tournament' as const,
-    })),
+        key: `m-${r.id}`,
+        name: r.tournament?.name ?? `#${r.tournamentId}`,
+        status: r.status === 'accepted' ? t('tournament.playing') : t('tournament.reserved'),
+        reservationId: r.id,
+        type: 'tournament' as const,
+        removable: r.status === 'pending',
+      })),
   ];
 
   const handleRemoveConfirm = async () => {
@@ -199,16 +201,18 @@ export default function ProfileScreen() {
                 </AppText>
                 <AppText variant="caption">{row.status}</AppText>
               </View>
-              <AppButton
-                title=""
-                size="sm"
-                variant="ghost"
-                icon="trash-outline"
-                onPress={() => {
-                  setRemoveError(null);
-                  setRemoveTarget({ type: row.type, reservationId: row.reservationId, name: row.name });
-                }}
-              />
+              {row.removable ? (
+                <AppButton
+                  title=""
+                  size="sm"
+                  variant="ghost"
+                  icon="trash-outline"
+                  onPress={() => {
+                    setRemoveError(null);
+                    setRemoveTarget({ type: row.type, reservationId: row.reservationId, name: row.name });
+                  }}
+                />
+              ) : null}
             </View>
           ))
         )}

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchAdminProfile, fetchMe, updateProfile, UpdateProfilePayload } from '@/api/auth';
+import { fetchAdmins } from '@/api/users';
 import {
   createTableReservation,
   deleteTableReservation,
@@ -159,6 +160,10 @@ export function useDeleteTournamentReservation(tournamentId: number) {
   });
 }
 
+
+export function useAdmins() {
+  return useQuery({ queryKey: ['admins'], queryFn: fetchAdmins });
+}
 
 export function useMe() {
   return useQuery({ queryKey: ['me'], queryFn: fetchMe });

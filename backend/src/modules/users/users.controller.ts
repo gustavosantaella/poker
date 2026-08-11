@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
@@ -14,8 +15,11 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll({ order: { createdAt: 'ASC' } });
+  findAll(@Query() pagination: PaginationDto, @Query('role') role?: UserRole) {
+    // Filtro por rol (p. ej. el player lista admins) y nunca exponer datos sensibles.
+    return this.usersService
+      .findAll({ ...pagination, where: role ? { role } : undefined, order: { createdAt: 'ASC' } })
+      .then((result) => ({ ...result, items: result.items.map((u) => this.usersService.toSafeUser(u)) }));
   }
 
   @Get(':id')

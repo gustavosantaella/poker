@@ -24,7 +24,7 @@ import { spacing } from '@/theme/spacing';
 import { getErrorMessage } from '@/utils/error';
 import { summarizeStructure } from '@/utils/blind-structure';
 import { formatChips, formatCurrency, formatDateTime, formatDuration, formatNumber } from '@/utils/format';
-import { ReservationState } from '@/utils/reservation';
+import { canReserveTournament, ReservationState } from '@/utils/reservation';
 
 type Tab = 'info' | 'structure' | 'prizes' | 'chips';
 
@@ -86,6 +86,7 @@ export default function TournamentDetailScreen() {
   }
 
   const online = tournament.mode === 'online';
+  const canReserve = canReserveTournament(tournament);
   const reEntryLabel = tournament.reEntryEnabled
     ? tournament.maxReEntries === 0
       ? t('tournament.unlimited')
@@ -159,6 +160,15 @@ export default function TournamentDetailScreen() {
         />
       ) : state === 'reserved' ? (
         <AppButton title={t('tournament.reserved')} icon="checkmark" variant="success" disabled fullWidth style={styles.reserveBtn} />
+      ) : !canReserve ? (
+        <AppButton
+          title={t('tournament.registrationClosed')}
+          icon="lock-closed"
+          variant="secondary"
+          disabled
+          fullWidth
+          style={styles.reserveBtn}
+        />
       ) : (
         <AppButton
           title={t('tournament.reserve')}

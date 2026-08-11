@@ -2,7 +2,8 @@ import { apiClient } from './client';
 import { Paginated, Tournament, TournamentChip, TournamentPrize, TournamentReservation } from './types';
 
 export async function fetchTournaments(): Promise<Paginated<Tournament>> {
-  const res = await apiClient.get('/tournaments', { params: { limit: 100 } });
+  // El player ve todos los torneos excepto los que ya se completaron.
+  const res = await apiClient.get('/tournaments', { params: { limit: 100, excludeStatus: 'completed' } });
   return res.data.data as Paginated<Tournament>;
 }
 

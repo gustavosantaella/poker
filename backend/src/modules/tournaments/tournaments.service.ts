@@ -142,9 +142,10 @@ export class TournamentsService extends CrudService<Tournament> {
    * Calcula la posición en vivo de un torneo en curso: si el tiempo del
    * nivel/descanso actual ya se agotó, devuelve el torneo avanzado al siguiente
    * item a partir de los timestamps (startedAt / levelStartedAt) y la estructura.
-   * Es una función pura: NO persiste el avance (la persistencia la hace
-   * nextLevel), así se evita que una lectura compita con "siguiente nivel" y
-   * se salten los descansos.
+   * El avance de niveles NO se persiste (lo persiste nextLevel) para evitar que
+   * una lectura compita con "siguiente nivel" y se salten los descansos.
+   * La FINALIZACIÓN sí se persiste (idempotente): cuando se agota el último
+   * item de la estructura, el torneo pasa automáticamente a 'completed'.
    */
   private async syncLiveStatus(tournament: Tournament): Promise<Tournament> {
     if (tournament.status !== TournamentStatus.RUNNING) {
@@ -176,6 +177,13 @@ export class TournamentsService extends CrudService<Tournament> {
       }
     }
 
+    // El nivel guardado apunta fuera de la estructura (p. ej. se acortó la
+    // estructura): el torneo ya agotó sus niveles, se completa.
+    if (tournament.currentLevel != null && tournament.currentLevel >= structure.length) {
+      await this.complete(tournament.id);
+      return { ...tournament, status: TournamentStatus.COMPLETED, currentLevel: null, levelStartedAt: null };
+    }
+
     let advanced = false;
     while (current < structure.length) {
       const item = structure[current];
@@ -184,8 +192,9 @@ export class TournamentsService extends CrudService<Tournament> {
         break;
       }
       if (current >= structure.length - 1) {
-        // El último item ya se agotó: queda a la espera de que el admin lo complete.
-        break;
+        // El último item de la estructura ya se agotó: el torneo terminó.
+        await this.complete(tournament.id);
+        return { ...tournament, status: TournamentStatus.COMPLETED, currentLevel: null, levelStartedAt: null };
       }
       levelStartMs += durationMs;
       current += 1;
@@ -196,6 +205,14 @@ export class TournamentsService extends CrudService<Tournament> {
       return { ...tournament, currentLevel: current, levelStartedAt: new Date(levelStartMs) };
     }
     return tournament;
+  }
+
+  /** Persiste la finalización de un torneo (idempotente). */
+  private async complete(id: number): Promise<void> {
+    await this.repository.update(
+      { id },
+      { status: TournamentStatus.COMPLETED, currentLevel: null, levelStartedAt: null },
+    );
   }
 
   async start(id: number): Promise<Tournament> {
@@ -242,6 +259,10 @@ export class TournamentsService extends CrudService<Tournament> {
   async nextLevel(id: number): Promise<Tournament> {
     // Estado persistido (sin sincronización): es la referencia para avanzar.
     const raw = await super.findOne(id);
+    // Un torneo ya finalizado/cancelado no se avanza ni se "resucita".
+    if (raw.status === TournamentStatus.COMPLETED || raw.status === TournamentStatus.CANCELLED) {
+      return this.findOne(id);
+    }
     const items = raw.blindStructure ?? [];
     if (items.length === 0) {
       throw new BadRequestException('Tournament has no blind structure');
@@ -298,6 +319,26 @@ export class TournamentsService extends CrudService<Tournament> {
     const user = await this.usersRepo.findOne({ where: { id: dto.userId } });
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+    const tournament = await this.repository.findOne({ where: { id: tournamentId } });
+    if (!tournament) {
+      throw new NotFoundException('Tournament not found');
+    }
+    // Un torneo ya no admite reservas si terminó, se canceló o su registro cerró
+    // (registrationOpen = false o el late registration ya llegó a su nivel límite).
+    if (tournament.status === TournamentStatus.COMPLETED || tournament.status === TournamentStatus.CANCELLED) {
+      throw new BadRequestException('Cannot reserve: tournament is already finished or cancelled');
+    }
+    if (!tournament.registrationOpen) {
+      throw new BadRequestException('Registration is closed for this tournament');
+    }
+    if (
+      tournament.lateRegistrationEnabled &&
+      tournament.lateRegistrationUntilLevel !== null &&
+      tournament.currentLevel !== null &&
+      tournament.currentLevel >= tournament.lateRegistrationUntilLevel
+    ) {
+      throw new BadRequestException('Late registration has ended for this tournament');
     }
     const existing = await this.reservationsRepo.findOne({ where: { tournamentId, userId: dto.userId } });
     if (existing) {

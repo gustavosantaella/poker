@@ -79,7 +79,7 @@ export default function CalendarScreen() {
     const map = new Map<string, CalendarEvent[]>();
     const todayKey = dateKey(startOfToday());
     for (const trn of tournamentsData?.items ?? []) {
-      if (trn.status === 'cancelled') continue;
+      if (trn.status === 'cancelled' || trn.status === 'completed') continue;
       const date = new Date(trn.startDate);
       if (Number.isNaN(date.getTime())) continue;
       // Nivel/descanso actual si el torneo está en curso.

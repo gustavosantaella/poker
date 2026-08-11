@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query } from '@nestjs/common';
-import { DeepPartial } from 'typeorm';
+import { DeepPartial, FindOptionsWhere, In, Not } from 'typeorm';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { GenerateStructureDto } from './dto/blind-structure.dto';
@@ -8,7 +8,7 @@ import { UpdateTournamentDto } from './dto/update-tournament.dto';
 import { CreateReservationDto, RebuyDto, UpdateReservationDto } from './dto/reservation.dto';
 import { CreateTournamentChipDto } from './dto/tournament-chip.dto';
 import { UpdatePrizesDto } from './dto/tournament-prize.dto';
-import { Tournament } from './entities/tournament.entity';
+import { Tournament, TournamentStatus } from './entities/tournament.entity';
 import { User } from '../users/entities/user.entity';
 import { TournamentsService } from './tournaments.service';
 
@@ -17,8 +17,17 @@ export class TournamentsController {
   constructor(private readonly service: TournamentsService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.service.findAll({ ...pagination, order: { startDate: 'DESC' } });
+  findAll(@Query() pagination: PaginationDto, @Query('excludeStatus') excludeStatus?: string) {
+    // Permite excluir estados de la lista (p. ej. el player solo quiere torneos
+    // distintos de 'completed'). El admin no envía este parámetro y sigue viendo todo.
+    const excluded = (excludeStatus ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) as TournamentStatus[];
+    const where: FindOptionsWhere<Tournament> | undefined = excluded.length
+      ? { status: Not(In(excluded)) }
+      : undefined;
+    return this.service.findAll({ ...pagination, where, order: { startDate: 'DESC' } });
   }
 
   @Post('generate-structure')

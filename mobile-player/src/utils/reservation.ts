@@ -1,3 +1,5 @@
+import { Tournament } from '@/api/types';
+
 export type ReservationState = 'playing' | 'reserved' | null;
 
 interface TableResLike {
@@ -26,4 +28,28 @@ export function tournamentState(reservations: TournamentResLike[], tournamentId:
   );
   if (!found) return null;
   return found.status === 'accepted' ? 'playing' : 'reserved';
+}
+
+/**
+ * Un torneo se puede reservar solo si sigue activo, la inscripción está abierta
+ * y el late registration (si existe) todavía no cerró: ya no se puede reservar
+ * cuando el torneo llegó a su nivel límite de late registration.
+ */
+export function canReserveTournament(
+  t: Pick<
+    Tournament,
+    'status' | 'registrationOpen' | 'lateRegistrationEnabled' | 'lateRegistrationUntilLevel' | 'currentLevel'
+  >,
+): boolean {
+  if (t.status === 'completed' || t.status === 'cancelled') return false;
+  if (!t.registrationOpen) return false;
+  if (
+    t.lateRegistrationEnabled &&
+    t.lateRegistrationUntilLevel != null &&
+    t.currentLevel != null &&
+    t.currentLevel >= t.lateRegistrationUntilLevel
+  ) {
+    return false;
+  }
+  return true;
 }

@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const { data: myTableReservations } = useMyTableReservations();
   const { data: myTournamentReservations } = useMyTournamentReservations();
   const tables = (tablesData?.items ?? []).slice(0, 3);
-  const tournaments = (tournamentsData?.items ?? []).slice(0, 3);
+  const tournaments = (tournamentsData?.items ?? []).filter((trn) => trn.status !== 'completed').slice(0, 3);
   const reserveTable = useReserve((target, userId) => createTableReservation(target.id, userId));
   const reserveTournament = useReserve((target, userId) => createTournamentReservation(target.id, userId));
 

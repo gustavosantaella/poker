@@ -13,6 +13,7 @@ export const en = {
   'tabs.home': 'Home',
   'tabs.tables': 'Tables',
   'tabs.tournaments': 'Tournaments',
+  'tabs.admins': 'Admins',
   'tabs.profile': 'Profile',
   'tabs.calendar': 'Calendar',
 
@@ -63,6 +64,8 @@ export const en = {
   'calendar.noEvents': 'No events on this day',
   'calendar.openNow': 'Open now',
   'calendar.tournament': 'Tournament',
+  'admins.count': '{count} admins',
+  'admins.empty': 'No admins available yet',
 
   'tables.title': 'Cash tables',
   'tables.count': '{count} tables',
@@ -150,6 +153,7 @@ export const en = {
   'tournament.cancelReserve': 'Cancel reservation',
   'tournament.cancelReserveConfirmTitle': 'Cancel Reservation',
   'tournament.cancelReserveConfirm': 'Are you sure you want to cancel your reservation for {name}?',
+  'tournament.registrationClosed': 'Registration closed',
 
   'structure.title': 'Blind structure',
   'structure.summary': '{levels} levels • {breaks} breaks • Est. {duration}',
@@ -185,6 +189,7 @@ export const es: Record<TranslationKey, string> = {
   'tabs.home': 'Inicio',
   'tabs.tables': 'Mesas',
   'tabs.tournaments': 'Torneos',
+  'tabs.admins': 'Administradores',
   'tabs.profile': 'Perfil',
   'tabs.calendar': 'Calendario',
 
@@ -235,6 +240,8 @@ export const es: Record<TranslationKey, string> = {
   'calendar.noEvents': 'Sin eventos este día',
   'calendar.openNow': 'Abierta ahora',
   'calendar.tournament': 'Torneo',
+  'admins.count': '{count} administradores',
+  'admins.empty': 'Aún no hay administradores',
 
   'tables.title': 'Mesas cash',
   'tables.count': '{count} mesas',
@@ -322,6 +329,7 @@ export const es: Record<TranslationKey, string> = {
   'tournament.cancelReserve': 'Cancelar reserva',
   'tournament.cancelReserveConfirmTitle': 'Cancelar reserva',
   'tournament.cancelReserveConfirm': '¿Estás seguro de que deseas cancelar tu reserva para {name}?',
+  'tournament.registrationClosed': 'Registro cerrado',
 
   'structure.title': 'Estructura de ciegas',
   'structure.summary': '{levels} niveles • {breaks} descansos • Est. {duration}',
