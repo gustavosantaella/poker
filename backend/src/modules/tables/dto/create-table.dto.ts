@@ -59,4 +59,10 @@ export class CreateTableDto {
   @IsInt()
   @Min(1)
   clubId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(5)
+  @Max(600)
+  actionTimeSec?: number;
 }

@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createClub,
+  createUser,
   fetchClubMembers,
   fetchClubs,
+  fetchDealers,
   fetchUsers,
   removeClubMember,
   updateClub,
   updateClubMember,
   CreateClubPayload,
+  CreateUserPayload,
 } from '@/api/clubs';
 import {
   createChip,
@@ -126,6 +129,21 @@ export function useRemoveClubMember(clubId: number) {
 
 export function useUsers() {
   return useQuery({ queryKey: ['users'], queryFn: fetchUsers });
+}
+
+export function useDealers() {
+  return useQuery({ queryKey: ['users', 'dealers'], queryFn: fetchDealers });
+}
+
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateUserPayload) => createUser(payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['users', 'dealers'] });
+      void qc.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
 }
 
 export function useAllGameTypes() {

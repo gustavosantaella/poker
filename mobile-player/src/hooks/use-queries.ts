@@ -10,6 +10,13 @@ import {
   joinClub,
 } from '@/api/clubs';
 import {
+  dealerAssign,
+  dealerComplete,
+  dealerStandUpPlayer,
+  fetchDealerAssignment,
+  fetchDealerContext,
+} from '@/api/dealer';
+import {
   createTableReservation,
   deleteTableReservation,
   fetchMyTableReservations,
@@ -226,6 +233,49 @@ export function useJoinClub() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['clubs', 'mine'] });
       void qc.invalidateQueries({ queryKey: ['clubs', 'memberships'] });
+    },
+  });
+}
+
+// ---------------- Dealer (repartidor) ----------------
+
+export function useDealerContext() {
+  return useQuery({ queryKey: ['dealer', 'context'], queryFn: fetchDealerContext });
+}
+
+export function useDealerAssignment() {
+  return useQuery({ queryKey: ['dealer', 'assignment'], queryFn: fetchDealerAssignment });
+}
+
+export function useDealerAssign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { tournamentId?: number; tableId?: number; tableNumber?: number }) =>
+      dealerAssign(payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['dealer', 'assignment'] });
+    },
+  });
+}
+
+export function useDealerComplete() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => dealerComplete(),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['dealer', 'assignment'] });
+      void qc.invalidateQueries({ queryKey: ['dealer', 'context'] });
+    },
+  });
+}
+
+export function useDealerStandUp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { reservationId?: number; tableReservationId?: number }) =>
+      dealerStandUpPlayer(payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['dealer', 'assignment'] });
     },
   });
 }

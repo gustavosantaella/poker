@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'manager' | 'player';
+export type UserRole = 'admin' | 'manager' | 'player' | 'dealer';
 
 export interface Club {
   id: number;
@@ -33,6 +33,7 @@ export interface User {
   name: string;
   role: UserRole;
   isActive: boolean;
+  clubId?: number | null;
   alias: string | null;
   country: string | null;
   phone: string | null;
@@ -73,6 +74,7 @@ export interface PokerTable {
   notes: string | null;
   isActive: boolean;
   clubId?: number | null;
+  actionTimeSec?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -137,6 +139,7 @@ export interface Tournament {
   startedAt: string | null;
   isActive: boolean;
   clubId?: number | null;
+  actionTimeSec?: number;
   createdAt: string;
   updatedAt: string;
   reservedCount?: number;

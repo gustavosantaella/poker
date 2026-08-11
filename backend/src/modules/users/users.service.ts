@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+﻿import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { CrudService } from '../../common/services/crud.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserRole } from './entities/user.entity';
 
@@ -27,6 +28,7 @@ export class UsersService extends CrudService<User> {
     password: string,
     role = UserRole.ADMIN,
     alias?: string,
+    clubId?: number | null,
   ): Promise<User> {
     const hashed = await bcrypt.hash(password, 10);
     return this.create({
@@ -35,7 +37,24 @@ export class UsersService extends CrudService<User> {
       password: hashed,
       role,
       alias: alias ?? null,
+      clubId: clubId ?? null,
     });
+  }
+
+  /** Crea un usuario desde el panel admin (p. ej. un colaborador/dealer del club). */
+  async createUser(dto: CreateUserDto): Promise<User> {
+    const existing = await this.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException('Email is already registered');
+    }
+    return this.createWithPassword(
+      dto.email,
+      dto.name,
+      dto.password,
+      dto.role,
+      undefined,
+      dto.clubId ?? null,
+    );
   }
 
   async update(id: number, data: UpdateUserDto): Promise<User> {
@@ -58,6 +77,7 @@ export class UsersService extends CrudService<User> {
       alias: user.alias ?? null,
       country: user.country ?? null,
       photoUrl: user.photoUrl ?? null,
+      clubId: user.clubId ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

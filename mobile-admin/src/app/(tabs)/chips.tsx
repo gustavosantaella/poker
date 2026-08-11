@@ -18,7 +18,7 @@ export default function ChipsScreen() {
   return (
     <View style={styles.flex}>
       <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-        <AppHeader title={t('chips.title')} subtitle={t('chips.count', { count: data?.total ?? 0 })} />
+        <AppHeader title={t('chips.title')} subtitle={t('chips.count', { count: data?.total ?? 0 })} showMenu />
 
         {isLoading ? (
           <LoadingView />

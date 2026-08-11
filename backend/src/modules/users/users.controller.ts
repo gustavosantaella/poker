@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User, UserRole } from './entities/user.entity';
@@ -20,6 +21,12 @@ export class UsersController {
     return this.usersService
       .findAll({ ...pagination, where: role ? { role } : undefined, order: { createdAt: 'ASC' } })
       .then((result) => ({ ...result, items: result.items.map((u) => this.usersService.toSafeUser(u)) }));
+  }
+
+  /** Crea un usuario desde el panel admin (colaboradores/dealers del club). */
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.createUser(dto).then((u) => this.usersService.toSafeUser(u));
   }
 
   @Get(':id')

@@ -18,7 +18,7 @@ export default function TournamentsScreen() {
   return (
     <View style={styles.flex}>
       <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-        <AppHeader title={t('tournaments.title')} subtitle={t('tournaments.count', { count: data?.total ?? 0 })} />
+        <AppHeader title={t('tournaments.title')} subtitle={t('tournaments.count', { count: data?.total ?? 0 })} showMenu />
 
         {isLoading ? (
           <LoadingView />

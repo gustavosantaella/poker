@@ -11,6 +11,8 @@ export interface User {
   address: string | null;
   phone: string | null;
   city: string | null;
+  clubId?: number | null;
+  photoUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,6 +88,7 @@ export interface PokerTable {
   notes: string | null;
   isActive: boolean;
   clubId?: number | null;
+  actionTimeSec?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -182,6 +185,7 @@ export interface Tournament {
   currentLevel: number | null;
   levelStartedAt: string | null;
   clubId?: number | null;
+  actionTimeSec?: number;
   /** Total de rebuys realizados en el torneo. */
   currentReEntries: number;
 }
@@ -240,6 +244,7 @@ export interface TablePayload {
   notes?: string;
   isActive?: boolean;
   clubId?: number | null;
+  actionTimeSec?: number;
 }
 
 export interface TournamentPayload {
@@ -269,6 +274,7 @@ export interface TournamentPayload {
   adminFeeType?: 'percent' | 'fixed';
   adminFeeValue?: number | null;
   clubId?: number | null;
+  actionTimeSec?: number;
   blindConfig: BlindConfig;
   /** Estructura manual (si el usuario la genero/edito en el formulario). Si se omite, el backend la regenera desde blindConfig. */
   blindStructure?: BlindStructureItem[] | null;

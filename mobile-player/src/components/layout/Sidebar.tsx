@@ -93,7 +93,11 @@ export function Sidebar({ visible, onClose }: { visible: boolean; onClose: () =>
     { key: 'tournaments', label: t('tabs.tournaments'), path: '/tournaments', icon: 'trophy' },
     { key: 'tables', label: t('tabs.tables'), path: '/tables', icon: 'grid' },
   ];
+  const isDealer = user?.role === 'dealer';
   const moreItems: SidebarItemDef[] = [
+    ...(isDealer
+      ? [{ key: 'dealer', label: t('dealer.title'), path: '/dealer', icon: 'shuffle' as const }]
+      : []),
     { key: 'clubs', label: t('tabs.clubs'), path: '/clubs', icon: 'business' },
     { key: 'profile', label: t('tabs.profile'), path: '/profile', icon: 'person' },
   ];

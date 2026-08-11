@@ -5,6 +5,8 @@ export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
   PLAYER = 'player',
+  /** Colaborador del club (p. ej. dealer que reparte cartas) - acceso de solo lectura. */
+  DEALER = 'dealer',
 }
 
 @Entity('users')
@@ -41,5 +43,9 @@ export class User extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   photoUrl: string | null;
+
+  /** Club al que pertenece el usuario (colaboradores/dealers). */
+  @Column({ name: 'club_id', type: 'int', nullable: true })
+  clubId: number | null;
 
 }

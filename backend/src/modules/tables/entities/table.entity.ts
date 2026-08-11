@@ -62,6 +62,10 @@ export class PokerTable extends BaseEntity {
   @Column({ name: 'club_id', type: 'int', nullable: true })
   clubId: number | null;
 
+  /** Tiempo de pensamiento por jugador (segundos). */
+  @Column({ type: 'int', default: 30 })
+  actionTimeSec: number = 30;
+
   /** Usuario que creó la mesa. */
   @Column({ name: 'created_by_user_id', type: 'int', nullable: true })
   createdByUserId: number | null;

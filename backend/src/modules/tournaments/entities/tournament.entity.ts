@@ -142,6 +142,10 @@ export class Tournament extends BaseEntity {
   @Column({ default: true })
   isActive: boolean;
 
+  /** Tiempo de pensamiento por jugador (segundos). */
+  @Column({ type: 'int', default: 30 })
+  actionTimeSec: number = 30;
+
   /** Club al que pertenece el torneo (opcional). */
   @Column({ name: 'club_id', type: 'int', nullable: true })
   clubId: number | null;

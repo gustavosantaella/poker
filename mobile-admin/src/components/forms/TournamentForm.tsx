@@ -200,6 +200,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         gameTypeId: tournament.gameTypeId ?? 0,
         startDate: tournament.startDate,
         clubId: tournament.clubId ?? undefined,
+        actionTimeSec: tournament.actionTimeSec ?? 30,
         status: tournament.status,
         mode: tournament.mode,
         currency: tournament.currency ?? DEFAULT_CURRENCY,
@@ -238,6 +239,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         gameTypeId: 0,
         startDate: defaultStartDate(),
         clubId: undefined,
+        actionTimeSec: 30,
         status: 'registering',
         mode: 'live',
         currency: DEFAULT_CURRENCY,
@@ -277,6 +279,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       gameTypeId: Number(values.gameTypeId),
       startDate: values.startDate,
       clubId: values.clubId != null ? Number(values.clubId) : null,
+      actionTimeSec: values.actionTimeSec != null ? Number(values.actionTimeSec) : 30,
       status: values.status,
       mode: values.mode,
       currency: values.currency,
@@ -370,6 +373,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
                 options={clubOptions}
               />
             ) : null}
+            <FormNumberField name="actionTimeSec" label={t('tournament.actionTime')} />
             <FormSegmented name="status" label={t('tournament.status')} options={statusOptions} />
             <FormSegmented name="mode" label={t('tournament.mode')} options={modeOptions} />
             <FormSwitch

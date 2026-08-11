@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAdminSidebar } from '@/hooks/use-sidebar';
 import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
 import { AppText } from './AppText';
@@ -10,14 +11,16 @@ export interface AppHeaderProps {
   title: string;
   subtitle?: string;
   showBack?: boolean;
+  showMenu?: boolean;
   right?: ReactNode;
   onBack?: () => void;
 }
 
-/** Encabezado de pantalla con boton de retroceso y acciones a la derecha. */
-export function AppHeader({ title, subtitle, showBack = false, right, onBack }: AppHeaderProps) {
+/** Encabezado de pantalla con botón de menú lateral, retroceso y acciones a la derecha. */
+export function AppHeader({ title, subtitle, showBack = false, showMenu = false, right, onBack }: AppHeaderProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const sidebar = useAdminSidebar();
 
   const handleBack = () => {
     if (onBack) {
@@ -30,7 +33,11 @@ export function AppHeader({ title, subtitle, showBack = false, right, onBack }: 
   return (
     <View style={styles.wrap}>
       <View style={styles.left}>
-        {showBack ? (
+        {showMenu ? (
+          <Pressable onPress={() => sidebar.open()} hitSlop={8} style={styles.backBtn}>
+            <Ionicons name="menu" size={24} color={colors.textPrimary} />
+          </Pressable>
+        ) : showBack ? (
           <Pressable onPress={handleBack} hitSlop={8} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
           </Pressable>

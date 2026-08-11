@@ -10,18 +10,20 @@ export interface ListItemProps {
   subtitle?: string;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
+  left?: ReactNode;
   right?: ReactNode;
   chevron?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
 }
 
-/** Fila de lista: icono + titulo + subtitulo + accion/chevron. */
+/** Fila de lista: icono/left + titulo + subtitulo + accion/chevron. */
 export function ListItem({
   title,
   subtitle,
   icon,
   iconColor,
+  left,
   right,
   chevron = false,
   onPress,
@@ -31,7 +33,9 @@ export function ListItem({
 
   const content = (
     <>
-      {icon ? (
+      {left ? (
+        <View style={styles.left}>{left}</View>
+      ) : icon ? (
         <View style={[styles.iconWrap, { backgroundColor: colors.surfaceMuted }]}>
           <Ionicons name={icon} size={20} color={iconColor ?? colors.primary} />
         </View>
@@ -71,6 +75,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: spacing.sm,
   },
+  left: { marginRight: 0 },
   iconWrap: {
     width: 40,
     height: 40,

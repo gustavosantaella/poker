@@ -20,6 +20,7 @@ export const createTableSchema = (t: TFunction) =>
         (v) => (v === '' || v == null ? undefined : v),
         z.coerce.number().int().min(1).optional(),
       ),
+      actionTimeSec: z.coerce.number().int().min(5).max(600).default(30),
     })
     .refine((data) => data.bigBlind >= data.smallBlind, {
       message: t('validation.bigBlindGTE'),

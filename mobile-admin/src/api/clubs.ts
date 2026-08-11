@@ -30,6 +30,25 @@ export async function fetchUsers(): Promise<Paginated<User>> {
   return res.data.data as Paginated<User>;
 }
 
+/** Lista los colaboradores con rol dealer. */
+export async function fetchDealers(): Promise<Paginated<User>> {
+  const res = await apiClient.get('/users', { params: { limit: 100, role: 'dealer' } });
+  return res.data.data as Paginated<User>;
+}
+
+export interface CreateUserPayload {
+  name: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'manager' | 'player' | 'dealer';
+  clubId?: number;
+}
+
+export async function createUser(payload: CreateUserPayload): Promise<User> {
+  const res = await apiClient.post('/users', payload);
+  return res.data.data as User;
+}
+
 export async function fetchClubMembers(clubId: number): Promise<ClubMember[]> {
   const res = await apiClient.get(`/clubs/${clubId}/members`);
   return res.data.data as ClubMember[];

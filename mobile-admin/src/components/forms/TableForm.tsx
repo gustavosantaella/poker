@@ -77,6 +77,7 @@ export function TableForm({ tableId }: TableFormProps) {
         mode: table.mode,
         notes: table.notes ?? '',
         clubId: table.clubId ?? undefined,
+        actionTimeSec: table.actionTimeSec ?? 30,
       }
     : {
         name: '',
@@ -91,6 +92,7 @@ export function TableForm({ tableId }: TableFormProps) {
         mode: 'live',
         notes: '',
         clubId: undefined,
+        actionTimeSec: 30,
       };
 
   const onSubmit = async (values: TableFormValues) => {
@@ -122,6 +124,7 @@ export function TableForm({ tableId }: TableFormProps) {
             />
             <FormSegmented name="mode" label={t('table.mode')} options={modeOptions} />
             <FormNumberField name="seats" label={t('table.seats')} />
+            <FormNumberField name="actionTimeSec" label={t('table.actionTime')} />
             {clubsList.length > 0 ? (
               <FormSelect
                 name="clubId"

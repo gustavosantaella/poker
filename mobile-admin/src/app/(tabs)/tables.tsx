@@ -18,7 +18,7 @@ export default function TablesScreen() {
   return (
     <View style={styles.flex}>
       <AppScreen refreshing={isRefetching} onRefresh={refetch}>
-        <AppHeader title={t('tables.title')} subtitle={t('tables.count', { count: data?.total ?? 0 })} />
+        <AppHeader title={t('tables.title')} subtitle={t('tables.count', { count: data?.total ?? 0 })} showMenu />
 
         {isLoading ? (
           <LoadingView />

@@ -39,7 +39,7 @@ export default function DashboardScreen() {
 
   return (
     <AppScreen refreshing={refreshing} onRefresh={handleRefresh}>
-      <AppHeader title={greeting} subtitle="PokeLAP Admin" />
+      <AppHeader title={greeting} subtitle="PokeLAP Admin" showMenu />
 
       {statsLoading ? (
         <LoadingView />

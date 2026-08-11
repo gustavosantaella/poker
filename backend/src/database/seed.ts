@@ -12,6 +12,8 @@ import {
   TournamentReservation,
 } from '../modules/tournaments/entities/tournament-reservation.entity';
 import { User, UserRole } from '../modules/users/entities/user.entity';
+import { Club } from '../modules/clubs/entities/club.entity';
+import { ClubMember, ClubMemberStatus } from '../modules/clubs/entities/club-member.entity';
 import { buildBlindStructure } from '../modules/tournaments/blind-structure.builder';
 import { BlindConfig, BuildBlindStructureParams } from '../modules/tournaments/types/blind-structure';
 
@@ -138,6 +140,65 @@ async function run(): Promise<void> {
   }
   const players = await userRepo.find({ where: { role: UserRole.PLAYER }, order: { email: 'ASC' } });
   console.log(`Seed: ${players.length} players available`);
+
+  // ---- Clubs + colaboradores (dealers) + miembros ----
+  const clubRepo = dataSource.getRepository(Club);
+  const clubMemberRepo = dataSource.getRepository(ClubMember);
+  const clubSpecs = [
+    { code: '100001', name: 'Poker Club Central', address: 'Av. Principal 123', phone: '+58 412 000 0001' },
+    { code: '100002', name: 'Royal Flush Club', address: 'Calle 5, Centro', phone: '+58 414 000 0002' },
+  ];
+  const clubs: Club[] = [];
+  for (const spec of clubSpecs) {
+    let club = await clubRepo.findOne({ where: { code: spec.code } });
+    if (!club) {
+      club = await clubRepo.save(
+        clubRepo.create({
+          code: spec.code,
+          name: spec.name,
+          address: spec.address,
+          phone: spec.phone,
+          adminUserId: existingAdmin?.id ?? 1,
+          createdByUserId: existingAdmin?.id ?? 1,
+        }),
+      );
+      console.log(`Seed: club "${spec.name}" created (code ${spec.code})`);
+    }
+    clubs.push(club);
+  }
+
+  const clubUsersData = [
+    { email: 'clubadmin1@pokelap.com', name: 'Club Admin Uno', password: 'Admin123!', role: UserRole.ADMIN, clubIndex: 0 },
+    { email: 'dealer1@pokelap.com', name: 'Carlos Dealer', password: 'Dealer123!', role: UserRole.DEALER, clubIndex: 0 },
+    { email: 'dealer2@pokelap.com', name: 'Maria Dealer', password: 'Dealer123!', role: UserRole.DEALER, clubIndex: 1 },
+  ];
+  for (const cu of clubUsersData) {
+    const existing = await userRepo.findOne({ where: { email: cu.email } });
+    if (!existing) {
+      await userRepo.save(
+        userRepo.create({
+          email: cu.email,
+          name: cu.name,
+          password: await bcrypt.hash(cu.password, 10),
+          role: cu.role,
+          clubId: clubs[cu.clubIndex]?.id ?? null,
+        }),
+      );
+      console.log(`Seed: ${cu.role} "${cu.name}" created (${cu.email} / ${cu.password})`);
+    }
+  }
+
+  // Miembros del club (los primeros jugadores, repartidos entre los clubs).
+  for (let i = 0; i < Math.min(players.length, 6); i++) {
+    const clubId = clubs[i % 2].id;
+    const existing = await clubMemberRepo.findOne({ where: { clubId, userId: players[i].id } });
+    if (!existing) {
+      await clubMemberRepo.save(
+        clubMemberRepo.create({ clubId, userId: players[i].id, status: ClubMemberStatus.ACCEPTED }),
+      );
+    }
+  }
+  console.log(`Seed: ${clubs.length} clubs, dealers and members ready`);
   // ---- Game types ----
   const gameTypeRepo = dataSource.getRepository(GameType);
   const gameTypesData = [
@@ -194,6 +255,8 @@ async function run(): Promise<void> {
         status: TableStatus.OPEN,
         mode: TableMode.LIVE,
         notes: "1/2 No-Limit Hold'em cash table.",
+        clubId: clubs[0]?.id ?? null,
+        actionTimeSec: 30,
       }),
     );
     console.log('Seed: sample cash table created');
@@ -212,6 +275,8 @@ async function run(): Promise<void> {
         status: TableStatus.OPEN,
         mode: TableMode.ONLINE,
         notes: '1/2 No-Limit Hold\'em online cash table.',
+        clubId: clubs[1]?.id ?? null,
+        actionTimeSec: 25,
       }),
     );
     console.log('Seed: sample online cash table created');
@@ -443,6 +508,8 @@ async function run(): Promise<void> {
           paidPlacesValue: spec.options?.paidPlacesValue ?? null,
           blindConfig: spec.blindConfig as BlindConfig,
           blindStructure: structure.items,
+          clubId: clubs[0]?.id ?? null,
+          actionTimeSec: 30,
           startedAt: spec.live?.startedAt ?? null,
           currentLevel: spec.live?.currentLevel ?? null,
           levelStartedAt: spec.live?.levelStartedAt ?? null,
@@ -483,6 +550,12 @@ async function run(): Promise<void> {
             status,
             stack: status === ReservationStatus.ACCEPTED ? tournament.startingStack : null,
             reEntries,
+            // Asignación de mesa/asiento para que el dealer vea la mesa con jugadores.
+            tableNumber:
+              status === ReservationStatus.ACCEPTED
+                ? (i % Math.max(1, tournament.tableCount ?? 1)) + 1
+                : null,
+            seatNumber: status === ReservationStatus.ACCEPTED ? (i % 9) + 1 : null,
           }),
         );
       }

@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { ChipsModule } from './modules/chips/chips.module';
 import { ClubsModule } from './modules/clubs/clubs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { DealerModule } from './modules/dealer/dealer.module';
 import { GameTypesModule } from './modules/game-types/game-types.module';
 import { TablesModule } from './modules/tables/tables.module';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
@@ -42,6 +43,7 @@ import configuration from './config/configuration';
     TournamentsModule,
     ClubsModule,
     DashboardModule,
+    DealerModule,
   ],
   controllers: [AppController],
   providers: [
