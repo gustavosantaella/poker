@@ -8,45 +8,64 @@ import {
 } from './types/blind-structure';
 
 /**
- * Motor de escalera de ciegas clasica.
+ * Motor de escalera de ciegas estilo casino.
  *
- * Empieza en 100/100 ante 100 y crece con la escalera clasica
- * (100/100, 100/200, 200/300, 300/500, 500/800, ...) donde la SB del
- * nivel es la BB del anterior. El ante es configurable (bb_ante,
- * per_player o none). La estructura termina cuando la BB supera ~5% del
- * stack promedio restante (o al fijar un numero de niveles).
+ * La secuencia de Big Blinds replica exactamente la estructura de la imagen:
+ *   Nv1: 100/100 ante 100
+ *   Nv2: 100/200 ante 200
+ *   Nv3: 200/300 ante 300
+ *   Nv4: 200/400 ante 400   → break
+ *   Nv5: 300/600 ante 600
+ *   Nv6: 400/800 ante 800
+ *   Nv7: 500/1000 ante 1000
+ *   Nv8: 600/1200 ante 1200  → break
+ *   Nv9: 1000/1500 ante 1500
+ *   ...y así sucesivamente
+ *
+ * Reglas:
+ *   - SB = BB del nivel anterior (nivel 1: SB = BB)
+ *   - Ante = BB (bb_ante), BB/5 (per_player) o 0 (none)
+ *   - Break cada `breakEveryLevels` niveles
  */
-
-/** Mantissas para el ante por jugador (1, 2, 3, 5) x 10^k. */
-const ANTE_MANTISSAS = [1, 2, 3, 5];
-
-/** Campo grande por defecto cuando maxPlayers es null (jugadores ilimitados). */
-const DEFAULT_PLAYERS = 45;
-const MIN_LEVELS = 12;
-const MAX_LEVELS = 60;
 
 /**
- * Escalera clasica de ciegas: SB = BB del nivel anterior.
- * 100/100, 100/200, 200/300, 300/500, 500/800, 800/1600, 1600/3200, ...
- * Despues de 500/800 la ciega grande DOBLA en cada nivel.
- * Se genera programaticamente hasta cubrir MAX_LEVELS niveles.
+ * Secuencia canónica de Big Blinds usada en la estructura.
+ * Construida para cubrir hasta 60 niveles.
  */
-const NICE_BLIND_SEQUENCE: number[] = (() => {
-  const values = [100, 200, 300, 500, 800];
-  while (values.length < MAX_LEVELS) {
-    values.push(values[values.length - 1] * 2);
-  }
-  return values;
-})();
+const CASINO_BB_SEQUENCE: number[] = [
+  // Niveles 1-4
+  100, 200, 300, 400,
+  // Niveles 5-8
+  600, 800, 1000, 1200,
+  // Niveles 9-11
+  1500, 2000, 2500,
+  // Niveles 12-17
+  3000, 4000, 6000, 8000, 10000, 12000,
+  // Niveles 18-21
+  15000, 20000, 25000, 30000,
+  // Niveles 22-25
+  40000, 50000, 60000, 80000,
+  // Niveles 26-28
+  100000, 150000, 150000,
+  // Niveles 29-33
+  200000, 250000, 300000, 400000, 500000,
+  // Niveles 34-37
+  600000, 800000, 1000000, 1200000,
+  // Niveles 38-40
+  1600000, 2000000, 2500000,
+  // Niveles 41-45 (extensión)
+  3000000, 4000000, 5000000, 6000000, 8000000,
+  // Niveles 46-50
+  10000000, 12000000, 15000000, 20000000, 25000000,
+  // Niveles 51-60
+  30000000, 40000000, 50000000, 60000000, 80000000,
+  100000000, 120000000, 150000000, 200000000, 250000000,
+];
 
-/** Ajuste del numero de niveles segun el ritmo elegido (slow = estructura mas profunda). */
-const GROWTH_LEVEL_FACTOR: Record<BlindGrowth, number> = {
-  slow: 1.15,
-  normal: 1,
-  fast: 0.85,
-};
+/** Mantissas para el ante per-player (1, 2, 3, 5) x 10^k. */
+const ANTE_MANTISSAS = [1, 2, 3, 5];
 
-/** Redondea el ante al patron clasico (1, 2, 3, 5) x 10^k. */
+/** Redondea al patrón clásico (1, 2, 3, 5) x 10^k. */
 function toNiceAnte(value: number): number {
   if (value <= 0) return 0;
   const exp = Math.floor(Math.log10(value));
@@ -55,13 +74,22 @@ function toNiceAnte(value: number): number {
   let bestDiff = Infinity;
   for (const m of ANTE_MANTISSAS) {
     const diff = Math.abs(base - m);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      best = m;
-    }
+    if (diff < bestDiff) { bestDiff = diff; best = m; }
   }
   return Math.round(best * 10 ** exp);
 }
+
+/** Campo por defecto cuando maxPlayers es null. */
+const DEFAULT_PLAYERS = 45;
+const MIN_LEVELS = 12;
+const MAX_LEVELS = 60;
+
+/** Factor de niveles según el ritmo. */
+const GROWTH_LEVEL_FACTOR: Record<BlindGrowth, number> = {
+  slow: 1.15,
+  normal: 1,
+  fast: 0.85,
+};
 
 export function buildBlindStructure(params: BuildBlindStructureParams): BlindStructureResult {
   const {
@@ -79,11 +107,7 @@ export function buildBlindStructure(params: BuildBlindStructureParams): BlindStr
     throw new BadRequestException('startingStack must be a positive number');
   }
 
-  // Cantidad de jugadores: determina el numero de niveles del torneo
-  // (ilimitado usa el campo por defecto, como antes).
   const players = maxPlayers && maxPlayers >= 2 ? maxPlayers : DEFAULT_PLAYERS;
-
-  // Niveles objetivo: escala con el campo y el ritmo elegido (mas jugadores = mas niveles).
   const baseTarget = Math.round((10 + players * 0.8) * GROWTH_LEVEL_FACTOR[growth]);
   const targetLevels = numberOfLevels
     ? Math.min(MAX_LEVELS, Math.max(1, numberOfLevels))
@@ -93,20 +117,18 @@ export function buildBlindStructure(params: BuildBlindStructureParams): BlindStr
 
   for (let level = 1; level <= targetLevels; level++) {
     const idx = level - 1;
-    if (idx >= NICE_BLIND_SEQUENCE.length) break;
+    if (idx >= CASINO_BB_SEQUENCE.length) break;
 
-    const bigBlind = NICE_BLIND_SEQUENCE[idx];
+    const bigBlind = CASINO_BB_SEQUENCE[idx];
+    // SB = BB del nivel anterior. Nivel 1: SB = BB.
+    const smallBlind = level === 1 ? bigBlind : CASINO_BB_SEQUENCE[idx - 1];
 
-    // SB = BB del nivel anterior: 100/100, 100/200, 200/300, 300/500, 500/800, ...
-    const smallBlind = level === 1 ? bigBlind : NICE_BLIND_SEQUENCE[idx - 1];
-
-    // Ante configurable como antes: bb_ante => ante = BB; per_player => ~BB/5; none => sin ante.
     const ante =
       anteMode === 'none'
         ? 0
         : anteMode === 'per_player'
           ? Math.min(toNiceAnte(Math.round(bigBlind / 5)), Math.floor(bigBlind / 2))
-          : bigBlind;
+          : bigBlind; // bb_ante: ante = BB
 
     items.push({
       type: 'level',
@@ -139,3 +161,6 @@ export function buildBlindStructure(params: BuildBlindStructureParams): BlindStr
     },
   };
 }
+
+
+
