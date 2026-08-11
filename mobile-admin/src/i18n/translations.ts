@@ -346,6 +346,8 @@ export const en = {
   'validation.addOnStackRequired': 'Add-on stack is required when add-on is enabled',
   'validation.addOnUntilLevelRequired': 'Until level is required when add-on is enabled',
   'validation.percentMax': 'Percent cannot exceed 100',
+  'validation.formInvalid': 'Check the highlighted fields before saving',
+  'validation.formInvalidFields': 'Review the fields: {fields}',
 
   'errors.sessionExpired': 'Your session has expired. Please sign in again.',
   'errors.forbidden': 'You do not have permission to perform this action.',
@@ -703,6 +705,8 @@ export const es: Record<TranslationKey, string> = {
   'validation.addOnStackRequired': 'Las fichas del add-on son obligatorias cuando está activado',
   'validation.addOnUntilLevelRequired': 'El nivel es obligatorio cuando el add-on está activado',
   'validation.percentMax': 'El porcentaje no puede superar 100',
+  'validation.formInvalid': 'Revisa los campos marcados antes de guardar',
+  'validation.formInvalidFields': 'Revisa los campos: {fields}',
 
   'errors.sessionExpired': 'Tu sesión expiró. Inicia sesión de nuevo.',
   'errors.forbidden': 'No tienes permiso para realizar esta acción.',

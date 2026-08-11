@@ -26,6 +26,33 @@ import { FormSwitch } from './FormSwitch';
 import { FormTextField } from './FormTextField';
 import { TournamentStructureSection } from './TournamentStructureSection';
 
+/** Claves de react-hook-form que no aportan info al log (evitan recursiones circulares). */
+const SKIP_ERROR_KEYS = new Set(['ref', 'types']);
+
+/** Convierte los errores de react-hook-form en lineas "campo: mensaje" legibles. */
+function extractErrorLines(errors: unknown, prefix = ''): string[] {
+  const lines: string[] = [];
+  if (!errors || typeof errors !== 'object') return lines;
+  if (Array.isArray(errors)) {
+    errors.forEach((item, i) => lines.push(...extractErrorLines(item, `${prefix}[${i}].`)));
+    return lines;
+  }
+  const obj = errors as Record<string, unknown>;
+  for (const key of Object.keys(obj)) {
+    if (SKIP_ERROR_KEYS.has(key)) continue;
+    const value = obj[key];
+    if (!value || typeof value !== 'object') continue;
+    if (Array.isArray(value)) {
+      value.forEach((item, i) => lines.push(...extractErrorLines(item, `${prefix}${key}[${i}].`)));
+    } else if (typeof (value as { message?: unknown }).message === 'string') {
+      lines.push(`${prefix}${key}: ${(value as { message: string }).message}`);
+    } else {
+      lines.push(...extractErrorLines(value, `${prefix}${key}.`));
+    }
+  }
+  return lines;
+}
+
 /** Campo de jugadores maximos: se oculta cuando el torneo es de jugadores ilimitados. */
 function MaxPlayersField() {
   const { t } = useI18n();
@@ -299,14 +326,21 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         values.blindStructure && values.blindStructure.length > 0 ? values.blindStructure : undefined,
     };
 
+    console.log('[TournamentForm] PAYLOAD A ENVIAR:', JSON.stringify(payload, null, 2));
+
     try {
       if (tournamentId) {
         await updateTournament.mutateAsync({ id: tournamentId, payload });
       } else {
         await createTournament.mutateAsync(payload);
       }
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/tournaments');
+      }
     } catch (error) {
+      console.error('[TournamentForm] ERROR AL GUARDAR:', error);
       setServerError(getErrorMessage(error));
     }
   };
@@ -402,7 +436,16 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
 
           <AppButton
             title={tournamentId ? t('common.saveChanges') : t('tournament.create')}
-            onPress={handleSubmit(onSubmit)}
+            onPress={handleSubmit(onSubmit, (errors) => {
+              const lines = extractErrorLines(errors);
+              console.log('[TournamentForm] ERRORES DE VALIDACIÓN:', lines.length ? lines : errors);
+              const paths = [...new Set(lines.map((l) => l.split(':')[0].trim()))].join(', ');
+              setServerError(
+                paths
+                  ? t('validation.formInvalidFields', { fields: paths })
+                  : t('validation.formInvalid'),
+              );
+            })}
             loading={formState.isSubmitting || createTournament.isPending || updateTournament.isPending}
             fullWidth
             style={styles.submit}

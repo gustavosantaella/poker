@@ -20,7 +20,7 @@ interface BlindStructureEditorProps {
 }
 
 const toInt = (value: string) => {
-  const n = Number(value);
+  const n = Math.round(Number(value));
   return Number.isNaN(n) ? 0 : n;
 };
 
@@ -67,11 +67,21 @@ export function BlindStructureEditor({
   const nextLevel = lastLevel ? lastLevel.level + 1 : 1;
 
   const updateLevel = (index: number, patch: Partial<Omit<LevelItem, 'type'>>) => {
-    onChange(items.map((item, i) => (i === index && item.type === 'level' ? { ...item, ...patch } : item)));
+    // Normaliza los valores para que la estructura siempre cumpla el schema
+    // (enteros con minimos validos). Evita que el submit falle en silencio.
+    const clean = { ...patch };
+    if (clean.bigBlind != null) clean.bigBlind = Math.max(1, clean.bigBlind);
+    if (clean.smallBlind != null) clean.smallBlind = Math.max(0, clean.smallBlind);
+    if (clean.ante != null) clean.ante = Math.max(0, clean.ante);
+    if (clean.durationMin != null) clean.durationMin = Math.max(0, clean.durationMin);
+    onChange(items.map((item, i) => (i === index && item.type === 'level' ? { ...item, ...clean } : item)));
   };
 
   const updateBreak = (index: number, patch: Partial<Omit<BreakItem, 'type'>>) => {
-    onChange(items.map((item, i) => (i === index && item.type === 'break' ? { ...item, ...patch } : item)));
+    const clean = { ...patch };
+    if (clean.afterLevel != null) clean.afterLevel = Math.max(1, clean.afterLevel);
+    if (clean.durationMin != null) clean.durationMin = Math.max(0, clean.durationMin);
+    onChange(items.map((item, i) => (i === index && item.type === 'break' ? { ...item, ...clean } : item)));
   };
 
   const removeItem = (index: number) => {

@@ -59,7 +59,8 @@ function toNice(value: number): number {
   let result = best * 10 ** exp;
   const next = 10 ** (exp + 1);
   if (next - value < value - result) result = next;
-  return result;
+  // Las ciegas siempre son numeros enteros (evita 110.00000000000001 por precision float).
+  return Math.round(result);
 }
 
 /** Redondea el ante al patron clasico (1, 2, 3, 5) x 10^k. */
@@ -76,7 +77,7 @@ function toNiceAnte(value: number): number {
       best = m;
     }
   }
-  return best * 10 ** exp;
+  return Math.round(best * 10 ** exp);
 }
 
 function geometricMean(values: number[]): number {
@@ -163,13 +164,13 @@ export function buildBlindStructure(params: BuildBlindStructureParams): BlindStr
       level,
       smallBlind: sb,
       bigBlind: bb,
-      ante,
-      durationMin: levelDurationMin,
+      ante: Math.round(ante),
+      durationMin: Math.round(levelDurationMin),
     });
 
     const hasBreak = breakEveryLevels > 0 && level % breakEveryLevels === 0;
     if (hasBreak) {
-      items.push({ type: 'break', durationMin: breakDurationMin, afterLevel: level });
+      items.push({ type: 'break', durationMin: Math.round(breakDurationMin), afterLevel: level });
     }
     previousBb = bb;
   }

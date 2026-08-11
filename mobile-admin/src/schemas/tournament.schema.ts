@@ -18,17 +18,17 @@ const optionalNumber = (min: number) =>
 
 const blindLevelSchema = z.object({
   type: z.literal('level'),
-  level: z.number().int().min(1),
-  smallBlind: z.number().int().min(0),
-  bigBlind: z.number().int().min(1),
-  ante: z.number().int().min(0),
-  durationMin: z.number().int().min(0),
+  level: z.coerce.number().int().min(1),
+  smallBlind: z.coerce.number().int().min(0),
+  bigBlind: z.coerce.number().int().min(1),
+  ante: z.coerce.number().int().min(0),
+  durationMin: z.coerce.number().int().min(0),
 });
 
 const blindBreakSchema = z.object({
   type: z.literal('break'),
-  afterLevel: z.number().int().min(1),
-  durationMin: z.number().int().min(0),
+  afterLevel: z.coerce.number().int().min(1),
+  durationMin: z.coerce.number().int().min(0),
 });
 
 export const createTournamentSchema = (t: TFunction) =>

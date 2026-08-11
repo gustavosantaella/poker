@@ -19,6 +19,27 @@ import { getErrorMessage } from '@/utils/error';
 import { FormNumberField } from './FormNumberField';
 import { FormSegmented } from './FormSegmented';
 
+/** Normaliza los items de la estructura a enteros (el schema exige int y el backend
+ *  puede devolver valores con decimales por precision float: 1.1 * 100 = 110.00000000000001). */
+function normalizeItems(items: BlindStructureItem[]): BlindStructureItem[] {
+  return items.map((item) =>
+    item.type === 'level'
+      ? {
+          ...item,
+          level: Math.round(item.level),
+          smallBlind: Math.round(item.smallBlind),
+          bigBlind: Math.round(item.bigBlind),
+          ante: Math.round(item.ante),
+          durationMin: Math.round(item.durationMin),
+        }
+      : {
+          ...item,
+          afterLevel: Math.round(item.afterLevel),
+          durationMin: Math.round(item.durationMin),
+        },
+  );
+}
+
 interface TournamentStructureSectionProps {
   initialStructure?: GenerateStructureResult | null;
 }
@@ -75,10 +96,12 @@ export function TournamentStructureSection({
     maxReEntries: w.reEntryEnabled && w.maxReEntries != null ? Number(w.maxReEntries) : undefined,
   });
 
-  /** Aplica la estructura y la sincroniza al formulario para que se guarde al pulsar Guardar. */
+  /** Aplica la estructura y la sincroniza al formulario para que se guarde
+   *  al pulsar Guardar (normalizada a enteros para pasar la validacion del schema). */
   const applyStructure = (next: GenerateStructureResult) => {
-    setStructure(next);
-    setValue('blindStructure', next.items.length > 0 ? next.items : undefined, { shouldDirty: true });
+    const items = normalizeItems(next.items);
+    setStructure({ ...next, items });
+    setValue('blindStructure', items.length > 0 ? items : undefined, { shouldDirty: true });
   };
 
   const handleGenerate = async () => {
