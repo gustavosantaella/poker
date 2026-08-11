@@ -1,6 +1,7 @@
-﻿import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View, Image } from 'react-native';
 import { PokerTable } from '@/api/types';
+import { API_URL } from '@/api/config';
 import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
@@ -9,6 +10,14 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { ReservationState } from '@/utils/reservation';
 import { formatCurrency } from '@/utils/format';
+import { useAdminProfile } from '@/hooks/use-queries';
+
+const SERVER_BASE = API_URL.replace(/\/api$/, '');
+function buildAvatarUrl(path?: string | null): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith('http')) return path;
+  return `${SERVER_BASE}${path}`;
+}
 
 export function TableCard({
   table,
@@ -23,6 +32,8 @@ export function TableCard({
 }) {
   const { colors } = useTheme();
   const { t } = useI18n();
+  const { data: admin } = useAdminProfile();
+  
   const online = table.mode === 'online';
   const modeBg = online ? colors.primary : colors.success;
   const modeFg = colors.onPrimary;
@@ -44,6 +55,9 @@ export function TableCard({
       </View>
 
       <View style={styles.header}>
+        {admin?.photoUrl ? (
+          <Image source={{ uri: buildAvatarUrl(admin?.photoUrl) }} style={styles.adminAvatar} />
+        ) : null}
         <View style={styles.titleWrap}>
           <AppText variant="subtitle" numberOfLines={1}>{table.name}</AppText>
           <AppText variant="caption">{table.gameType?.name ?? t('table.noGameType')}</AppText>
@@ -87,7 +101,8 @@ const styles = StyleSheet.create({
     marginTop: -16, marginHorizontal: -16, marginBottom: 12, paddingVertical: 7,
   },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 },
-  titleWrap: { flex: 1, marginRight: 8 },
+  adminAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12, backgroundColor: '#333' },
+  titleWrap: { flex: 1, marginRight: 8, justifyContent: 'center' },
   meta: { flexDirection: 'row', gap: 12 },
   metaItem: { flex: 1 },
   reserveBtn: { marginTop: 12 },

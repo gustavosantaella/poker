@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
+import { uploadAvatar } from '@/api/auth';
+import { API_URL } from '@/api/config';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppHeader } from '@/components/ui/AppHeader';
 import { AppModal } from '@/components/ui/AppModal';
@@ -21,6 +23,13 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { getErrorMessage } from '@/utils/error';
 
+const SERVER_BASE = API_URL.replace(/\/api$/, '');
+function buildAvatarUrl(path?: string | null): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith('http')) return path;
+  return `${SERVER_BASE}${path}`;
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -33,7 +42,8 @@ export default function ProfileScreen() {
   const [name, setName] = useState('');
   const [country, setCountry] = useState('');
   const [phone, setPhone] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);      // local URI after picking
+  const [photoChanged, setPhotoChanged] = useState(false);       // whether user changed the photo
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -87,7 +97,8 @@ export default function ProfileScreen() {
     setName(user?.name ?? '');
     setCountry(user?.country ?? '');
     setPhone(user?.phone ?? '');
-    setPhoto(user?.photoUrl ?? null);
+    setPhoto(null);
+    setPhotoChanged(false);
     setFormError(null);
     setEditOpen(true);
   };
@@ -98,11 +109,11 @@ export default function ProfileScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      quality: 0.4,
-      base64: true,
+      quality: 0.7,
     });
-    if (!result.canceled && result.assets[0]?.base64) {
-      setPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    if (!result.canceled && result.assets[0]?.uri) {
+      setPhoto(result.assets[0].uri);
+      setPhotoChanged(true);
     }
   };
 
@@ -114,14 +125,23 @@ export default function ProfileScreen() {
     setSaving(true);
     setFormError(null);
     try {
+      let photoUrl: string | null | undefined = undefined;
+      if (photoChanged && photo) {
+        // Upload the file and get back the server URL
+        photoUrl = await uploadAvatar(photo);
+      } else if (photoChanged && !photo) {
+        // User removed the photo
+        photoUrl = null;
+      }
       await updateProfile({
         alias: alias.trim(),
         name: name.trim(),
         country: country.trim() || null,
         phone: phone.trim() || null,
-        photoUrl: photo,
+        photoUrl,
       });
       setEditOpen(false);
+      setPhotoChanged(false);
     } catch (e) {
       setFormError(getErrorMessage(e));
     } finally {
@@ -142,7 +162,7 @@ export default function ProfileScreen() {
 
       <View style={styles.avatarWrap}>
         {user?.photoUrl ? (
-          <Image source={{ uri: user.photoUrl }} style={[styles.avatar, { backgroundColor: colors.surfaceMuted }]} />
+          <Image source={{ uri: buildAvatarUrl(user?.photoUrl) }} style={[styles.avatar, { backgroundColor: colors.surfaceMuted }]} />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.primaryMuted }]}>
             <Ionicons name="person" size={44} color={colors.primary} />
@@ -237,7 +257,7 @@ export default function ProfileScreen() {
                     title={t('profile.removePhoto')}
                     size="sm"
                     variant="ghost"
-                    onPress={() => setPhoto(null)}
+                    onPress={() => { setPhoto(null); setPhotoChanged(true); }}
                   />
                 ) : null}
               </View>

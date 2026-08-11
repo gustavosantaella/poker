@@ -4,7 +4,10 @@ import { API_URL } from './config';
 
 export const TOKEN_STORAGE_KEY = 'pokelapPlayer.authToken';
 
-export const apiClient = axios.create({ baseURL: API_URL });
+export const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: { 'X-App-Client': 'mobile-player' },
+});
 
 let onUnauthorized: (() => void) | null = null;
 

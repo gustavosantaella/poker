@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -7,6 +7,11 @@ import { User } from './entities/user.entity';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('admin/profile')
+  getAdminProfile() {
+    return this.usersService.getAdminProfile();
+  }
 
   @Get()
   findAll() {

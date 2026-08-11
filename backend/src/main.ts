@@ -1,6 +1,9 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { json, urlencoded } from 'express';
+import { join } from 'path';
 import { networkInterfaces } from 'os';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -9,8 +12,14 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService);
+
+  // Serve uploaded files (avatars, etc.) as static assets
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
+
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
 
   // Global API prefix: /api
   app.setGlobalPrefix('api');

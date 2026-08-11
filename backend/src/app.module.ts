@@ -1,4 +1,4 @@
-﻿import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,6 +11,7 @@ import { GameTypesModule } from './modules/game-types/game-types.module';
 import { TablesModule } from './modules/tables/tables.module';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
 import { UsersModule } from './modules/users/users.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -33,6 +34,7 @@ import configuration from './config/configuration';
     }),
     UsersModule,
     AuthModule,
+    UploadsModule,
     GameTypesModule,
     ChipsModule,
     TablesModule,

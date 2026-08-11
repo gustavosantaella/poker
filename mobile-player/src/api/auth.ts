@@ -38,3 +38,21 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<User
   const res = await apiClient.patch('/users/me/profile', payload);
   return res.data.data as User;
 }
+
+export async function fetchAdminProfile(): Promise<User | null> {
+  const res = await apiClient.get('/users/admin/profile');
+  return res.data.data as User | null;
+}
+
+export async function uploadAvatar(localUri: string): Promise<string> {
+  const formData = new FormData();
+  const filename = localUri.split('/').pop() ?? 'avatar.jpg';
+  const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+  formData.append('file', { uri: localUri, name: filename, type: mimeType } as unknown as Blob);
+  const res = await apiClient.post('/uploads/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return (res.data.data as { url: string }).url;
+}
+

@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
@@ -61,5 +61,13 @@ export class UsersService extends CrudService<User> {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  async getAdminProfile() {
+    const admin = await this.repository.findOne({
+      where: { role: UserRole.ADMIN },
+      order: { id: 'ASC' }
+    });
+    return admin ? this.toSafeUser(admin) : null;
   }
 }

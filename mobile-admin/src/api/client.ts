@@ -6,7 +6,10 @@ import { log } from '@/utils/logger';
 export const TOKEN_STORAGE_KEY = 'pokelap.authToken';
 
 /** Cliente axios compartido (baseURL /api). */
-export const apiClient = axios.create({ baseURL: API_URL });
+export const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: { 'X-App-Client': 'mobile-admin' },
+});
 
 log.info(`API base URL: ${API_URL}`);
 

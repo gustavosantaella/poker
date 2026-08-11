@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchMe, updateProfile, UpdateProfilePayload } from '@/api/auth';
+import { fetchAdminProfile, fetchMe, updateProfile, UpdateProfilePayload } from '@/api/auth';
 import {
   createTableReservation,
   deleteTableReservation,
@@ -171,5 +171,13 @@ export function useUpdateProfile() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['me'] });
     },
+  });
+}
+
+export function useAdminProfile() {
+  return useQuery({
+    queryKey: ['admin-profile'],
+    queryFn: fetchAdminProfile,
+    staleTime: 1000 * 60 * 60, // cache for 1 hour
   });
 }
