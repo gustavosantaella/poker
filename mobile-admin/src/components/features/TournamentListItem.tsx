@@ -44,29 +44,41 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
       : t('tournament.levelShort', { level: current.level })
     : null;
 
+  const isGoldCard = running;
+  const titleColor = isGoldCard ? '#1E1602' : undefined;
+  const subtextColor = isGoldCard ? 'rgba(30, 22, 2, 0.76)' : colors.textSecondary;
+  const bodyTextColor = isGoldCard ? '#1E1602' : undefined;
+  const liveBarBg = isGoldCard ? 'rgba(0, 0, 0, 0.08)' : colors.primaryMuted;
+  const liveBarText = isGoldCard ? '#1E1602' : colors.primary;
+  const dividerColor = isGoldCard ? 'rgba(30, 22, 2, 0.15)' : colors.border;
+
   return (
     <>
-      <AppCard onPress={onPress} style={styles.card}>
+      <AppCard onPress={onPress} style={styles.card} variant={running ? 'gold' : 'metallic'}>
         <View style={styles.header}>
           <View style={styles.titleWrap}>
-            <AppText variant="subtitle" numberOfLines={1}>
+            <AppText variant="subtitle" numberOfLines={1} style={titleColor ? { color: titleColor } : undefined}>
               {tournament.name}
             </AppText>
-            <AppText variant="caption">
+            <AppText variant="caption" style={{ color: subtextColor }}>
               {tournament.gameType?.name ?? t('table.noGameType')} • {formatDateTime(tournament.startDate)} •{' '}
               {tournament.mode === 'online' ? t('mode.online') : t('mode.live')}
             </AppText>
           </View>
-          <TournamentStatusBadge status={tournament.status} />
+          <TournamentStatusBadge
+            status={tournament.status}
+            color={isGoldCard ? '#F7DF9E' : undefined}
+            backgroundColor={isGoldCard ? '#1E1602' : undefined}
+          />
         </View>
 
         {current && (running || paused) ? (
-          <View style={[styles.liveBar, { backgroundColor: colors.primaryMuted }]}>
-            <AppText variant="caption" weight="semibold" color={colors.primary}>
+          <View style={[styles.liveBar, { backgroundColor: liveBarBg }]}>
+            <AppText variant="caption" weight="semibold" style={{ color: liveBarText }}>
               ▶ {currentLabel}
               {running ? ` • ${countdown.time}` : ''}
             </AppText>
-            <AppText variant="caption" color={colors.primary}>
+            <AppText variant="caption" style={{ color: liveBarText }}>
               {t('tournament.elapsed')}: {countdown.elapsedTotal}
             </AppText>
           </View>
@@ -74,19 +86,19 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
 
         <View style={styles.meta}>
           <View style={styles.metaItem}>
-            <AppText variant="caption" color={colors.textSecondary}>
+            <AppText variant="caption" style={{ color: subtextColor }}>
               {t('table.buyIn')}
             </AppText>
-            <AppText variant="body" weight="semibold" numberOfLines={1}>
+            <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
               {formatCurrency(tournament.buyIn, tournament.currency)}
               {tournament.fee > 0 ? ` + ${formatCurrency(tournament.fee, tournament.currency)}` : ''}
             </AppText>
           </View>
           <View style={styles.metaItem}>
-            <AppText variant="caption" color={colors.textSecondary}>
+            <AppText variant="caption" style={{ color: subtextColor }}>
               {t('tournament.players')}
             </AppText>
-            <AppText variant="body" weight="semibold" numberOfLines={1}>
+            <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
               {tournament.maxPlayers == null ? t('tournament.unlimited') : formatNumber(tournament.maxPlayers)}
             </AppText>
           </View>
@@ -94,18 +106,18 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
 
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
-            <AppText variant="caption" color={colors.textSecondary}>
+            <AppText variant="caption" style={{ color: subtextColor }}>
               {t('tournament.reserved')}
             </AppText>
-            <AppText variant="body" weight="semibold" numberOfLines={1}>
+            <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
               {formatNumber(tournament.reservedCount ?? 0)}
             </AppText>
           </View>
           <View style={styles.metaItem}>
-            <AppText variant="caption" color={colors.textSecondary}>
+            <AppText variant="caption" style={{ color: subtextColor }}>
               {t('tournament.playing')}
             </AppText>
-            <AppText variant="body" weight="semibold" numberOfLines={1}>
+            <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
               {formatNumber(tournament.playersCount ?? 0)}
             </AppText>
           </View>
@@ -113,29 +125,29 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
 
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
-            <AppText variant="caption" color={colors.textSecondary}>
+            <AppText variant="caption" style={{ color: subtextColor }}>
               {t('tournament.rebuys')}
             </AppText>
-            <AppText variant="body" weight="semibold" numberOfLines={1}>
+            <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
               {formatNumber(tournament.currentReEntries ?? 0)}
             </AppText>
           </View>
           <View style={styles.metaItem}>
-            <AppText variant="caption" color={colors.textSecondary}>
+            <AppText variant="caption" style={{ color: subtextColor }}>
               {t('tournament.collected')}
             </AppText>
-            <AppText variant="body" weight="semibold" numberOfLines={1}>
+            <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
               {formatCurrency(collected, tournament.currency)}
             </AppText>
           </View>
         </View>
 
         {tournament.guaranteedPrize != null ? (
-          <View style={[styles.footerRow, { borderTopColor: colors.border }]}>
-            <AppText variant="caption" color={colors.textSecondary}>
+          <View style={[styles.footerRow, { borderTopColor: dividerColor }]}>
+            <AppText variant="caption" style={{ color: subtextColor }}>
               {t('tournament.guaranteedPrize')}
             </AppText>
-            <AppText variant="body" weight="semibold">
+            <AppText variant="body" weight="semibold" style={bodyTextColor ? { color: bodyTextColor } : undefined}>
               {formatCurrency(tournament.guaranteedPrize, tournament.currency)}
             </AppText>
           </View>

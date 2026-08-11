@@ -64,6 +64,9 @@ export function AppButton({
   const fontSizes: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 17 };
   const borderRadius = size === 'sm' ? radius.sm : radius.md;
 
+  const isColored = variant === 'primary' || variant === 'danger' || variant === 'success';
+  const showShadow = !isDisabled && isColored;
+
   return (
     <Pressable
       onPress={onPress}
@@ -78,6 +81,12 @@ export function AppButton({
           borderWidth: variant === 'ghost' ? 1 : 0,
           borderColor: variant === 'ghost' ? colors.primary : undefined,
           alignSelf: fullWidth ? 'stretch' : 'auto',
+          // Premium glowing shadow effect for colored buttons in dark mode
+          shadowColor: showShadow ? backgrounds[variant] : 'transparent',
+          shadowOffset: showShadow ? { width: 0, height: 4 } : { width: 0, height: 0 },
+          shadowOpacity: showShadow ? 0.38 : 0,
+          shadowRadius: showShadow ? 8 : 0,
+          elevation: showShadow ? 4 : 0,
         },
         style,
       ]}

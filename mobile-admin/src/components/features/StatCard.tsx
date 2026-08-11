@@ -4,6 +4,7 @@ import { useTheme } from '@/theme';
 import { radius } from '@/theme/radius';
 import { spacing } from '@/theme/spacing';
 import { AppText } from '@/components/ui/AppText';
+import { AppCard } from '@/components/ui/AppCard';
 
 export type StatTone = 'primary' | 'success' | 'warning' | 'accent' | 'info' | 'muted';
 
@@ -29,16 +30,27 @@ export function StatCard({ label, value, icon, tone = 'primary' }: StatCardProps
 
   const color = tones[tone];
 
+  const cardVariant = tone === 'warning' ? 'gold' : 'metallic';
+  const isGoldCard = cardVariant === 'gold';
+
+  // High contrast colors on gold cards
+  const textColor = isGoldCard ? '#1E1602' : color;
+  const iconColor = isGoldCard ? '#1E1602' : color;
+  const iconWrapBg = isGoldCard ? 'rgba(0, 0, 0, 0.08)' : colors.primaryMuted;
+  const labelColor = isGoldCard ? '#3A2F12' : undefined;
+
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={[styles.iconWrap, { backgroundColor: colors.primaryMuted }]}>
-        <Ionicons name={icon} size={20} color={color} />
+    <AppCard style={styles.card} variant={cardVariant}>
+      <View style={[styles.iconWrap, { backgroundColor: iconWrapBg }]}>
+        <Ionicons name={icon} size={20} color={iconColor} />
       </View>
-      <AppText variant="number" color={color}>
+      <AppText variant="number" color={textColor}>
         {value}
       </AppText>
-      <AppText variant="caption">{label}</AppText>
-    </View>
+      <AppText variant="caption" style={labelColor ? { color: labelColor } : undefined}>
+        {label}
+      </AppText>
+    </AppCard>
   );
 }
 
