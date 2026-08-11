@@ -1,6 +1,6 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BlindLevelItem, BlindBreakItem, TournamentChip } from '@/api/types';
 import { createTournamentReservation } from '@/api/tournaments';
@@ -25,6 +25,7 @@ import { getErrorMessage } from '@/utils/error';
 import { summarizeStructure } from '@/utils/blind-structure';
 import { formatChips, formatCurrency, formatDateTime, formatDuration, formatNumber } from '@/utils/format';
 import { canReserveTournament, ReservationState } from '@/utils/reservation';
+import { buildDefaultPrizes, getPaidPlacesCount } from '@/utils/prizes';
 
 type Tab = 'info' | 'structure' | 'prizes' | 'chips';
 
@@ -87,6 +88,23 @@ export default function TournamentDetailScreen() {
 
   const online = tournament.mode === 'online';
   const canReserve = canReserveTournament(tournament);
+  // Premios: se muestran los puestos pagados configurados; cada puesto usa el
+  // monto guardado si existe y el resto se calcula como en el admin (distribucion
+  // proporcional del premio garantizado).
+  const displayPrizes = useMemo(() => {
+    const saved = prizes ?? [];
+    const placeCount = getPaidPlacesCount(tournament);
+    if (placeCount <= 0) return [];
+    const total = tournament.guaranteedPrize ?? 0;
+    if (total <= 0 && saved.length === 0) return [];
+    const savedByPlace = new Map(saved.map((p) => [p.place, p.amount]));
+    const computedByPlace = new Map(buildDefaultPrizes(placeCount, total).map((p) => [p.place, p.amount]));
+    return Array.from({ length: placeCount }, (_, i) => {
+      const place = i + 1;
+      return { place, amount: savedByPlace.get(place) ?? computedByPlace.get(place) ?? 0 };
+    });
+  }, [prizes, tournament]);
+  const prizesEstimated = displayPrizes.length > 0 && (prizes?.length ?? 0) < displayPrizes.length;
   const reEntryLabel = tournament.reEntryEnabled
     ? tournament.maxReEntries === 0
       ? t('tournament.unlimited')
@@ -298,7 +316,11 @@ export default function TournamentDetailScreen() {
       ) : activeTab === 'chips' ? (
         <ChipsSection chips={tournamentChips ?? []} />
       ) : (
-        <PrizesSection prizes={prizes ?? []} currency={tournament.currency} />
+        <PrizesSection
+          prizes={displayPrizes}
+          currency={tournament.currency}
+          estimated={prizesEstimated}
+        />
       )}
 
       <ConfirmModal
@@ -389,7 +411,15 @@ function ChipsSection({ chips }: { chips: TournamentChip[] }) {
   );
 }
 
-function PrizesSection({ prizes, currency }: { prizes: { place: number; amount: number }[]; currency: string }) {
+function PrizesSection({
+  prizes,
+  currency,
+  estimated = false,
+}: {
+  prizes: { place: number; amount: number }[];
+  currency: string;
+  estimated?: boolean;
+}) {
   const { colors } = useTheme();
   const { t } = useI18n();
   if (prizes.length === 0) {
@@ -403,6 +433,11 @@ function PrizesSection({ prizes, currency }: { prizes: { place: number; amount: 
   }
   return (
     <AppCard padded={false}>
+      {estimated ? (
+        <AppText variant="caption" color={colors.textSecondary} style={styles.prizesNote}>
+          {t('tournament.prizesEstimated')}
+        </AppText>
+      ) : null}
       {prizes.map((p, i) => (
         <View
           key={p.place}
@@ -464,6 +499,7 @@ const styles = StyleSheet.create({
   },
   chipInfo: { flex: 1 },
   chipDiscard: { flexShrink: 1, textAlign: 'right' },
+  prizesNote: { paddingHorizontal: 16, paddingTop: 12 },
   prizeRow: {
     flexDirection: 'row',
     alignItems: 'center',
