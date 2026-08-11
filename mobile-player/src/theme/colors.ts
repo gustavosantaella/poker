@@ -1,51 +1,51 @@
 export const palette = {
   light: {
-    background: '#F6F7F9',
+    background: '#F0F2F5', // Slightly darker off-white for better contrast
     surface: '#FFFFFF',
-    surfaceMuted: '#EFF1F4',
-    border: '#E4E7EC',
-    textPrimary: '#10141A',
-    textSecondary: '#5C6470',
-    textMuted: '#9AA1AB',
-    primary: '#1B6EF3',
-    onPrimary: '#FFFFFF',
-    primaryMuted: '#E7F0FE',
-    accent: '#7C5CFC',
+    surfaceMuted: '#E4E7EC',
+    border: '#D1D5DB',
+    textPrimary: '#111827',
+    textSecondary: '#4B5563',
+    textMuted: '#9CA3AF',
+    primary: '#D4AF37', // Gold
+    onPrimary: '#000000', // Black text on gold
+    primaryMuted: '#FDF6E3',
+    accent: '#0F5132', // Casino Green
     onAccent: '#FFFFFF',
     success: '#1E9E5A',
     successMuted: '#E3F5EC',
     warning: '#D97706',
     warningMuted: '#FDF1E0',
-    danger: '#DC2626',
+    danger: '#E32636', // Alizarin Red (Cards)
     dangerMuted: '#FDEBEB',
     info: '#0E7490',
     infoMuted: '#E0F2F5',
-    overlay: 'rgba(10, 12, 16, 0.45)',
+    overlay: 'rgba(0, 0, 0, 0.5)',
     tabBar: '#FFFFFF',
   },
   dark: {
-    background: '#0F1115',
-    surface: '#171A20',
-    surfaceMuted: '#1E222A',
-    border: '#2A2F38',
-    textPrimary: '#F0F2F5',
-    textSecondary: '#A9B0BA',
-    textMuted: '#6C7480',
-    primary: '#4C8DFF',
-    onPrimary: '#0B1119',
-    primaryMuted: '#172C4F',
-    accent: '#9B7FFF',
-    onAccent: '#0B1119',
+    background: '#121418', // Deep Charcoal/Black
+    surface: '#1A1D24', // Slightly lighter charcoal for cards
+    surfaceMuted: '#242830',
+    border: '#2A363B', // Subtle gold/green tinted border
+    textPrimary: '#F3F4F6',
+    textSecondary: '#9CA3AF',
+    textMuted: '#6B7280',
+    primary: '#D4AF37', // Casino Gold
+    onPrimary: '#000000', // Black text on gold chips
+    primaryMuted: '#2D2411', // Very dark gold hint
+    accent: '#0F5132', // Casino Green
+    onAccent: '#FFFFFF',
     success: '#34C07A',
     successMuted: '#15301F',
     warning: '#F0A63B',
     warningMuted: '#33270F',
-    danger: '#F26D6D',
+    danger: '#E32636', // Vibrant Playing Card Red
     dangerMuted: '#3A1A1A',
     info: '#4FB6D8',
     infoMuted: '#122C33',
-    overlay: 'rgba(0, 0, 0, 0.6)',
-    tabBar: '#171A20',
+    overlay: 'rgba(0, 0, 0, 0.7)', // Darker overlay for casino vibe
+    tabBar: '#0A0B0E', // Very dark for tab bar
   },
 } as const;
 

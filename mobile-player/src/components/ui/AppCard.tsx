@@ -18,11 +18,24 @@ export function AppCard({ children, style, padded = true, onPress }: AppCardProp
     <View
       style={[
         styles.card,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        { 
+          backgroundColor: colors.surface, 
+          borderColor: colors.border,
+          shadowColor: colors.primary, // subtle gold shadow
+        },
         style,
       ]}
     >
-      {onPress ? <Pressable onPress={onPress}>{content}</Pressable> : content}
+      {onPress ? (
+        <Pressable 
+          onPress={onPress}
+          style={({ pressed }) => pressed && { opacity: 0.85 }}
+        >
+          {content}
+        </Pressable>
+      ) : (
+        content
+      )}
     </View>
   );
 }
@@ -32,6 +45,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     overflow: 'hidden',
+    // iOS shadow
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    // Android elevation
+    elevation: 3,
   },
   padded: { padding: spacing.md },
 });

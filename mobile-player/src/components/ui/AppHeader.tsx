@@ -27,11 +27,11 @@ export function AppHeader({
         </Pressable>
       ) : null}
       <View style={styles.titles}>
-        <AppText variant="title" numberOfLines={1}>
+        <AppText variant="title" color={colors.primary} numberOfLines={1}>
           {title}
         </AppText>
         {subtitle ? (
-          <AppText variant="caption" numberOfLines={1}>
+          <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
             {subtitle}
           </AppText>
         ) : null}

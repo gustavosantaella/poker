@@ -71,10 +71,18 @@ export function AppButton({
           backgroundColor: backgrounds[variant],
           height: heights[size],
           borderRadius: size === 'sm' ? radius.sm : radius.md,
-          opacity: isDisabled ? 0.55 : pressed ? 0.85 : 1,
-          borderWidth: variant === 'ghost' ? 1 : 0,
-          borderColor: variant === 'ghost' ? colors.primary : undefined,
+          opacity: isDisabled ? 0.55 : pressed ? 0.75 : 1,
+          borderWidth: variant === 'ghost' ? 1 : variant === 'primary' ? 1 : 0,
+          borderColor: variant === 'ghost' ? colors.primary : variant === 'primary' ? colors.primaryMuted : undefined,
           alignSelf: fullWidth ? 'stretch' : 'auto',
+          // Casino-style shadows for primary action
+          ...(variant === 'primary' && !isDisabled && {
+            shadowColor: colors.primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 6,
+            elevation: 4,
+          })
         },
         style,
       ]}

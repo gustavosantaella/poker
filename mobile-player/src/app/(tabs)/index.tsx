@@ -1,4 +1,4 @@
-﻿import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { createTableReservation } from '@/api/tables';
@@ -62,9 +62,9 @@ export default function HomeScreen() {
     <AppScreen refreshing={tablesRefetching || tournamentsRefetching} onRefresh={handleRefresh}>
       <AppHeader title={t('home.hello', { name: greeting })} />
 
-      <View style={[styles.hero, { backgroundColor: colors.primaryMuted }]}>
-        <AppText variant="title" color={colors.primary}>{t('home.heroTitle')}</AppText>
-        <AppText variant="caption" color={colors.primary}>{t('home.heroSubtitle')}</AppText>
+      <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.primary, borderWidth: 1 }]}>
+        <AppText variant="title" color={colors.primary} style={styles.heroTitle}>{t('home.heroTitle')}</AppText>
+        <AppText variant="caption" color={colors.textSecondary} style={styles.heroSubtitle}>{t('home.heroSubtitle')}</AppText>
       </View>
 
       <View style={styles.sectionHeader}>
@@ -128,9 +128,22 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   hero: {
     borderRadius: 16,
-    padding: 20,
+    padding: 24,
     marginBottom: 16,
-    gap: 4,
+    gap: 8,
+    // Add shadow to the hero section
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  heroTitle: {
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  heroSubtitle: {
+    opacity: 0.9,
   },
   sectionHeader: {
     flexDirection: 'row',
