@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Tournament } from './tournament.entity';
@@ -13,7 +13,15 @@ export enum ReservationStatus {
   ELIMINATED = 'eliminated',
 }
 
+/**
+ * - Un jugador solo puede tener UNA reserva por torneo.
+ * - Una mesa/asiento solo puede estar ocupada por un jugador aceptado a la vez
+ *   (MySQL permite múltiples NULLs, por lo que las filas pendientes/levantadas
+ *   con mesa/asiento null no colisionan).
+ */
 @Entity('tournament_reservations')
+@Index('UQ_tournament_reservations_tournament_user', ['tournamentId', 'userId'], { unique: true })
+@Index('UQ_tournament_reservations_seat', ['tournamentId', 'tableNumber', 'seatNumber'], { unique: true })
 export class TournamentReservation extends BaseEntity {
   @ManyToOne(() => Tournament, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tournament_id' })

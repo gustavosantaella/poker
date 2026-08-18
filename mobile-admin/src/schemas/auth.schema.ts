@@ -16,6 +16,7 @@ export const createRegisterSchema = (t: TFunction) =>
       email: z.string().min(1, t('validation.emailRequired')).email(t('validation.emailInvalid')),
       password: z.string().min(8, t('validation.passwordMin')).max(72),
       confirmPassword: z.string().min(1, t('validation.confirmPassword')),
+      inviteCode: z.string().optional(),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: t('validation.passwordsMismatch'),

@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
 import { JoinClubDto } from './dto/join-club.dto';
@@ -32,6 +33,7 @@ export class ClubsController {
     return this.service.myMemberships(user.id);
   }
 
+  @Roles(UserRole.ADMIN)
   @Post()
   create(@Body() dto: CreateClubDto, @CurrentUser() user: User) {
     return this.service.createClub(dto, user.id);
@@ -42,17 +44,19 @@ export class ClubsController {
     return this.service.findOne(id);
   }
 
+  @Roles(UserRole.ADMIN)
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateClubDto) {
     return this.service.update(id, dto);
   }
 
+  @Roles(UserRole.ADMIN)
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);
   }
 
-  // ---- Miembros del club ----
+  // ---- Miembros del club (solo el admin del club puede gestionar) ----
 
   @Get(':id/members')
   members(@Param('id', ParseIntPipe) id: number) {

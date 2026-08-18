@@ -8,12 +8,15 @@ import { FAB } from '@/components/ui/FAB';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTournaments } from '@/hooks/use-queries';
+import { useTournamentEvents } from '@/hooks/use-tournament-events';
 
 export default function TournamentsScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const { data, isLoading, isRefetching, refetch } = useTournaments();
   const tournaments = data?.items ?? [];
+  // Tiempo real: actualiza la lista cuando cambia cualquier torneo (SSE).
+  useTournamentEvents();
 
   return (
     <View style={styles.flex}>

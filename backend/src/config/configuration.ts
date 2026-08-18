@@ -1,4 +1,5 @@
 export default () => ({
+  nodeEnv: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '3000', 10),
   database: {
     host: process.env.DB_HOST ?? 'localhost',
@@ -11,4 +12,14 @@ export default () => ({
     secret: process.env.JWT_SECRET ?? 'pokelap-dev-secret',
     expiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   },
+  auth: {
+    // Código secreto opcional: si se envía en el registro, la cuenta se crea como admin.
+    // Si no se define, nadie puede auto-registrarse como admin (solo vía seed o admin existente).
+    adminInviteCode: process.env.ADMIN_INVITE_CODE ?? '',
+  },
+  corsOrigins: (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
 });
+

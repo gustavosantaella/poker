@@ -449,7 +449,7 @@ export default function SettingsScreen() {
                         style={styles.photoPreview}
                       />
                     ) : (
-                      <AppText color={colors.primary}>{t('settings.uploadPhoto', 'Upload Photo')}</AppText>
+                      <AppText color={colors.primary}>{t('settings.uploadPhoto')}</AppText>
                     )}
                   </Pressable>
                 </View>

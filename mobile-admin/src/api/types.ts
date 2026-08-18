@@ -1,6 +1,6 @@
 import { Currency } from '@/constants/currencies';
 
-export type UserRole = 'admin' | 'manager';
+export type UserRole = 'admin' | 'manager' | 'player';
 
 export interface User {
   id: number;
@@ -11,6 +11,9 @@ export interface User {
   address: string | null;
   phone: string | null;
   city: string | null;
+  alias: string | null;
+  country: string | null;
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

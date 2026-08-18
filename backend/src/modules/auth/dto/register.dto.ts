@@ -1,5 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
-import { UserRole } from '../../users/entities/user.entity';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail({}, { message: 'A valid email is required' })
@@ -19,8 +18,13 @@ export class RegisterDto {
   @MaxLength(60)
   alias?: string;
 
+  /**
+   * Código de invitación opcional. Si coincide con ADMIN_INVITE_CODE del backend,
+   * la cuenta se crea con rol admin. Sin él, el rol SIEMPRE es player: un usuario
+   * nunca puede auto-asignarse un rol desde el cliente.
+   */
   @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
-
+  @IsString()
+  @MaxLength(64)
+  inviteCode?: string;
 }

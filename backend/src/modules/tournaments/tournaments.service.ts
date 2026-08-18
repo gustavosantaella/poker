@@ -1,9 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, MoreThan, Repository } from 'typeorm';
+import { DataSource, DeepPartial, EntityManager, MoreThan, Repository } from 'typeorm';
 import { CrudOptions, CrudService } from '../../common/services/crud.service';
 import { Paginated } from '../../common/types/paginated';
 import { Chip } from '../chips/entities/chip.entity';
+import { RealtimeService } from '../realtime/realtime.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import { buildBlindStructure } from './blind-structure.builder';
 import { CreateReservationDto, RebuyDto, UpdateReservationDto } from './dto/reservation.dto';
@@ -20,6 +27,8 @@ import { BlindStructureItem, BuildBlindStructureParams } from './types/blind-str
 
 @Injectable()
 export class TournamentsService extends CrudService<Tournament> {
+  private readonly logger = new Logger(TournamentsService.name);
+
   constructor(
     @InjectRepository(Tournament) repository: Repository<Tournament>,
     @InjectRepository(TournamentReservation)
@@ -30,6 +39,8 @@ export class TournamentsService extends CrudService<Tournament> {
     private readonly prizesRepo: Repository<TournamentPrize>,
     @InjectRepository(Chip) private readonly chipsRepo: Repository<Chip>,
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
+    private readonly dataSource: DataSource,
+    private readonly realtime: RealtimeService,
   ) {
     super(repository);
   }
@@ -148,21 +159,19 @@ export class TournamentsService extends CrudService<Tournament> {
   // ---------------- Estado en vivo ----------------
 
   /**
-   * Calcula la posición en vivo de un torneo en curso: si el tiempo del
-   * nivel/descanso actual ya se agotó, devuelve el torneo avanzado al siguiente
-   * item a partir de los timestamps (startedAt / levelStartedAt) y la estructura.
-   * El avance de niveles NO se persiste (lo persiste nextLevel) para evitar que
-   * una lectura compita con "siguiente nivel" y se salten los descansos.
-   * La FINALIZACIÓN sí se persiste (idempotente): cuando se agota el último
-   * item de la estructura, el torneo pasa automáticamente a 'completed'.
+   * Calcula (sin efectos de escritura) la posición en vivo de un torneo en curso:
+   * a partir de los timestamps (startedAt / levelStartedAt) y la estructura,
+   * devuelve el nivel/descanso actual o el estado 'completed' si el tiempo se
+   * agotó. La PERSISTENCIA del avance la hace el cron (tickLiveTournaments) y las
+   * acciones manuales (nextLevel): una simple lectura nunca escribe.
    */
-  private async syncLiveStatus(tournament: Tournament): Promise<Tournament> {
+  private computeLiveState(tournament: Tournament): { patch: DeepPartial<Tournament>; changed: boolean } {
     if (tournament.status !== TournamentStatus.RUNNING) {
-      return tournament;
+      return { patch: {}, changed: false };
     }
     const structure = tournament.blindStructure;
     if (!structure || structure.length === 0) {
-      return tournament;
+      return { patch: {}, changed: false };
     }
     const now = Date.now();
 
@@ -174,11 +183,11 @@ export class TournamentsService extends CrudService<Tournament> {
     if (Number.isNaN(levelStartMs)) {
       // Fallback: derivar el inicio del nivel desde startedAt + duraciones previas.
       if (!tournament.startedAt) {
-        return tournament;
+        return { patch: {}, changed: false };
       }
       const base = new Date(tournament.startedAt).getTime();
       if (Number.isNaN(base)) {
-        return tournament;
+        return { patch: {}, changed: false };
       }
       levelStartMs = base;
       for (let i = 0; i < current; i++) {
@@ -186,11 +195,16 @@ export class TournamentsService extends CrudService<Tournament> {
       }
     }
 
+    const finished = {
+      status: TournamentStatus.COMPLETED,
+      currentLevel: null,
+      levelStartedAt: null,
+    } as DeepPartial<Tournament>;
+
     // El nivel guardado apunta fuera de la estructura (p. ej. se acortó la
     // estructura): el torneo ya agotó sus niveles, se completa.
     if (tournament.currentLevel != null && tournament.currentLevel >= structure.length) {
-      await this.complete(tournament.id);
-      return { ...tournament, status: TournamentStatus.COMPLETED, currentLevel: null, levelStartedAt: null };
+      return { patch: finished, changed: true };
     }
 
     let advanced = false;
@@ -202,8 +216,7 @@ export class TournamentsService extends CrudService<Tournament> {
       }
       if (current >= structure.length - 1) {
         // El último item de la estructura ya se agotó: el torneo terminó.
-        await this.complete(tournament.id);
-        return { ...tournament, status: TournamentStatus.COMPLETED, currentLevel: null, levelStartedAt: null };
+        return { patch: finished, changed: true };
       }
       levelStartMs += durationMs;
       current += 1;
@@ -211,18 +224,46 @@ export class TournamentsService extends CrudService<Tournament> {
     }
 
     if (advanced) {
-      return { ...tournament, currentLevel: current, levelStartedAt: new Date(levelStartMs) };
+      return { patch: { currentLevel: current, levelStartedAt: new Date(levelStartMs) }, changed: true };
     }
+    return { patch: {}, changed: false };
+  }
+
+  /** Posición en vivo calculada sin persistir (para lecturas). */
+  private async syncLiveStatus(tournament: Tournament): Promise<Tournament> {
+    const { patch } = this.computeLiveState(tournament);
+    return { ...tournament, ...patch } as Tournament;
+  }
+
+  /**
+   * Cron: avanza y persiste el estado en vivo de todos los torneos RUNNING y
+   * notifica por SSE. Usa actualizaciones condicionales (currentLevel + status
+   * como condición) para no pisar acciones manuales concurrentes (nextLevel).
+   */
+  async tickLiveTournaments(): Promise<void> {
+    const tournaments = await this.repository.find({
+      where: { status: TournamentStatus.RUNNING },
+    });
+    for (const tournament of tournaments) {
+      const { patch, changed } = this.computeLiveState(tournament);
+      if (!changed) continue;
+      await this.repository.update(
+        { id: tournament.id, currentLevel: tournament.currentLevel ?? 0, status: tournament.status },
+        patch,
+      );
+      this.logger.log(`Tournament ${tournament.id} auto-advanced -> ${JSON.stringify(patch)}`);
+      const updated = await this.findOne(tournament.id);
+      this.realtime.emit(tournament.id, 'tournament:updated', updated);
+    }
+  }
+
+  /** Publica el estado actual de un torneo por SSE (torneo + suscriptores globales). */
+  private async broadcastTournament(id: number): Promise<Tournament> {
+    const tournament = await this.findOne(id);
+    this.realtime.emit(id, 'tournament:updated', tournament);
     return tournament;
   }
 
-  /** Persiste la finalización de un torneo (idempotente). */
-  private async complete(id: number): Promise<void> {
-    await this.repository.update(
-      { id },
-      { status: TournamentStatus.COMPLETED, currentLevel: null, levelStartedAt: null },
-    );
-  }
 
   async start(id: number): Promise<Tournament> {
     const tournament = await this.findOne(id);
@@ -230,12 +271,14 @@ export class TournamentsService extends CrudService<Tournament> {
       throw new BadRequestException('Tournament cannot be started from its current status');
     }
     const now = new Date();
-    return super.update(id, {
+    const updated = await super.update(id, {
       status: TournamentStatus.RUNNING,
       startedAt: tournament.startedAt ?? now,
       currentLevel: tournament.currentLevel ?? 0,
       levelStartedAt: tournament.levelStartedAt ?? now,
     } as DeepPartial<Tournament>);
+    this.realtime.emit(id, 'tournament:updated', updated);
+    return updated;
   }
 
   async pause(id: number): Promise<Tournament> {
@@ -251,7 +294,9 @@ export class TournamentsService extends CrudService<Tournament> {
       patch.currentLevel = live.currentLevel;
       patch.levelStartedAt = live.levelStartedAt;
     }
-    return super.update(id, patch);
+    const updated = await super.update(id, patch);
+    this.realtime.emit(id, 'tournament:updated', updated);
+    return updated;
   }
 
   async resume(id: number): Promise<Tournament> {
@@ -259,10 +304,12 @@ export class TournamentsService extends CrudService<Tournament> {
     if (tournament.status !== TournamentStatus.PAUSED) {
       throw new BadRequestException('Tournament is not paused');
     }
-    return super.update(id, {
+    const updated = await super.update(id, {
       status: TournamentStatus.RUNNING,
       levelStartedAt: new Date(),
     } as DeepPartial<Tournament>);
+    this.realtime.emit(id, 'tournament:updated', updated);
+    return updated;
   }
 
   async nextLevel(id: number): Promise<Tournament> {
@@ -288,14 +335,14 @@ export class TournamentsService extends CrudService<Tournament> {
         { id, currentLevel: rawIndex },
         { currentLevel: live.currentLevel, levelStartedAt: live.levelStartedAt },
       );
-      return this.findOne(id);
+      return this.broadcastTournament(id);
     }
 
     // Avance manual: pasar al siguiente item (nivel o descanso).
     const current = live.currentLevel ?? rawIndex;
     const next = current + 1;
     if (next >= items.length) {
-      // Avance condicional: si otra peticion ya completo el torneo, no se pisa.
+      // Avance condicional: si otra petición ya completó el torneo, no se pisa.
       await this.repository.update(
         { id, currentLevel: current },
         {
@@ -304,10 +351,10 @@ export class TournamentsService extends CrudService<Tournament> {
           levelStartedAt: null,
         },
       );
-      return this.findOne(id);
+      return this.broadcastTournament(id);
     }
     await this.repository.update({ id, currentLevel: current }, { currentLevel: next, levelStartedAt: new Date() });
-    return this.findOne(id);
+    return this.broadcastTournament(id);
   }
   // ---------------- Reservas ----------------
 
@@ -315,16 +362,19 @@ export class TournamentsService extends CrudService<Tournament> {
   private readonly SEATS_PER_TABLE = 9;
 
   /**
-   * Asigna automaticamente una mesa (1..tableCount) y un asiento libre (1..SEATS_PER_TABLE)
+   * Asigna automáticamente una mesa (1..tableCount) y un asiento libre (1..SEATS_PER_TABLE)
    * al jugador aceptado: elige la primera mesa con espacio y el primer asiento libre.
+   * Se ejecuta DENTRO de la transacción que bloquea la fila del torneo, por lo que
+   * dos aceptaciones concurrentes no pueden asignar el mismo asiento.
    */
   private async autoAssignSeat(
+    manager: EntityManager,
     tournamentId: number,
     tableCount: number,
     excludeReservationId: number,
   ): Promise<{ tableNumber: number; seatNumber: number }> {
     const tables = Math.max(1, Math.min(tableCount || 1, 50));
-    const accepted = await this.reservationsRepo.find({
+    const accepted = await manager.find(TournamentReservation, {
       where: { tournamentId, status: ReservationStatus.ACCEPTED },
     });
     const occupied = new Set(
@@ -345,21 +395,20 @@ export class TournamentsService extends CrudService<Tournament> {
 
   /** Valida que una mesa/asiento manual no esté ocupada por otro jugador aceptado. */
   private async validateSeatAvailable(
-    tournamentId: number,
+    manager: EntityManager,
+    tournament: Tournament,
     tableNumber: number,
     seatNumber: number,
     excludeReservationId: number,
   ): Promise<void> {
-    const tournament = await this.repository.findOne({ where: { id: tournamentId } });
-    if (!tournament) throw new NotFoundException('Tournament not found');
     if (tableNumber < 1 || tableNumber > (tournament.tableCount ?? 1)) {
       throw new BadRequestException(`Table must be between 1 and ${tournament.tableCount ?? 1}`);
     }
     if (seatNumber < 1 || seatNumber > this.SEATS_PER_TABLE) {
       throw new BadRequestException(`Seat must be between 1 and ${this.SEATS_PER_TABLE}`);
     }
-    const conflict = await this.reservationsRepo.findOne({
-      where: { tournamentId, status: ReservationStatus.ACCEPTED, tableNumber, seatNumber },
+    const conflict = await manager.findOne(TournamentReservation, {
+      where: { tournamentId: tournament.id, status: ReservationStatus.ACCEPTED, tableNumber, seatNumber },
     });
     if (conflict && conflict.id !== excludeReservationId) {
       throw new BadRequestException(`Seat ${seatNumber} on table ${tableNumber} is already taken`);
@@ -378,179 +427,280 @@ export class TournamentsService extends CrudService<Tournament> {
     });
   }
 
+  /**
+   * Recalcula los contadores denormalizados del torneo (reservedPlayers,
+   * currentPlayers, currentReEntries) a partir de las reservas, DENTRO de la
+   * misma transacción que las muta: así nunca se desincronizan.
+   */
+  private async refreshCounters(manager: EntityManager, tournamentId: number): Promise<void> {
+    const [reservedPlayers, currentPlayers, reEntryRow] = await Promise.all([
+      manager.count(TournamentReservation, { where: { tournamentId } }),
+      manager.count(TournamentReservation, {
+        where: { tournamentId, status: ReservationStatus.ACCEPTED },
+      }),
+      manager
+        .createQueryBuilder(TournamentReservation, 'r')
+        .select('COALESCE(SUM(r.reEntries), 0)', 'total')
+        .where('r.tournament_id = :id', { id: tournamentId })
+        .getRawOne(),
+    ]);
+    await manager.update(
+      Tournament,
+      { id: tournamentId },
+      {
+        reservedPlayers,
+        currentPlayers,
+        currentReEntries: Number(reEntryRow?.total ?? 0),
+      },
+    );
+  }
 
   async createReservation(tournamentId: number, dto: CreateReservationDto) {
-    const user = await this.usersRepo.findOne({ where: { id: dto.userId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    const tournament = await this.repository.findOne({ where: { id: tournamentId } });
-    if (!tournament) {
-      throw new NotFoundException('Tournament not found');
-    }
-    // Un torneo ya no admite reservas si terminó, se canceló o su registro cerró
-    // (registrationOpen = false o el late registration ya llegó a su nivel límite).
-    if (tournament.status === TournamentStatus.COMPLETED || tournament.status === TournamentStatus.CANCELLED) {
-      throw new BadRequestException('Cannot reserve: tournament is already finished or cancelled');
-    }
-    if (!tournament.registrationOpen) {
-      throw new BadRequestException('Registration is closed for this tournament');
-    }
-    if (
-      tournament.lateRegistrationEnabled &&
-      tournament.lateRegistrationUntilLevel !== null &&
-      tournament.currentLevel !== null &&
-      tournament.currentLevel >= tournament.lateRegistrationUntilLevel
-    ) {
-      throw new BadRequestException('Late registration has ended for this tournament');
-    }
-    const existing = await this.reservationsRepo.findOne({ where: { tournamentId, userId: dto.userId } });
-    if (existing) {
-      throw new BadRequestException('Player already has a reservation for this tournament');
-    }
-    const reservation = this.reservationsRepo.create({
-      tournamentId,
-      userId: dto.userId,
-      status: ReservationStatus.PENDING,
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.findOne(User, { where: { id: dto.userId } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      // Lock pesimista sobre el torneo: serializa la creación de reservas.
+      const tournament = await manager.findOne(Tournament, {
+        where: { id: tournamentId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!tournament) {
+        throw new NotFoundException('Tournament not found');
+      }
+      // Un torneo ya no admite reservas si terminó, se canceló o su registro cerró
+      // (registrationOpen = false o el late registration ya llegó a su nivel límite).
+      if (tournament.status === TournamentStatus.COMPLETED || tournament.status === TournamentStatus.CANCELLED) {
+        throw new BadRequestException('Cannot reserve: tournament is already finished or cancelled');
+      }
+      if (!tournament.registrationOpen) {
+        throw new BadRequestException('Registration is closed for this tournament');
+      }
+      if (
+        tournament.lateRegistrationEnabled &&
+        tournament.lateRegistrationUntilLevel !== null &&
+        tournament.currentLevel !== null &&
+        tournament.currentLevel >= tournament.lateRegistrationUntilLevel
+      ) {
+        throw new BadRequestException('Late registration has ended for this tournament');
+      }
+      const existing = await manager.findOne(TournamentReservation, {
+        where: { tournamentId, userId: dto.userId },
+      });
+      if (existing) {
+        throw new BadRequestException('Player already has a reservation for this tournament');
+      }
+      const saved = await manager.save(
+        manager.create(TournamentReservation, {
+          tournamentId,
+          userId: dto.userId,
+          status: ReservationStatus.PENDING,
+        }),
+      );
+      await this.refreshCounters(manager, tournamentId);
+      const reservation = await manager.findOne(TournamentReservation, { where: { id: saved.id } });
+      this.realtime.emit(tournamentId, 'reservation:updated', { tournamentId, reservation });
+      return reservation;
     });
-    const saved = await this.reservationsRepo.save(reservation);
-    return this.reservationsRepo.findOne({ where: { id: saved.id } });
   }
 
   async updateReservation(tournamentId: number, reservationId: number, dto: UpdateReservationDto) {
-    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
-    if (!reservation) {
-      throw new NotFoundException('Reservation not found');
-    }
-    reservation.status = dto.status;
-    if (dto.stack !== undefined && dto.stack !== null) {
-      reservation.stack = dto.stack;
-    } else if (dto.status === ReservationStatus.ACCEPTED && reservation.stack == null) {
-      const tournament = await this.findOne(tournamentId);
-      reservation.stack = tournament.startingStack;
-    }
-
-    // Auto-assign table/seat when accepting a player
-    if (dto.status === ReservationStatus.ACCEPTED) {
-      const tournament = await this.repository.findOne({ where: { id: tournamentId } });
+    return this.dataSource.transaction(async (manager) => {
+      // Bloquea la fila del torneo para serializar la asignación de asientos
+      // entre admins concurrentes (evita doble asignación).
+      const tournament = await manager.findOne(Tournament, {
+        where: { id: tournamentId },
+        lock: { mode: 'pessimistic_write' },
+      });
       if (!tournament) throw new NotFoundException('Tournament not found');
 
-      if (dto.tableNumber != null && dto.seatNumber != null) {
-        // Manual assignment — validate no conflict
-        await this.validateSeatAvailable(tournamentId, dto.tableNumber, dto.seatNumber, reservationId);
-        reservation.tableNumber = dto.tableNumber;
-        reservation.seatNumber = dto.seatNumber;
-      } else {
-        // Auto-assign
-        const seat = await this.autoAssignSeat(tournamentId, tournament.tableCount, reservationId);
-        reservation.tableNumber = seat.tableNumber;
-        reservation.seatNumber = seat.seatNumber;
+      const reservation = await manager.findOne(TournamentReservation, {
+        where: { id: reservationId, tournamentId },
+      });
+      if (!reservation) {
+        throw new NotFoundException('Reservation not found');
       }
-    } else if (
-      dto.status === ReservationStatus.REJECTED ||
-      dto.status === ReservationStatus.PENDING ||
-      dto.status === ReservationStatus.STOOD_UP ||
-      dto.status === ReservationStatus.ELIMINATED
-    ) {
-      // Clear assignment if rejected, reverted to pending, stood up, or eliminated
-      reservation.tableNumber = null;
-      reservation.seatNumber = null;
-    }
 
-    const saved = await this.reservationsRepo.save(reservation);
-    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+      reservation.status = dto.status;
+      if (dto.stack !== undefined && dto.stack !== null) {
+        reservation.stack = dto.stack;
+      } else if (dto.status === ReservationStatus.ACCEPTED && reservation.stack == null) {
+        reservation.stack = tournament.startingStack;
+      }
+
+      // Asignación de mesa/asiento al aceptar un jugador.
+      if (dto.status === ReservationStatus.ACCEPTED) {
+        if (dto.tableNumber != null && dto.seatNumber != null) {
+          // Asignación manual — validar que no haya conflicto.
+          await this.validateSeatAvailable(manager, tournament, dto.tableNumber, dto.seatNumber, reservationId);
+          reservation.tableNumber = dto.tableNumber;
+          reservation.seatNumber = dto.seatNumber;
+        } else {
+          // Asignación automática.
+          const seat = await this.autoAssignSeat(manager, tournamentId, tournament.tableCount, reservationId);
+          reservation.tableNumber = seat.tableNumber;
+          reservation.seatNumber = seat.seatNumber;
+        }
+      } else if (
+        dto.status === ReservationStatus.REJECTED ||
+        dto.status === ReservationStatus.PENDING ||
+        dto.status === ReservationStatus.STOOD_UP ||
+        dto.status === ReservationStatus.ELIMINATED
+      ) {
+        // Limpia la asignación si se rechaza, se revierte a pendiente, se levanta o se elimina.
+        reservation.tableNumber = null;
+        reservation.seatNumber = null;
+      }
+
+      const saved = await manager.save(reservation);
+      await this.refreshCounters(manager, tournamentId);
+      const updated = await manager.findOne(TournamentReservation, { where: { id: saved.id } });
+      this.realtime.emit(tournamentId, 'reservation:updated', { tournamentId, reservation: updated });
+      return updated;
+    });
   }
 
   /** Registra un rebuy (re-entrada): stack nuevo + incrementa contadores por jugador y del torneo. */
-  async rebuy(tournamentId: number, reservationId: number, dto: RebuyDto) {
-    const tournament = await this.findOne(tournamentId);
-    if (!tournament.reEntryEnabled) {
-      throw new BadRequestException('Re-entry is not enabled for this tournament');
-    }
-    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
-    if (!reservation) {
-      throw new NotFoundException('Reservation not found');
-    }
-    if (
-      reservation.status !== ReservationStatus.ACCEPTED &&
-      reservation.status !== ReservationStatus.STOOD_UP
-    ) {
-      throw new BadRequestException('Only accepted or stood-up players can rebuy');
-    }
-    const current = reservation.reEntries ?? 0;
-    if (tournament.maxReEntries !== null && tournament.maxReEntries !== 0 && current >= tournament.maxReEntries) {
-      throw new BadRequestException('Max re-entries reached for this player');
-    }
-    // Re-activa al jugador como activo (vuelve a entrar al torneo).
-    reservation.status = ReservationStatus.ACCEPTED;
-    reservation.reEntries = current + 1;
-    reservation.stack = dto.stack ?? tournament.startingStack;
+  async rebuy(
+    tournamentId: number,
+    reservationId: number,
+    dto: RebuyDto,
+    actor?: { userId: number; role: string },
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const tournament = await manager.findOne(Tournament, {
+        where: { id: tournamentId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!tournament) throw new NotFoundException('Tournament not found');
+      if (!tournament.reEntryEnabled) {
+        throw new BadRequestException('Re-entry is not enabled for this tournament');
+      }
 
-    // Re-assign table/seat on rebuy
-    if (dto.tableNumber != null && dto.seatNumber != null) {
-      await this.validateSeatAvailable(tournamentId, dto.tableNumber, dto.seatNumber, reservationId);
-      reservation.tableNumber = dto.tableNumber;
-      reservation.seatNumber = dto.seatNumber;
-    } else {
-      const seat = await this.autoAssignSeat(tournamentId, tournament.tableCount, reservationId);
-      reservation.tableNumber = seat.tableNumber;
-      reservation.seatNumber = seat.seatNumber;
-    }
+      const reservation = await manager.findOne(TournamentReservation, {
+        where: { id: reservationId, tournamentId },
+      });
+      if (!reservation) {
+        throw new NotFoundException('Reservation not found');
+      }
+      this.assertCanActOn(actor, reservation);
+      if (
+        reservation.status !== ReservationStatus.ELIMINATED &&
+        reservation.status !== ReservationStatus.STOOD_UP
+      ) {
+        throw new BadRequestException('Only eliminated or stood-up players can rebuy');
+      }
+      const current = reservation.reEntries ?? 0;
+      if (tournament.maxReEntries !== null && tournament.maxReEntries >= 0 && current >= tournament.maxReEntries) {
+        throw new BadRequestException('Max re-entries reached for this player');
+      }
+      // Re-activa al jugador como activo (vuelve a entrar al torneo).
+      reservation.status = ReservationStatus.ACCEPTED;
+      reservation.reEntries = current + 1;
+      reservation.stack = dto.stack ?? tournament.startingStack;
 
-    const saved = await this.reservationsRepo.save(reservation);
-    await this.repository.update(
-      { id: tournamentId },
-      { currentReEntries: (tournament.currentReEntries ?? 0) + 1 },
-    );
-    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+      // Re-asignar mesa/asiento en el rebuy.
+      if (dto.tableNumber != null && dto.seatNumber != null) {
+        await this.validateSeatAvailable(manager, tournament, dto.tableNumber, dto.seatNumber, reservationId);
+        reservation.tableNumber = dto.tableNumber;
+        reservation.seatNumber = dto.seatNumber;
+      } else {
+        const seat = await this.autoAssignSeat(manager, tournamentId, tournament.tableCount, reservationId);
+        reservation.tableNumber = seat.tableNumber;
+        reservation.seatNumber = seat.seatNumber;
+      }
+
+      const saved = await manager.save(reservation);
+      await this.refreshCounters(manager, tournamentId);
+      const updated = await manager.findOne(TournamentReservation, { where: { id: saved.id } });
+      this.realtime.emit(tournamentId, 'reservation:updated', { tournamentId, reservation: updated });
+      return updated;
+    });
   }
 
   /** "Get up": el jugador se levanta de la mesa. Queda como eliminado del torneo
    *  (no cuenta como jugador activo) pero conserva la opcion de hacer rebuy
    *  para volver a entrar como jugador activo. */
-  async standUp(tournamentId: number, reservationId: number) {
-    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
-    if (!reservation) {
-      throw new NotFoundException('Reservation not found');
-    }
-    if (reservation.status !== ReservationStatus.ACCEPTED) {
-      throw new BadRequestException('Only accepted players can get up');
-    }
-    reservation.status = ReservationStatus.STOOD_UP;
-    reservation.tableNumber = null;
-    reservation.seatNumber = null;
-    reservation.stack = null;
-    const saved = await this.reservationsRepo.save(reservation);
-    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+  async standUp(tournamentId: number, reservationId: number, actor?: { userId: number; role: string }) {
+    return this.dataSource.transaction(async (manager) => {
+      const reservation = await manager.findOne(TournamentReservation, {
+        where: { id: reservationId, tournamentId },
+      });
+      if (!reservation) {
+        throw new NotFoundException('Reservation not found');
+      }
+      this.assertCanActOn(actor, reservation);
+      if (reservation.status !== ReservationStatus.ACCEPTED) {
+        throw new BadRequestException('Only accepted players can get up');
+      }
+      reservation.status = ReservationStatus.STOOD_UP;
+      reservation.tableNumber = null;
+      reservation.seatNumber = null;
+      reservation.stack = null;
+      const saved = await manager.save(reservation);
+      await this.refreshCounters(manager, tournamentId);
+      const updated = await manager.findOne(TournamentReservation, { where: { id: saved.id } });
+      this.realtime.emit(tournamentId, 'reservation:updated', { tournamentId, reservation: updated });
+      return updated;
+    });
   }
 
   /** "Eliminar jugador": lo saca del torneo (deja de contar en los jugadores en juego)
    *  pero conserva su reserva, que sigue contabilizandose en las reservas. */
   async eliminate(tournamentId: number, reservationId: number) {
-    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
-    if (!reservation) {
-      throw new NotFoundException('Reservation not found');
-    }
-    if (
-      reservation.status !== ReservationStatus.ACCEPTED &&
-      reservation.status !== ReservationStatus.STOOD_UP
-    ) {
-      throw new BadRequestException('Only accepted or stood-up players can be eliminated');
-    }
-    reservation.status = ReservationStatus.ELIMINATED;
-    reservation.tableNumber = null;
-    reservation.seatNumber = null;
-    reservation.stack = null;
-    const saved = await this.reservationsRepo.save(reservation);
-    return this.reservationsRepo.findOne({ where: { id: saved.id } });
+    return this.dataSource.transaction(async (manager) => {
+      const reservation = await manager.findOne(TournamentReservation, {
+        where: { id: reservationId, tournamentId },
+      });
+      if (!reservation) {
+        throw new NotFoundException('Reservation not found');
+      }
+      if (
+        reservation.status !== ReservationStatus.ACCEPTED &&
+        reservation.status !== ReservationStatus.STOOD_UP
+      ) {
+        throw new BadRequestException('Only accepted or stood-up players can be eliminated');
+      }
+      reservation.status = ReservationStatus.ELIMINATED;
+      reservation.tableNumber = null;
+      reservation.seatNumber = null;
+      reservation.stack = null;
+      const saved = await manager.save(reservation);
+      await this.refreshCounters(manager, tournamentId);
+      const updated = await manager.findOne(TournamentReservation, { where: { id: saved.id } });
+      this.realtime.emit(tournamentId, 'reservation:updated', { tournamentId, reservation: updated });
+      return updated;
+    });
   }
 
-  async removeReservation(tournamentId: number, reservationId: number) {
-    const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tournamentId } });
-    if (!reservation) {
-      throw new NotFoundException('Reservation not found');
+  async removeReservation(
+    tournamentId: number,
+    reservationId: number,
+    actor?: { userId: number; role: string },
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const reservation = await manager.findOne(TournamentReservation, {
+        where: { id: reservationId, tournamentId },
+      });
+      if (!reservation) {
+        throw new NotFoundException('Reservation not found');
+      }
+      this.assertCanActOn(actor, reservation);
+      await manager.delete(TournamentReservation, reservation.id);
+      await this.refreshCounters(manager, tournamentId);
+      this.realtime.emit(tournamentId, 'reservation:removed', { tournamentId, reservationId });
+    });
+  }
+
+  /** Un player solo puede operar sobre sus propias reservas. */
+  private assertCanActOn(
+    actor: { userId: number; role: string } | undefined,
+    reservation: TournamentReservation,
+  ): void {
+    if (actor && actor.role === UserRole.PLAYER && reservation.userId !== actor.userId) {
+      throw new ForbiddenException('You can only operate on your own reservation');
     }
-    await this.reservationsRepo.delete(reservationId);
   }
 
   // ---------------- Fichas del torneo ----------------
@@ -560,30 +710,37 @@ export class TournamentsService extends CrudService<Tournament> {
   }
 
   async addChip(tournamentId: number, dto: CreateTournamentChipDto) {
-    const chip = await this.chipsRepo.findOne({ where: { id: dto.chipId } });
-    if (!chip) {
-      throw new NotFoundException('Chip not found');
-    }
-    const existing = await this.tournamentChipsRepo.findOne({ where: { tournamentId, chipId: dto.chipId } });
-    if (existing) {
-      throw new BadRequestException('Chip already added to this tournament');
-    }
-    const tournamentChip = this.tournamentChipsRepo.create({
-      tournamentId,
-      chipId: dto.chipId,
-      discardLevel: dto.discardLevel ?? null,
+    return this.dataSource.transaction(async (manager) => {
+      const chip = await manager.findOne(Chip, { where: { id: dto.chipId } });
+      if (!chip) {
+        throw new NotFoundException('Chip not found');
+      }
+      const existing = await manager.findOne(TournamentChip, { where: { tournamentId, chipId: dto.chipId } });
+      if (existing) {
+        throw new BadRequestException('Chip already added to this tournament');
+      }
+      const tournamentChip = manager.create(TournamentChip, {
+        tournamentId,
+        chipId: dto.chipId,
+        discardLevel: dto.discardLevel ?? null,
+      });
+      const saved = await manager.save(tournamentChip);
+      this.realtime.emit(tournamentId, 'tournament:chips', { tournamentId });
+      return saved;
     });
-    return this.tournamentChipsRepo.save(tournamentChip);
   }
 
   async removeChip(tournamentId: number, tournamentChipId: number) {
-    const tournamentChip = await this.tournamentChipsRepo.findOne({
-      where: { id: tournamentChipId, tournamentId },
+    return this.dataSource.transaction(async (manager) => {
+      const tournamentChip = await manager.findOne(TournamentChip, {
+        where: { id: tournamentChipId, tournamentId },
+      });
+      if (!tournamentChip) {
+        throw new NotFoundException('Tournament chip not found');
+      }
+      await manager.delete(TournamentChip, tournamentChipId);
+      this.realtime.emit(tournamentId, 'tournament:chips', { tournamentId });
     });
-    if (!tournamentChip) {
-      throw new NotFoundException('Tournament chip not found');
-    }
-    await this.tournamentChipsRepo.delete(tournamentChipId);
   }
 
   // ---------------- Premios ----------------
@@ -593,12 +750,17 @@ export class TournamentsService extends CrudService<Tournament> {
   }
 
   async replacePrizes(tournamentId: number, dto: UpdatePrizesDto) {
-    await this.findOne(tournamentId);
-    await this.prizesRepo.delete({ tournamentId });
-    const rows = dto.prizes.map((p) =>
-      this.prizesRepo.create({ tournamentId, place: p.place, amount: p.amount }),
-    );
-    return this.prizesRepo.save(rows);
+    return this.dataSource.transaction(async (manager) => {
+      const tournament = await manager.findOne(Tournament, { where: { id: tournamentId } });
+      if (!tournament) throw new NotFoundException('Tournament not found');
+      await manager.delete(TournamentPrize, { tournamentId });
+      const rows = dto.prizes.map((p) =>
+        manager.create(TournamentPrize, { tournamentId, place: p.place, amount: p.amount }),
+      );
+      const saved = await manager.save(TournamentPrize, rows);
+      this.realtime.emit(tournamentId, 'tournament:prizes', { tournamentId });
+      return saved;
+    });
   }
 
   // ---------------- Jugadores ----------------

@@ -9,7 +9,8 @@ import { AppText } from '@/components/ui/AppText';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingView } from '@/components/ui/LoadingView';
-import { useDeleteTournament, useTournament } from '@/hooks/use-queries';
+import { useTournament, useDeleteTournament } from '@/hooks/use-queries';
+import { useTournamentEvents } from '@/hooks/use-tournament-events';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { getErrorMessage } from '@/utils/error';
@@ -24,6 +25,8 @@ export default function TournamentDetailScreen() {
   const deleteTournament = useDeleteTournament();
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Tiempo real: refresca el detalle cuando el torneo cambia (nivel, estado, reservas).
+  useTournamentEvents(tournamentId);
 
   const handleDelete = async () => {
     setError(null);

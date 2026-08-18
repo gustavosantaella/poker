@@ -1,4 +1,9 @@
-﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+﻿import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { CrudService } from '../../common/services/crud.service';
@@ -63,10 +68,18 @@ export class TablesService extends CrudService<PokerTable> {
     return this.reservationsRepo.find({ where: { tableId }, order: { createdAt: 'DESC' } });
   }
 
-  async removeReservation(tableId: number, reservationId: number) {
+  async removeReservation(
+    tableId: number,
+    reservationId: number,
+    actor?: { userId: number; role: string },
+  ) {
     const reservation = await this.reservationsRepo.findOne({ where: { id: reservationId, tableId } });
     if (!reservation) {
       throw new NotFoundException('Table reservation not found');
+    }
+    // Un player solo puede cancelar su propia reserva.
+    if (actor && actor.role === 'player' && reservation.userId !== actor.userId) {
+      throw new ForbiddenException('You can only remove your own reservation');
     }
     await this.reservationsRepo.delete(reservationId);
   }

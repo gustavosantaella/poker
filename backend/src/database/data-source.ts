@@ -3,7 +3,12 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// DataSource para scripts CLI (seed). Crea las tablas en desarrollo vía synchronize.
+/**
+ * DataSource para comandos CLI de TypeORM (migraciones).
+ * Uso: npm run migration:generate -- src/database/migrations/Nombre
+ *      npm run migration:run
+ *      npm run migration:revert
+ */
 export default new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST ?? 'localhost',
@@ -13,5 +18,6 @@ export default new DataSource({
   database: process.env.DB_DATABASE ?? 'pokelap',
   entities: ['src/**/*.entity.ts'],
   migrations: ['src/database/migrations/*{.ts,.js}'],
-  synchronize: true,
+  synchronize: false,
+  migrationsRun: false,
 });

@@ -16,8 +16,13 @@ export async function login(email: string, password: string): Promise<AuthResult
   return res.data.data as AuthResult;
 }
 
-export async function register(name: string, email: string, password: string): Promise<AuthResult> {
-  const res = await apiClient.post('/auth/register', { name, email, password });
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+  inviteCode?: string,
+): Promise<AuthResult> {
+  const res = await apiClient.post('/auth/register', { name, email, password, inviteCode });
   return res.data.data as AuthResult;
 }
 

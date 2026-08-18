@@ -28,7 +28,12 @@ export default function RegisterScreen() {
   const onSubmit = async (values: RegisterValues) => {
     setServerError(null);
     try {
-      await register(values.name.trim(), values.email.trim(), values.password);
+      await register(
+        values.name.trim(),
+        values.email.trim(),
+        values.password,
+        values.inviteCode?.trim() || undefined,
+      );
       router.replace('/(tabs)');
     } catch (error) {
       setServerError(getErrorMessage(error));
@@ -52,7 +57,7 @@ export default function RegisterScreen() {
 
         <AppForm
           schema={schema}
-          defaultValues={{ name: '', email: '', password: '', confirmPassword: '' }}
+          defaultValues={{ name: '', email: '', password: '', confirmPassword: '', inviteCode: '' }}
           onSubmit={onSubmit}
         >
           {({ handleSubmit, formState }) => (
@@ -83,6 +88,14 @@ export default function RegisterScreen() {
                   label={t('auth.confirmPassword')}
                   placeholder={t('auth.confirmPasswordPlaceholder')}
                   secureTextEntry
+                />
+                <FormTextField
+                  name="inviteCode"
+                  label={t('auth.inviteCode')}
+                  placeholder={t('auth.inviteCodePlaceholder')}
+                  helper={t('auth.inviteCodeHint')}
+                  autoCapitalize="none"
+                  autoCorrect={false}
                 />
               </AppCard>
 

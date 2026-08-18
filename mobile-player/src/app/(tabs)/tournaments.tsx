@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useMyTournamentReservations, useTournaments } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
+import { useTournamentEvents } from '@/hooks/use-tournament-events';
 import { useI18n } from '@/i18n/I18nProvider';
 import { ReservationState, tournamentState } from '@/utils/reservation';
 
@@ -21,6 +22,8 @@ export default function TournamentsScreen() {
   const { openSidebar } = useSidebar();
   const { data, isLoading, isRefetching, refetch } = useTournaments();
   const { data: myReservations } = useMyTournamentReservations();
+  // Tiempo real: actualiza la lista cuando cambia cualquier torneo (SSE).
+  useTournamentEvents();
   // Filtro defensivo: aunque el backend ya excluya 'completed', nunca mostrar
   // torneos terminados en el listado del player.
   const tournaments = (data?.items ?? []).filter((trn) => trn.status !== 'completed');

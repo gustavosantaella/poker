@@ -16,7 +16,7 @@ export interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, inviteCode?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (payload: UpdateProfilePayload) => Promise<void>;
 }
@@ -77,10 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(async (name: string, email: string, password: string) => {
+  const register = useCallback(async (name: string, email: string, password: string, inviteCode?: string) => {
     log.info(`Register attempt: ${email}`);
     try {
-      const result = await apiRegister(name, email, password);
+      const result = await apiRegister(name, email, password, inviteCode);
       await setAuthToken(result.accessToken);
       setToken(result.accessToken);
       setUser(result.user);

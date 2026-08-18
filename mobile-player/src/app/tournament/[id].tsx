@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useClub, useDeleteTournamentReservation, useRebuyTournamentReservation, useTournament, useTournamentChips, useTournamentPrizes, useTournamentReservations } from '@/hooks/use-queries';
 import { useReserve } from '@/hooks/use-reserve';
 import { useTournamentCountdown } from '@/hooks/use-tournament-countdown';
+import { useTournamentEvents } from '@/hooks/use-tournament-events';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
@@ -55,6 +56,9 @@ export default function TournamentDetailScreen() {
   const deleteReservation = useDeleteTournamentReservation(tournamentId);
   const rebuy = useRebuyTournamentReservation(tournamentId);
   const countdown = useTournamentCountdown(tournament);
+  // Tiempo real: el backend notifica por SSE el avance de niveles, estado y
+  // cambios en reservas; aquí se refrescan las queries correspondientes.
+  useTournamentEvents(tournamentId);
 
   const current = countdown.currentItem;
   const myReservation = (reservations ?? []).find((r) => r.userId === user?.id);

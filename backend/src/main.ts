@@ -15,6 +15,12 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService);
 
+  // Seguridad: en producción no se permite el secret por defecto ni la ausencia de CORS explícito.
+  const isProduction = config.get<string>('nodeEnv') === 'production';
+  if (isProduction && (config.get<string>('jwt.secret') === 'pokelap-dev-secret' || !config.get<string>('jwt.secret'))) {
+    throw new Error('JWT_SECRET must be configured in production');
+  }
+
   // Serve uploaded files (avatars, etc.) as static assets
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
@@ -33,7 +39,12 @@ async function bootstrap() {
   );
   app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.enableCors({ origin: true, credentials: false });
+
+  // CORS: restringido a CORS_ORIGINS (lista separada por comas) si está definido.
+  // En desarrollo sin configuración se permite cualquier origen (apps nativas no usan CORS).
+  const corsOrigins = config.get<string[]>('corsOrigins') ?? [];
+  const origin = corsOrigins.length > 0 ? corsOrigins : !isProduction;
+  app.enableCors({ origin, credentials: false });
 
   const port = config.get<number>('port') ?? 3000;
   await app.listen(port);
