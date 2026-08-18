@@ -10,7 +10,7 @@ dotenv.config();
  *      npm run migration:revert
  */
 export default new DataSource({
-  type: 'mysql',
+  type: (process.env.DB_TYPE ?? 'mysql') as any,
   host: process.env.DB_HOST ?? 'localhost',
   port: parseInt(process.env.DB_PORT ?? '3306', 10),
   username: process.env.DB_USERNAME ?? 'root',

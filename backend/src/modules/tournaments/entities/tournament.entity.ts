@@ -31,7 +31,7 @@ export class Tournament extends BaseEntity {
   @Column({ name: 'game_type_id', type: 'int', nullable: true })
   gameTypeId: number | null;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: 'timestamp' })
   startDate: Date;
   @Column({ type: 'enum', enum: TournamentStatus, default: TournamentStatus.SCHEDULED })
   status: TournamentStatus;
@@ -121,13 +121,13 @@ export class Tournament extends BaseEntity {
   @Column({ type: 'decimal', precision: 14, scale: 2, transformer: DecimalTransformer, nullable: true })
   adminFeeValue: number | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   startedAt: Date | null;
 
   @Column({ type: 'int', nullable: true })
   currentLevel: number | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   levelStartedAt: Date | null;
 
   /** Total de reservas (calculado a partir de tournament_reservations, no persistido). */

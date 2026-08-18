@@ -31,9 +31,10 @@ import configuration from './config/configuration';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
+        console.log(config.get<string>('database.type'));
         const isProduction = config.get<string>('nodeEnv') === 'production';
         return {
-          type: 'mysql',
+          type: config.get<string>('database.type') as any,
           host: config.get<string>('database.host'),
           port: config.get<number>('database.port'),
           username: config.get<string>('database.username'),
@@ -79,4 +80,4 @@ import configuration from './config/configuration';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
