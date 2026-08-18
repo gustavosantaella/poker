@@ -1,1 +1,7 @@
 todo.md
+.vercel
+.env*
+*.log
+*.pid
+*.png
+*.sqlite3

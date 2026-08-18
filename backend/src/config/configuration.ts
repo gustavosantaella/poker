@@ -18,6 +18,14 @@ export default () => ({
     // Si no se define, nadie puede auto-registrarse como admin (solo vía seed o admin existente).
     adminInviteCode: process.env.ADMIN_INVITE_CODE ?? '',
   },
+  blob: {
+    // Almacenamiento de archivos (avatares, etc.) en Vercel Blob.
+    // Autenticación preferente: OIDC (VERCEL_OIDC_TOKEN, rotado por Vercel).
+    // Alternativa: token de lectura/escritura BLOB_READ_WRITE_TOKEN.
+    storeId: process.env.BLOB_STORE_ID ?? '',
+    oidcToken: process.env.VERCEL_OIDC_TOKEN ?? '',
+    readWriteToken: process.env.BLOB_READ_WRITE_TOKEN ?? '',
+  },
   corsOrigins: (process.env.CORS_ORIGINS ?? '')
     .split(',')
     .map((s) => s.trim())

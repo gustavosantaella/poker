@@ -1,29 +1,27 @@
 import {
+  BadRequestException,
   Controller,
+  InternalServerErrorException,
   Post,
   UploadedFile,
   UseInterceptors,
-  BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { memoryStorage } from 'multer';
+import { join } from 'path';
+import { existsSync, unlinkSync } from 'fs';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import sharp from 'sharp';
+import { del, put, PutBlobResult } from '@vercel/blob';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 
-const UPLOADS_DIR = join(process.cwd(), 'uploads', 'avatars');
-
-if (!existsSync(UPLOADS_DIR)) {
-  mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_DIMENSION = 4096; // 4096x4096 px máximo
+const BLOB_HOST_SUFFIX = '.blob.vercel-storage.com';
 
 /** Detecta el tipo real por magic bytes (no confía en el mimetype enviado). */
 function detectImageType(buffer: Buffer): 'jpeg' | 'png' | 'webp' | null {
@@ -33,23 +31,43 @@ function detectImageType(buffer: Buffer): 'jpeg' | 'png' | 'webp' | null {
   return null;
 }
 
+/** ¿Es una URL alojada en Vercel Blob? (para poder borrar avatares anteriores). */
+function isBlobUrl(url: string): boolean {
+  return url.includes(BLOB_HOST_SUFFIX);
+}
+
 @Controller('uploads')
 export class UploadsController {
   constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+    private readonly config: ConfigService,
   ) {}
+
+  /**
+   * Credenciales de Vercel Blob.
+   *
+   * Autenticación preferente: OIDC (`VERCEL_OIDC_TOKEN`). El SDK lo detecta solo:
+   *  - en local, desde la variable de entorno `VERCEL_OIDC_TOKEN`;
+   *  - en Vercel Functions, desde el header `x-vercel-oidc-token`.
+   * Para OIDC es obligatorio indicar el store (`BLOB_STORE_ID`).
+   *
+   * Respaldo: token de lectura/escritura `BLOB_READ_WRITE_TOKEN` (código fuera de Vercel).
+   */
+  private blobAuth(): { token?: string; storeId?: string } {
+    const storeId = this.config.get<string>('blob.storeId')?.trim() ?? '';
+    if (storeId) {
+      return { storeId };
+    }
+    const readWriteToken = this.config.get<string>('blob.readWriteToken')?.trim() ?? '';
+    return readWriteToken ? { token: readWriteToken } : {};
+  }
 
   @Post('avatar')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: UPLOADS_DIR,
-        filename: (_req, file, cb) => {
-          // Nombre aleatorio (UUID): no se puede adivinar ni sobrescribir archivos ajenos.
-          cb(null, `avatar-${randomUUID()}${extname(file.originalname).toLowerCase()}`);
-        },
-      }),
+      // El archivo se procesa en memoria y se sube a Vercel Blob (no se guarda en disco).
+      storage: memoryStorage(),
       limits: { fileSize: MAX_FILE_SIZE },
     }),
   )
@@ -59,48 +77,67 @@ export class UploadsController {
     }
 
     // 1) Validar magic bytes (evita subir archivos disfrazados de imagen).
-    // Multer con diskStorage no expone el buffer; leemos el archivo ya escrito.
-    const { readFileSync } = await import('fs');
-    const raw = readFileSync(file.path);
-    const detected = detectImageType(raw);
+    const detected = detectImageType(file.buffer);
     if (!detected) {
-      unlinkSync(file.path);
       throw new BadRequestException('Only image files are allowed (jpeg, png, webp)');
     }
 
+    let processed: Buffer;
     try {
       // 2) Re-encode con sharp: elimina contenido malicioso, normaliza formato y valida dimensiones.
-      const image = sharp(raw, { failOn: 'error' }).rotate();
+      const image = sharp(file.buffer, { failOn: 'error' }).rotate();
       const metadata = await image.metadata();
       if ((metadata.width ?? 0) > MAX_DIMENSION || (metadata.height ?? 0) > MAX_DIMENSION) {
         throw new BadRequestException(`Image is too large (max ${MAX_DIMENSION}x${MAX_DIMENSION}px)`);
       }
-      await image
+      processed = await image
         .resize({ width: metadata.width!, height: metadata.height!, fit: 'inside' })
         .jpeg({ quality: 85 })
-        .toFile(file.path);
-
-      // 3) Borrar el avatar anterior del usuario si es local.
-      if (user.photoUrl?.startsWith('/uploads/')) {
-        const oldPath = join(process.cwd(), user.photoUrl.replace(/^\//, ''));
-        if (oldPath !== file.path && existsSync(oldPath)) {
-          try {
-            unlinkSync(oldPath);
-          } catch {
-            // Archivo ausente o en uso: se ignora, no bloquea la subida.
-          }
-        }
-      }
-
-      return { url: `/uploads/avatars/${file.filename}` };
+        .toBuffer();
     } catch (error) {
-      try {
-        unlinkSync(file.path);
-      } catch {
-        /* noop */
-      }
       if (error instanceof BadRequestException) throw error;
       throw new BadRequestException('The uploaded file is not a valid image');
     }
+
+    const auth = this.blobAuth();
+
+    // 3) Subir a Vercel Blob: almacenamiento externo persistente y servido por CDN.
+    let blob: PutBlobResult;
+    try {
+      blob = await put(`avatars/avatar-${randomUUID()}.jpg`, processed, {
+        access: 'public',
+        contentType: 'image/jpeg',
+        addRandomSuffix: true,
+        ...auth,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Image upload failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
+    }
+
+    // 4) Borrar el avatar anterior (Blob o legacy local) sin bloquear la subida.
+    await this.removePreviousAvatar(user.photoUrl, auth);
+
+    return { url: blob.url };
+  }
+
+  private async removePreviousAvatar(
+    photoUrl: string | null | undefined,
+    auth: { token?: string; storeId?: string },
+  ): Promise<void> {
+    if (!photoUrl) return;
+    try {
+      if (isBlobUrl(photoUrl)) {
+        await del(photoUrl, auth);
+      } else if (photoUrl.startsWith('/uploads/')) {
+        // Legacy: archivos locales subidos antes de migrar a Vercel Blob.
+        const oldPath = join(process.cwd(), photoUrl.replace(/^\//, ''));
+        if (existsSync(oldPath)) unlinkSync(oldPath);
+      }
+    } catch {
+      // Si el blob anterior ya no existe o no se puede borrar, no se bloquea la subida.
+    }
   }
 }
+
