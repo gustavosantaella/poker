@@ -21,8 +21,8 @@ export function EmptyState({
   const { colors } = useTheme();
   return (
     <View style={styles.wrap}>
-      <View style={[styles.iconWrap, { backgroundColor: colors.surfaceMuted }]}>
-        <Ionicons name={icon} size={32} color={colors.textMuted} />
+      <View style={[styles.iconWrap, { borderColor: colors.primary, backgroundColor: colors.primaryMuted }]}>
+        <Ionicons name={icon} size={32} color={colors.primary} />
       </View>
       <AppText variant="subtitle" center>
         {title}
@@ -42,11 +42,19 @@ export function EmptyState({
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
   iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.xs,
+    // Brillo dorado del icono vacío.
+    shadowColor: '#E3B341',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
   action: { minWidth: 160 },
 });

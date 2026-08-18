@@ -56,6 +56,16 @@ export function TournamentCard({
   const modeFg = isGoldCard ? '#1E1602' : colors.onPrimary;
   const closed = state === null && !canReserveTournament(tournament);
 
+  // Tono del badge según el estado del torneo (dorado invertido sobre la tarjeta dorada).
+  const statusTone =
+    tournament.status === 'running'
+      ? 'gold'
+      : tournament.status === 'registering' || tournament.status === 'paused'
+        ? 'warning'
+        : tournament.status === 'cancelled'
+          ? 'danger'
+          : 'neutral';
+
   const button =
     state === 'playing'
       ? { title: t('tournament.playing'), variant: 'success' as const, icon: 'checkmark' as const }
@@ -84,7 +94,7 @@ export function TournamentCard({
         </View>
         <Badge
           label={t(`status.${tournament.status}`)}
-          tone={tournament.status === 'registering' ? 'primary' : 'neutral'}
+          tone={statusTone}
         />
       </View>
 

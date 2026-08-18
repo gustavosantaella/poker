@@ -36,7 +36,7 @@ export function AppHeader({
     <View style={styles.row}>
       {left}
       <View style={styles.titles}>
-        <AppText variant="title" color={colors.primary} numberOfLines={1}>
+        <AppText variant="title" color={colors.primary} numberOfLines={1} style={styles.title}>
           {title}
         </AppText>
         {subtitle ? (
@@ -55,4 +55,8 @@ const styles = StyleSheet.create({
   leftBtn: { marginLeft: -spacing.xs, paddingRight: spacing.xs },
   titles: { flex: 1 },
   right: {},
+  title: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
 });

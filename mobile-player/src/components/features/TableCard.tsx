@@ -52,6 +52,16 @@ export function TableCard({
   const modeBg = isGoldCard ? 'rgba(0, 0, 0, 0.12)' : (online ? colors.primary : colors.success);
   const modeFg = isGoldCard ? '#1E1602' : colors.onPrimary;
 
+  // Tono del badge según el estado de la mesa.
+  const statusTone =
+    table.status === 'running'
+      ? 'gold'
+      : table.status === 'open'
+        ? 'success'
+        : table.status === 'paused'
+          ? 'warning'
+          : 'neutral';
+
   const button =
     state === 'playing'
       ? { title: t('table.playing'), variant: 'success' as const, icon: 'checkmark' as const }
@@ -76,7 +86,7 @@ export function TableCard({
           <AppText variant="subtitle" numberOfLines={1} style={titleColor ? { color: titleColor } : undefined}>{table.name}</AppText>
           <AppText variant="caption" style={{ color: subtextColor }}>{table.gameType?.name ?? t('table.noGameType')}</AppText>
         </View>
-        <Badge label={t(`status.${table.status}`)} tone={table.status === 'open' ? 'success' : 'neutral'} />
+        <Badge label={t(`status.${table.status}`)} tone={statusTone} />
       </View>
 
       <View style={styles.meta}>

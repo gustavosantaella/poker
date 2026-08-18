@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { createTableReservation } from '@/api/tables';
 import { createTournamentReservation } from '@/api/tournaments';
 import { TableCard } from '@/components/features/TableCard';
@@ -23,7 +24,7 @@ import { ReservationState, tableState, tournamentState } from '@/utils/reservati
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useI18n();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const { openSidebar } = useSidebar();
   const { data: tablesData, isLoading: tablesLoading, refetch: refetchTables, isRefetching: tablesRefetching } =
@@ -61,32 +62,74 @@ export default function HomeScreen() {
 
   const greeting = user?.alias ?? user?.name?.split(' ')[0] ?? '';
 
+  // Mini-estadísticas del hero: mesas abiertas/en juego y torneos activos.
+  const openTables = (tablesData?.items ?? []).filter((t) => t.status === 'open' || t.status === 'running').length;
+  const activeTournaments = (tournamentsData?.items ?? []).filter(
+    (t) => t.status === 'registering' || t.status === 'running',
+  ).length;
+
   return (
     <AppScreen refreshing={tablesRefetching || tournamentsRefetching} onRefresh={handleRefresh}>
       <AppHeader title={t('home.hello', { name: greeting })} menu onMenuPress={openSidebar} />
 
-      <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
-        <View style={[styles.chip, { borderColor: colors.primary, backgroundColor: colors.primaryMuted }]}>
-          <View style={[styles.chipInner, { borderColor: colors.primary }]}>
-            <AppText variant="subtitle" weight="bold" color={colors.primary}>
-              AA
-            </AppText>
-          </View>
-        </View>
-        <AppText variant="title" color={colors.primary} style={styles.heroTitle}>
-          {t('home.heroTitle')}
-        </AppText>
-        <AppText variant="caption" color={colors.textSecondary} style={styles.heroSubtitle}>
-          {t('home.heroSubtitle')}
-        </AppText>
-        <View style={styles.suitsRow}>
+      <LinearGradient
+        colors={
+          isDark
+            ? ['#5C4312', '#8F6A1F', '#E3B341', '#8F6A1F', '#5C4312']
+            : ['#D9B25F', '#F1D896', '#E3B341', '#F1D896', '#D9B25F']
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
+      >
+        <View pointerEvents="none" style={styles.heroSuits}>
           {['♠', '♥', '♦', '♣'].map((suit, i) => (
-            <AppText key={suit} variant="caption" color={i % 2 === 0 ? colors.textMuted : colors.danger} style={styles.suit}>
+            <AppText
+              key={suit}
+              variant="caption"
+              color={i % 2 === 0 ? 'rgba(30,22,2,0.5)' : 'rgba(198,43,63,0.55)'}
+              style={styles.suit}
+            >
               {suit}
             </AppText>
           ))}
         </View>
-      </View>
+
+        <View style={styles.chip}>
+          <View style={styles.chipRing} />
+          <View style={styles.chipInner}>
+            <AppText variant="subtitle" weight="bold" color="#F4D889">
+              AA
+            </AppText>
+          </View>
+        </View>
+        <AppText variant="title" weight="bold" color="#1E1602" style={styles.heroTitle}>
+          {t('home.heroTitle')}
+        </AppText>
+        <AppText variant="caption" color="rgba(30,22,2,0.78)" center style={styles.heroSubtitle}>
+          {t('home.heroSubtitle')}
+        </AppText>
+
+        <View style={styles.heroStats}>
+          <View style={styles.heroStat}>
+            <AppText variant="number" color="#1E1602">
+              {openTables}
+            </AppText>
+            <AppText variant="caption" color="rgba(30,22,2,0.72)" weight="semibold">
+              {t('home.openTables')}
+            </AppText>
+          </View>
+          <View style={[styles.heroDivider, { backgroundColor: 'rgba(30,22,2,0.25)' }]} />
+          <View style={styles.heroStat}>
+            <AppText variant="number" color="#1E1602">
+              {activeTournaments}
+            </AppText>
+            <AppText variant="caption" color="rgba(30,22,2,0.72)" weight="semibold">
+              {t('home.activeTournaments')}
+            </AppText>
+          </View>
+        </View>
+      </LinearGradient>
 
       <View style={styles.sectionHeader}>
         <AppText variant="subtitle">{t('home.upcomingTournaments')}</AppText>
@@ -149,44 +192,79 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   hero: {
     borderRadius: radius.lg,
-    padding: 24,
+    paddingVertical: 26,
+    paddingHorizontal: 20,
     marginBottom: 16,
-    gap: 8,
+    gap: 6,
     alignItems: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderColor: 'rgba(244, 216, 137, 0.7)',
+    overflow: 'hidden',
     // Brillo dorado del hero
     shadowColor: '#E3B341',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
   },
+  heroSuits: {
+    position: 'absolute',
+    top: 10,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+  },
+  suit: { fontSize: 20 },
   chip: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     borderWidth: 3,
+    borderColor: '#F4D889',
+    backgroundColor: '#1A150A',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  chipRing: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    borderColor: 'rgba(244, 216, 137, 0.55)',
   },
   chipInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     borderWidth: 1.5,
+    borderColor: 'rgba(244, 216, 137, 0.75)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroTitle: {
     textTransform: 'uppercase',
     letterSpacing: 2,
+    marginTop: 2,
   },
   heroSubtitle: {
-    opacity: 0.9,
+    opacity: 0.95,
   },
-  suitsRow: { flexDirection: 'row', gap: 16, marginTop: 4 },
-  suit: { fontSize: 18 },
+  heroStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 24,
+    marginTop: 12,
+  },
+  heroStat: { alignItems: 'center', gap: 2 },
+  heroDivider: { width: 1, height: 30 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',

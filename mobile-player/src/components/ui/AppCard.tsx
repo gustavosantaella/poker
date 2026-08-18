@@ -37,6 +37,8 @@ export function AppCard({ children, onPress, padded = true, style, variant = 'me
 
   const gradientColors = getGradientColors();
 
+  const sheen = isDark && variant !== 'default' ? <View pointerEvents="none" style={styles.sheen} /> : null;
+
   const content = (
     <View style={{ padding: padded ? spacing.md : 0, flex: 1 }}>
       {children}
@@ -64,11 +66,12 @@ export function AppCard({ children, onPress, padded = true, style, variant = 'me
           onPress={onPress}
           style={({ pressed }) => [
             { flex: 1, borderRadius: radius.lg },
-            pressed && { opacity: 0.88 }
+            pressed && { opacity: 0.9 }
           ]}
         >
           {content}
         </Pressable>
+        {sheen}
       </LinearGradient>
     );
   }
@@ -81,6 +84,7 @@ export function AppCard({ children, onPress, padded = true, style, variant = 'me
       style={cardStyle}
     >
       {content}
+      {sheen}
     </LinearGradient>
   );
 }
@@ -96,5 +100,15 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     // Android elevation
     elevation: 4,
+  },
+  // Brillo metálico reflectivo diagonal.
+  sheen: {
+    position: 'absolute',
+    top: -24,
+    left: -56,
+    width: '135%',
+    height: 36,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    transform: [{ rotate: '-10deg' }],
   },
 });
