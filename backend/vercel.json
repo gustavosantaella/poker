@@ -3,15 +3,16 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/echo-dev.ts",
+      "src": "src/serverless.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/echo-dev.ts"
+      "dest": "src/serverless.ts"
     }
   ]
 }
+
 
