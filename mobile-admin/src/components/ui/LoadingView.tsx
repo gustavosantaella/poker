@@ -1,9 +1,10 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { translate } from '@/i18n';
 import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
 import { AppText } from './AppText';
 
-export function LoadingView({ label = 'Loading...' }: { label?: string }) {
+export function LoadingView({ label = translate('common.loading') }: { label?: string }) {
   const { colors } = useTheme();
   return (
     <View style={styles.wrap}>

@@ -3,6 +3,8 @@ import { GameTypesService } from './game-types.service';
 import { CreateGameTypeDto } from './dto/create-game-type.dto';
 import { UpdateGameTypeDto } from './dto/update-game-type.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 @Controller('game-types')
 export class GameTypesController {
@@ -23,16 +25,19 @@ export class GameTypesController {
     return this.service.findOne(id);
   }
 
+  @Roles(UserRole.ADMIN)
   @Post()
   create(@Body() dto: CreateGameTypeDto) {
     return this.service.create(dto);
   }
 
+  @Roles(UserRole.ADMIN)
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateGameTypeDto) {
     return this.service.update(id, dto);
   }
 
+  @Roles(UserRole.ADMIN)
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Option } from '@/constants';
+import { translate } from '@/i18n';
 import { useTheme } from '@/theme';
 import { radius } from '@/theme/radius';
 import { spacing } from '@/theme/spacing';
@@ -22,7 +23,7 @@ export interface AppSelectProps {
 /** Selector que abre un modal con las opciones (estilo de input). */
 export function AppSelect({
   label,
-  placeholder = 'Select an option',
+  placeholder = translate('common.selectOption'),
   value,
   options,
   onSelect,

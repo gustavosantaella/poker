@@ -4,7 +4,7 @@ import { LoadingView } from '@/components/ui/LoadingView';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function IndexScreen() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -14,7 +14,13 @@ export default function IndexScreen() {
     );
   }
 
-  return <Redirect href={isAuthenticated ? '/(tabs)' : '/login'} />;
+  // La app de admin es solo para administradores: un player autenticado es
+  // redirigido al login (el backend además devuelve 403 en todas las escrituras).
+  if (isAuthenticated && user && user.role !== 'player') {
+    return <Redirect href="/(tabs)" />;
+  }
+
+  return <Redirect href="/login" />;
 }
 
 const styles = StyleSheet.create({

@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useController, useFormContext } from 'react-hook-form';
 import { CHIP_COLOR_PRESETS } from '@/constants';
+import { translate } from '@/i18n';
 import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
 import { AppText } from '@/components/ui/AppText';
@@ -12,7 +13,7 @@ export interface ColorPickerFieldProps {
 }
 
 /** Selector de color de ficha: paleta de presets + hex editable. */
-export function ColorPickerField({ name, colorNameField, label = 'Chip color' }: ColorPickerFieldProps) {
+export function ColorPickerField({ name, colorNameField, label = translate('chip.color') }: ColorPickerFieldProps) {
   const { colors } = useTheme();
   const { field, fieldState } = useController({ name });
   const { setValue } = useFormContext();
@@ -60,7 +61,7 @@ export function ColorPickerField({ name, colorNameField, label = 'Chip color' }:
           ]}
         />
         <AppText variant="caption" color={isHexValid ? undefined : colors.danger}>
-          {isHexValid ? hex : 'Select a preset or type a hex color'}
+          {isHexValid ? hex : translate('chip.hexHint')}
         </AppText>
       </View>
       {fieldState.error ? (

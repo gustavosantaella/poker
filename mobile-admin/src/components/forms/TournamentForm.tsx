@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useWatch } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
 import { GenerateStructureResult } from '@/api/tournaments';
 import { AppButton } from '@/components/ui/AppButton';
@@ -7,9 +8,12 @@ import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { TOURNAMENT_STATUS_OPTIONS } from '@/constants';
-import { useCreateTournament, useGameTypes, useTournament, useUpdateTournament } from '@/hooks/use-queries';
-import { tournamentSchema, TournamentFormValues } from '@/schemas/tournament.schema';
+import { TOURNAMENT_STATUS_VALUES, MODE_VALUES } from '@/constants';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
+import { useClubs, useCreateTournament, useGameTypes, useTournament, useUpdateTournament } from '@/hooks/use-queries';
+import { TranslationKey } from '@/i18n';
+import { useI18n } from '@/i18n/I18nProvider';
+import { createTournamentSchema, TournamentFormValues } from '@/schemas/tournament.schema';
 import { useTheme } from '@/theme';
 import { summarizeStructure } from '@/utils/blind-structure';
 import { getErrorMessage } from '@/utils/error';
@@ -21,6 +25,110 @@ import { FormSelect } from './FormSelect';
 import { FormSwitch } from './FormSwitch';
 import { FormTextField } from './FormTextField';
 import { TournamentStructureSection } from './TournamentStructureSection';
+
+/** Claves de react-hook-form que no aportan info al log (evitan recursiones circulares). */
+const SKIP_ERROR_KEYS = new Set(['ref', 'types']);
+
+/** Convierte los errores de react-hook-form en lineas "campo: mensaje" legibles. */
+function extractErrorLines(errors: unknown, prefix = ''): string[] {
+  const lines: string[] = [];
+  if (!errors || typeof errors !== 'object') return lines;
+  if (Array.isArray(errors)) {
+    errors.forEach((item, i) => lines.push(...extractErrorLines(item, `${prefix}[${i}].`)));
+    return lines;
+  }
+  const obj = errors as Record<string, unknown>;
+  for (const key of Object.keys(obj)) {
+    if (SKIP_ERROR_KEYS.has(key)) continue;
+    const value = obj[key];
+    if (!value || typeof value !== 'object') continue;
+    if (Array.isArray(value)) {
+      value.forEach((item, i) => lines.push(...extractErrorLines(item, `${prefix}${key}[${i}].`)));
+    } else if (typeof (value as { message?: unknown }).message === 'string') {
+      lines.push(`${prefix}${key}: ${(value as { message: string }).message}`);
+    } else {
+      lines.push(...extractErrorLines(value, `${prefix}${key}.`));
+    }
+  }
+  return lines;
+}
+
+/** Campo de jugadores maximos: se oculta cuando el torneo es de jugadores ilimitados. */
+function MaxPlayersField() {
+  const { t } = useI18n();
+  const unlimited = useWatch({ name: 'maxPlayersUnlimited' });
+  if (unlimited) return null;
+  return <FormNumberField name="maxPlayers" label={t('tournament.maxPlayers')} />;
+}
+
+/** Campo de max. re-entradas: se oculta cuando la re-entrada es ilimitada. */
+function MaxReEntriesField() {
+  const { t } = useI18n();
+  const reEntryUnlimited = useWatch({ name: 'reEntryUnlimited' });
+  if (reEntryUnlimited) return null;
+  return <FormNumberField name="maxReEntries" label={t('tournament.maxReEntries')} />;
+}
+
+/** Campo de jugadores premiados: cambia el label segun sea % o cantidad fija. */
+function PaidPlacesValueField() {
+  const { t } = useI18n();
+  const type = useWatch({ name: 'paidPlacesType' });
+  return (
+    <FormNumberField
+      name="paidPlacesValue"
+      label={type === 'fixed' ? t('tournament.paidPlacesFixed') : t('tournament.paidPlacesPercent')}
+    />
+  );
+}
+
+/** Campos de add-on: se ocultan cuando el add-on esta desactivado. */
+function AddOnFields() {
+  const { t } = useI18n();
+  const enabled = useWatch({ name: 'addOnEnabled' });
+  if (!enabled) return null;
+  return (
+    <>
+      <View style={styles.row}>
+        <View style={styles.col}>
+          <FormNumberField name="addOnAmount" label={t('tournament.addOnCost')} />
+        </View>
+        <View style={styles.col}>
+          <FormNumberField name="addOnStack" label={t('tournament.addOnChips')} />
+        </View>
+      </View>
+      <FormNumberField
+        name="addOnUntilLevel"
+        label={t('tournament.addOnUntilLevel')}
+        helper={t('tournament.addOnUntilLevelHelper')}
+      />
+    </>
+  );
+}
+
+/** Campo de inscripcion tardia: se oculta cuando esta desactivada. */
+function LateRegistrationField() {
+  const { t } = useI18n();
+  const enabled = useWatch({ name: 'lateRegistrationEnabled' });
+  if (!enabled) return null;
+  return <FormNumberField name="lateRegistrationUntilLevel" label={t('tournament.availableUntilLevel')} />;
+}
+
+/** Controles de re-entrada: se ocultan cuando la re-entrada no esta disponible. */
+function ReEntryFields() {
+  const { t } = useI18n();
+  const enabled = useWatch({ name: 'reEntryEnabled' });
+  if (!enabled) return null;
+  return (
+    <>
+      <FormSwitch
+        name="reEntryUnlimited"
+        label={t('tournament.reEntryUnlimited')}
+        description={t('tournament.reEntryUnlimitedDesc')}
+      />
+      <MaxReEntriesField />
+    </>
+  );
+}
 
 interface TournamentFormProps {
   tournamentId?: number;
@@ -37,21 +145,49 @@ function defaultStartDate(): string {
 export function TournamentForm({ tournamentId }: TournamentFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data: gameTypes, isLoading: gameTypesLoading } = useGameTypes();
+  const { data: clubs } = useClubs();
   const { data: tournament, isLoading: tournamentLoading } = useTournament(tournamentId ?? 0);
   const createTournament = useCreateTournament();
   const updateTournament = useUpdateTournament();
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const schema = useMemo(() => createTournamentSchema(t), [t]);
+
   if (gameTypesLoading || (tournamentId && tournamentLoading) || (tournamentId && !tournament)) {
     return (
       <AppCard>
-        <LoadingView label="Loading tournament..." />
+        <LoadingView label={t('tournament.loading')} />
       </AppCard>
     );
   }
 
   const gameTypeOptions = (gameTypes ?? []).map((g) => ({ label: g.name, value: String(g.id) }));
+  // El selector de club solo aparece si hay clubs registrados.
+  const clubsList = clubs?.items ?? [];
+  const clubOptions = clubsList.map((c) => ({ label: c.name, value: String(c.id) }));
+
+  const statusOptions = TOURNAMENT_STATUS_VALUES.map((value) => ({
+    label: t(`status.${value}` as TranslationKey),
+    value,
+  }));
+
+  const modeOptions = MODE_VALUES.map((value) => ({
+    label: t(`mode.${value}` as TranslationKey),
+    value,
+  }));
+
+  const currencyOptions = CURRENCIES.map((value) => ({ label: value, value }));
+
+  const paidPlacesOptions = [
+    { label: t('tournament.percent'), value: 'percent' },
+    { label: t('tournament.fixed'), value: 'fixed' },
+  ];
+  const adminFeeOptions = [
+    { label: t('tournament.percent'), value: 'percent' },
+    { label: t('tournament.fixed'), value: 'fixed' },
+  ];
 
   const initialStructure: GenerateStructureResult | null = tournament?.blindStructure
     ? { items: tournament.blindStructure, summary: summarizeStructure(tournament.blindStructure)! }
@@ -63,13 +199,19 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         name: tournament.name,
         gameTypeId: tournament.gameTypeId ?? 0,
         startDate: tournament.startDate,
+        clubId: tournament.clubId ?? undefined,
         status: tournament.status,
+        mode: tournament.mode,
+        currency: tournament.currency ?? DEFAULT_CURRENCY,
         buyIn: tournament.buyIn,
         fee: tournament.fee,
         startingStack: tournament.startingStack,
-        maxPlayers: tournament.maxPlayers,
+        maxPlayers: tournament.maxPlayers ?? undefined,
+        maxPlayersUnlimited: tournament.maxPlayers == null,
         registrationOpen: tournament.registrationOpen,
+        tableCount: tournament.tableCount ?? 1,
         reEntryEnabled: tournament.reEntryEnabled,
+        reEntryUnlimited: tournament.maxReEntries === 0,
         maxReEntries: tournament.maxReEntries ?? undefined,
         lateRegistrationEnabled: tournament.lateRegistrationEnabled,
         lateRegistrationUntilLevel: tournament.lateRegistrationUntilLevel ?? undefined,
@@ -77,7 +219,11 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         addOnAmount: tournament.addOnAmount ?? undefined,
         addOnStack: tournament.addOnStack ?? undefined,
         addOnUntilLevel: tournament.addOnUntilLevel ?? undefined,
-        startingBigBlind: bc?.startingBigBlind ?? undefined,
+        guaranteedPrize: tournament.guaranteedPrize ?? undefined,
+        paidPlacesType: tournament.paidPlacesType ?? 'percent',
+        paidPlacesValue: tournament.paidPlacesValue ?? 15,
+        adminFeeType: tournament.adminFeeType ?? 'percent',
+        adminFeeValue: tournament.adminFeeValue ?? undefined,
         levelDurationMin: bc?.levelDurationMin ?? 20,
         numberOfLevels: bc?.numberOfLevels ?? undefined,
         growth: bc?.growth ?? 'normal',
@@ -85,26 +231,37 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         anteStartLevel: bc?.anteStartLevel ?? undefined,
         breakEveryLevels: bc?.breakEveryLevels ?? 4,
         breakDurationMin: bc?.breakDurationMin ?? 10,
+        blindStructure: undefined,
       }
     : {
         name: '',
         gameTypeId: 0,
         startDate: defaultStartDate(),
+        clubId: undefined,
         status: 'registering',
+        mode: 'live',
+        currency: DEFAULT_CURRENCY,
         buyIn: 50,
         fee: 5,
         startingStack: 10000,
         maxPlayers: 9,
+        maxPlayersUnlimited: false,
         registrationOpen: true,
+        tableCount: 1,
         reEntryEnabled: true,
-        maxReEntries: 1,
+        reEntryUnlimited: false,
+        maxReEntries: 2,
         lateRegistrationEnabled: true,
         lateRegistrationUntilLevel: 6,
         addOnEnabled: true,
         addOnAmount: 40,
         addOnStack: 15000,
         addOnUntilLevel: 6,
-        startingBigBlind: undefined,
+        guaranteedPrize: undefined,
+        paidPlacesType: 'percent',
+        paidPlacesValue: 15,
+        adminFeeType: 'percent',
+        adminFeeValue: undefined,
         levelDurationMin: 20,
         numberOfLevels: undefined,
         growth: 'normal',
@@ -112,34 +269,47 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         anteStartLevel: undefined,
         breakEveryLevels: 4,
         breakDurationMin: 10,
-      };
-
-  const onSubmit = async (values: TournamentFormValues) => {
+        blindStructure: undefined,
+      };  const onSubmit = async (values: TournamentFormValues) => {
     setServerError(null);
     const payload = {
       name: values.name,
       gameTypeId: Number(values.gameTypeId),
       startDate: values.startDate,
+      clubId: values.clubId != null ? Number(values.clubId) : null,
       status: values.status,
+      mode: values.mode,
+      currency: values.currency,
       buyIn: Number(values.buyIn),
       fee: Number(values.fee ?? 0),
       startingStack: Number(values.startingStack),
-      maxPlayers: values.maxPlayers == null ? 9 : Number(values.maxPlayers),
+      maxPlayers: values.maxPlayersUnlimited ? null : values.maxPlayers == null ? 9 : Number(values.maxPlayers),
       registrationOpen: values.registrationOpen,
+      tableCount: Number(values.tableCount),
       reEntryEnabled: values.reEntryEnabled,
-      maxReEntries: values.reEntryEnabled && values.maxReEntries != null ? Number(values.maxReEntries) : 0,
+      maxReEntries: values.reEntryEnabled
+        ? values.reEntryUnlimited
+          ? 0
+          : values.maxReEntries != null
+            ? Number(values.maxReEntries)
+            : null
+        : null,
       lateRegistrationEnabled: values.lateRegistrationEnabled,
       lateRegistrationUntilLevel:
         values.lateRegistrationEnabled && values.lateRegistrationUntilLevel != null
           ? Number(values.lateRegistrationUntilLevel)
-          : 0,
+          : null,
       addOnEnabled: values.addOnEnabled,
-      addOnAmount: values.addOnEnabled && values.addOnAmount != null ? Number(values.addOnAmount) : 0,
-      addOnStack: values.addOnEnabled && values.addOnStack != null ? Number(values.addOnStack) : 0,
-      addOnUntilLevel: values.addOnEnabled && values.addOnUntilLevel != null ? Number(values.addOnUntilLevel) : 0,
+      addOnAmount: values.addOnEnabled && values.addOnAmount != null ? Number(values.addOnAmount) : null,
+      addOnStack: values.addOnEnabled && values.addOnStack != null ? Number(values.addOnStack) : null,
+      addOnUntilLevel: values.addOnEnabled && values.addOnUntilLevel != null ? Number(values.addOnUntilLevel) : null,
+      guaranteedPrize: values.guaranteedPrize != null ? Number(values.guaranteedPrize) : null,
+      paidPlacesType: values.paidPlacesType,
+      paidPlacesValue: values.paidPlacesValue != null ? Number(values.paidPlacesValue) : null,
+      adminFeeType: values.adminFeeType,
+      adminFeeValue: values.adminFeeValue != null ? Number(values.adminFeeValue) : null,
       blindConfig: {
         startingStack: Number(values.startingStack),
-        startingBigBlind: values.startingBigBlind != null ? Number(values.startingBigBlind) : undefined,
         levelDurationMin: Number(values.levelDurationMin),
         numberOfLevels: values.numberOfLevels != null ? Number(values.numberOfLevels) : undefined,
         growth: values.growth,
@@ -147,8 +317,23 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         anteStartLevel: values.anteStartLevel != null ? Number(values.anteStartLevel) : undefined,
         breakEveryLevels: Number(values.breakEveryLevels),
         breakDurationMin: Number(values.breakDurationMin ?? 10),
+        maxPlayers: values.maxPlayersUnlimited ? null : values.maxPlayers == null ? null : Number(values.maxPlayers),
+        addOnEnabled: values.addOnEnabled,
+        addOnStack: values.addOnEnabled && values.addOnStack != null ? Number(values.addOnStack) : undefined,
+        reEntryEnabled: values.reEntryEnabled,
+        maxReEntries: values.reEntryEnabled
+          ? values.reEntryUnlimited
+            ? 0
+            : values.maxReEntries != null
+              ? Number(values.maxReEntries)
+              : 0
+          : 0,
       },
+      blindStructure:
+        values.blindStructure && values.blindStructure.length > 0 ? values.blindStructure : undefined,
     };
+
+    console.log('[TournamentForm] PAYLOAD A ENVIAR:', JSON.stringify(payload, null, 2));
 
     try {
       if (tournamentId) {
@@ -156,85 +341,112 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
       } else {
         await createTournament.mutateAsync(payload);
       }
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/tournaments');
+      }
     } catch (error) {
+      console.error('[TournamentForm] ERROR AL GUARDAR:', error);
       setServerError(getErrorMessage(error));
     }
   };
 
   return (
-    <AppForm schema={tournamentSchema} defaultValues={defaultValues} onSubmit={onSubmit}>
-      {({ handleSubmit, formState }) => (
+    <AppForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit}>
+      {({ handleSubmit, formState }) => {
+        return (
         <View>
-          <SectionHeader title="Details" />
+          <SectionHeader title={t('tournament.details')} />
           <AppCard>
-            <FormTextField name="name" label="Tournament name" placeholder="e.g. Sunday Special" />
-            <FormSelect name="gameTypeId" label="Game type" placeholder="Select a game type" options={gameTypeOptions} />
-            <FormDateField name="startDate" label="Start date & time" />
-            <FormSegmented name="status" label="Status" options={TOURNAMENT_STATUS_OPTIONS} />
-            <View style={styles.row}>
-              <View style={styles.col}>
-                <FormNumberField name="maxPlayers" label="Max players" />
-              </View>
-            </View>
-            <FormSwitch name="registrationOpen" label="Registration open" description="Players can register" />
+            <FormTextField name="name" label={t('tournament.name')} placeholder={t('tournament.namePlaceholder')} />
+            <FormSelect name="gameTypeId" label={t('tournament.gameType')} placeholder={t('tournament.gameTypePlaceholder')} options={gameTypeOptions} />
+            <FormDateField name="startDate" label={t('tournament.startDate')} />
+            {clubsList.length > 0 ? (
+              <FormSelect
+                name="clubId"
+                label={t('form.club')}
+                placeholder={t('form.noClub')}
+                options={clubOptions}
+              />
+            ) : null}
+            <FormSegmented name="status" label={t('tournament.status')} options={statusOptions} />
+            <FormSegmented name="mode" label={t('tournament.mode')} options={modeOptions} />
+            <FormSwitch
+              name="maxPlayersUnlimited"
+              label={t('tournament.unlimitedPlayers')}
+              description={t('tournament.unlimitedPlayersDesc')}
+            />
+            <MaxPlayersField />
+            <FormNumberField
+              name="tableCount"
+              label={t('tournament.tableCount')}
+              helper={t('tournament.tableCountHelper')}
+            />
+            <FormSwitch name="registrationOpen" label={t('tournament.registrationOpen')} description={t('tournament.registrationOpenDesc')} />
           </AppCard>
 
-          <SectionHeader title="Cost" />
+          <SectionHeader title={t('tournament.cost')} />
           <AppCard>
+            <FormSelect
+              name="currency"
+              label={t('tournament.currency')}
+              options={currencyOptions}
+            />
             <View style={styles.row}>
               <View style={styles.col}>
-                <FormNumberField name="buyIn" label="Buy-in" />
+                <FormNumberField name="buyIn" label={t('tournament.buyIn')} />
               </View>
               <View style={styles.col}>
-                <FormNumberField name="fee" label="Entry fee" />
+                <FormNumberField name="fee" label={t('tournament.entryFee')} />
               </View>
             </View>
           </AppCard>
 
-          <TournamentStructureSection initialStructure={initialStructure} />
+          <SectionHeader title={t('tournament.prize')} />
+          <AppCard>
+            <FormNumberField
+              name="guaranteedPrize"
+              label={t('tournament.guaranteedPrize')}
+              helper={t('tournament.guaranteedPrizeHelper')}
+            />
+            <FormSegmented name="paidPlacesType" label={t('tournament.paidPlaces')} options={paidPlacesOptions} />
+            <PaidPlacesValueField />
+            <FormNumberField name="adminFeeValue" label={t('tournament.adminFee')} helper={t('tournament.adminFeeHelper')} />
+            <FormSegmented name="adminFeeType" label={t('tournament.feeType')} options={adminFeeOptions} />
+          </AppCard>
 
-          <SectionHeader title="Re-entry (rebuy)" />
+          <SectionHeader title={t('tournament.reEntry')} />
           <AppCard>
             <FormSwitch
               name="reEntryEnabled"
-              label="Re-entry available"
-              description="Allow players to buy back in after busting"
+              label={t('tournament.reEntryEnabled')}
+              description={t('tournament.reEntryDesc')}
             />
-            <FormNumberField name="maxReEntries" label="Max re-entries per player" />
+            <ReEntryFields />
           </AppCard>
 
-          <SectionHeader title="Late registration" />
+          <SectionHeader title={t('tournament.lateRegistration')} />
           <AppCard>
             <FormSwitch
               name="lateRegistrationEnabled"
-              label="Late registration available"
-              description="Players can join after the start"
+              label={t('tournament.lateRegistrationEnabled')}
+              description={t('tournament.lateRegistrationDesc')}
             />
-            <FormNumberField name="lateRegistrationUntilLevel" label="Available until level" />
+            <LateRegistrationField />
           </AppCard>
 
-          <SectionHeader title="Add-on" />
+          <SectionHeader title={t('tournament.addOn')} />
           <AppCard>
             <FormSwitch
               name="addOnEnabled"
-              label="Add-on available"
-              description="Optional extra chips for an additional cost"
+              label={t('tournament.addOnEnabled')}
+              description={t('tournament.addOnDesc')}
             />
-            <View style={styles.row}>
-              <View style={styles.col}>
-                <FormNumberField name="addOnAmount" label="Add-on cost" />
-              </View>
-              <View style={styles.col}>
-                <FormNumberField name="addOnStack" label="Add-on chips" />
-              </View>
-            </View>
-            <FormNumberField
-              name="addOnUntilLevel"
-              label="Add-on available until level"
-              helper="Usually the end of late registration"
-            />
+            <AddOnFields />
           </AppCard>
+
+          <TournamentStructureSection initialStructure={initialStructure} />
 
           {serverError ? (
             <AppText variant="caption" color={colors.danger} style={styles.error}>
@@ -243,14 +455,24 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
           ) : null}
 
           <AppButton
-            title={tournamentId ? 'Save changes' : 'Create tournament'}
-            onPress={handleSubmit(onSubmit)}
+            title={tournamentId ? t('common.saveChanges') : t('tournament.create')}
+            onPress={handleSubmit(onSubmit, (errors) => {
+              const lines = extractErrorLines(errors);
+              console.log('[TournamentForm] ERRORES DE VALIDACIÓN:', lines.length ? lines : errors);
+              const paths = [...new Set(lines.map((l) => l.split(':')[0].trim()))].join(', ');
+              setServerError(
+                paths
+                  ? t('validation.formInvalidFields', { fields: paths })
+                  : t('validation.formInvalid'),
+              );
+            })}
             loading={formState.isSubmitting || createTournament.isPending || updateTournament.isPending}
             fullWidth
             style={styles.submit}
           />
         </View>
-      )}
+        );
+      }}
     </AppForm>
   );
 }

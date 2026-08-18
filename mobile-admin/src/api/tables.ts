@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Paginated, PokerTable, TablePayload } from './types';
+import { Paginated, PokerTable, TablePayload, TableReservation } from './types';
 
 export interface TableFilters {
   status?: string;
@@ -28,4 +28,13 @@ export async function updateTable(id: number, payload: Partial<TablePayload>): P
 
 export async function deleteTable(id: number): Promise<void> {
   await apiClient.delete(`/tables/${id}`);
+}
+
+export async function fetchTableReservations(tableId: number): Promise<TableReservation[]> {
+  const res = await apiClient.get(`/tables/${tableId}/reservations`);
+  return res.data.data as TableReservation[];
+}
+
+export async function removeTableReservation(tableId: number, reservationId: number): Promise<void> {
+  await apiClient.delete(`/tables/${tableId}/reservations/${reservationId}`);
 }

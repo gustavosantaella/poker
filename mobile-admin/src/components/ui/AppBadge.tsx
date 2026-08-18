@@ -10,13 +10,18 @@ export type BadgeTone =
   | 'info'
   | 'accent';
 
+import { StyleProp, ViewStyle } from 'react-native';
+
 export interface AppBadgeProps {
   label: string;
   tone?: BadgeTone;
+  color?: string;
+  backgroundColor?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 /** Etiqueta pequeña de estado con color de fondo suave. */
-export function AppBadge({ label, tone = 'muted' }: AppBadgeProps) {
+export function AppBadge({ label, tone = 'muted', color, backgroundColor, style }: AppBadgeProps) {
   const { colors } = useTheme();
 
   const background: Record<BadgeTone, string> = {
@@ -43,8 +48,18 @@ export function AppBadge({ label, tone = 'muted' }: AppBadgeProps) {
     <AppText
       variant="caption"
       weight="semibold"
-      color={foreground[tone]}
-      style={{ backgroundColor: background[tone], paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' }}
+      color={color || foreground[tone]}
+      numberOfLines={1}
+      style={[
+        {
+          backgroundColor: backgroundColor || background[tone],
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+          borderRadius: 999,
+          overflow: 'hidden',
+        },
+        style,
+      ]}
     >
       {label}
     </AppText>

@@ -43,9 +43,12 @@ export function AppSegmentedControl({
               ]}
             >
               <AppText
-                variant="label"
+                variant="caption"
                 color={active ? colors.textPrimary : colors.textSecondary}
                 weight={active ? 'semibold' : 'regular'}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
               >
                 {option.label}
               </AppText>

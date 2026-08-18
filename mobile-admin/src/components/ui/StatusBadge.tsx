@@ -1,5 +1,6 @@
 import { TableStatus, TournamentStatus } from '@/api/types';
-import { labelFor, TABLE_STATUS_OPTIONS, TOURNAMENT_STATUS_OPTIONS } from '@/constants';
+import { TranslationKey } from '@/i18n';
+import { useI18n } from '@/i18n/I18nProvider';
 import { AppBadge, BadgeTone } from './AppBadge';
 
 const TABLE_TONES: Record<TableStatus, BadgeTone> = {
@@ -19,11 +20,26 @@ const TOURNAMENT_TONES: Record<TournamentStatus, BadgeTone> = {
 };
 
 export function TableStatusBadge({ status }: { status: TableStatus }) {
-  return <AppBadge label={labelFor(TABLE_STATUS_OPTIONS, status)} tone={TABLE_TONES[status]} />;
+  const { t } = useI18n();
+  return <AppBadge label={t(`status.${status}` as TranslationKey)} tone={TABLE_TONES[status]} />;
 }
 
-export function TournamentStatusBadge({ status }: { status: TournamentStatus }) {
+export function TournamentStatusBadge({
+  status,
+  color,
+  backgroundColor,
+}: {
+  status: TournamentStatus;
+  color?: string;
+  backgroundColor?: string;
+}) {
+  const { t } = useI18n();
   return (
-    <AppBadge label={labelFor(TOURNAMENT_STATUS_OPTIONS, status)} tone={TOURNAMENT_TONES[status]} />
+    <AppBadge
+      label={t(`status.${status}` as TranslationKey)}
+      tone={TOURNAMENT_TONES[status]}
+      color={color}
+      backgroundColor={backgroundColor}
+    />
   );
 }

@@ -2,12 +2,14 @@ import { PokerTable } from '@/api/types';
 import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { TableStatusBadge } from '@/components/ui/StatusBadge';
+import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency } from '@/utils/format';
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from '@/theme';
 
 export function TableListItem({ table, onPress }: { table: PokerTable; onPress: () => void }) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   return (
     <AppCard onPress={onPress} style={styles.card}>
       <View style={styles.header}>
@@ -15,14 +17,17 @@ export function TableListItem({ table, onPress }: { table: PokerTable; onPress: 
           <AppText variant="subtitle" numberOfLines={1}>
             {table.name}
           </AppText>
-          <AppText variant="caption">{table.gameType?.name ?? 'No game type'}</AppText>
+          <AppText variant="caption">
+            {table.gameType?.name ?? t('table.noGameType')} •{' '}
+            {table.mode === 'online' ? t('mode.online') : t('mode.live')}
+          </AppText>
         </View>
         <TableStatusBadge status={table.status} />
       </View>
       <View style={styles.meta}>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>
-            Blinds
+            {t('table.blinds')}
           </AppText>
           <AppText variant="body" weight="semibold">
             {table.smallBlind}/{table.bigBlind}
@@ -30,15 +35,15 @@ export function TableListItem({ table, onPress }: { table: PokerTable; onPress: 
         </View>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>
-            Buy-in
+            {t('table.buyIn')}
           </AppText>
           <AppText variant="body" weight="semibold">
-            {formatCurrency(table.minBuyIn)} – {formatCurrency(table.maxBuyIn)}
+            {formatCurrency(table.minBuyIn, table.currency)} – {formatCurrency(table.maxBuyIn, table.currency)}
           </AppText>
         </View>
         <View style={styles.metaItem}>
           <AppText variant="caption" color={colors.textSecondary}>
-            Seats
+            {t('table.seats')}
           </AppText>
           <AppText variant="body" weight="semibold">
             {table.seats}

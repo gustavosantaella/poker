@@ -13,6 +13,11 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();
+    // No registrar cada frame de los endpoints SSE (event-stream): sería ruido y
+    // el stream no se completa (el "tap" de finalización nunca ocurriría).
+    if (String(request.headers?.accept ?? '').includes('text/event-stream')) {
+      return next.handle();
+    }
     const response = http.getResponse<Response>();
     const { method, originalUrl } = request;
     const ip = request.ip ?? request.socket?.remoteAddress ?? 'unknown';

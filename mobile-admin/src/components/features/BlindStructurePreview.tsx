@@ -2,9 +2,10 @@ import { BlindStructureItem, BlindStructureSummary } from '@/api/types';
 import { AppCard } from '@/components/ui/AppCard';
 import { AppText } from '@/components/ui/AppText';
 import { LoadingView } from '@/components/ui/LoadingView';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
-import { formatDuration } from '@/utils/format';
+import { formatChips, formatDuration } from '@/utils/format';
 import { StyleSheet, View } from 'react-native';
 
 export interface BlindStructurePreviewProps {
@@ -12,6 +13,10 @@ export interface BlindStructurePreviewProps {
   summary: BlindStructureSummary | null | undefined;
   loading?: boolean;
   error?: string;
+  lateRegistrationLevel?: number | null;
+  addOnLevel?: number | null;
+  reEntryUnlimited?: boolean;
+  currentIndex?: number | null;
 }
 
 /** Tabla de niveles + resumen de la estructura de ciegas generada. */
@@ -20,13 +25,18 @@ export function BlindStructurePreview({
   summary,
   loading = false,
   error,
+  lateRegistrationLevel = null,
+  addOnLevel = null,
+  reEntryUnlimited = false,
+  currentIndex = null,
 }: BlindStructurePreviewProps) {
   const { colors } = useTheme();
+  const { t } = useI18n();
 
   if (loading) {
     return (
       <AppCard>
-        <LoadingView label="Generating blind structure..." />
+        <LoadingView label={t('structure.generating')} />
       </AppCard>
     );
   }
@@ -45,7 +55,7 @@ export function BlindStructurePreview({
     return (
       <AppCard>
         <AppText variant="caption" color={colors.textSecondary}>
-          Fill in the structure fields and press “Preview” to generate the blind levels.
+          {t('structure.hint')}
         </AppText>
       </AppCard>
     );
@@ -56,42 +66,83 @@ export function BlindStructurePreview({
       {summary ? (
         <View style={[styles.summary, { backgroundColor: colors.primaryMuted }]}>
           <AppText variant="caption" weight="semibold" color={colors.primary}>
-            {summary.levelCount} levels • {summary.breakCount} breaks • Est.{' '}
-            {formatDuration(summary.estimatedDurationMin)}
+            {t('structure.summary', {
+              levels: summary.levelCount,
+              breaks: summary.breakCount,
+              duration: formatDuration(summary.estimatedDurationMin),
+            })}
           </AppText>
+          {lateRegistrationLevel != null ? (
+            <AppText variant="caption" color={colors.warning}>
+              ⛔ {t('structure.registrationClosesAt', { level: lateRegistrationLevel })}
+            </AppText>
+          ) : null}
+          {addOnLevel != null ? (
+            <AppText variant="caption" color={colors.primary}>
+              ➕ {t('structure.addOnEndsAt', { level: addOnLevel })}
+            </AppText>
+          ) : null}
+          {reEntryUnlimited ? (
+            <AppText variant="caption" color={colors.primary}>
+              🔄 {t('structure.reEntryUnlimited')}
+            </AppText>
+          ) : null}
         </View>
       ) : null}
 
-      {items.map((item) => {
+      {items.map((item, index) => {
+        const isCurrent = currentIndex != null && index === currentIndex;
         if (item.type === 'break') {
           return (
-            <View key={`break-${item.afterLevel}`} style={[styles.break, { backgroundColor: colors.surfaceMuted }]}>
+            <View
+              key={`break-${item.afterLevel}`}
+              style={[
+                styles.break,
+                { backgroundColor: isCurrent ? colors.primaryMuted : colors.surfaceMuted },
+              ]}
+            >
               <AppText variant="caption" weight="semibold" color={colors.warning}>
-                ☕ Break • {item.durationMin} min
+                {isCurrent ? '▶ ' : ''}
+                {t('structure.breakLabel', { minutes: item.durationMin })}
               </AppText>
-              <AppText variant="caption">after level {item.afterLevel}</AppText>
+              <AppText variant="caption">{t('structure.afterLevel', { level: item.afterLevel })}</AppText>
             </View>
           );
         }
         return (
-          <View key={`level-${item.level}`} style={[styles.row, { borderBottomColor: colors.border }]}>
-            <AppText variant="body" weight="semibold" style={styles.level}>
-              L{item.level}
-            </AppText>
-            <AppText variant="body" weight="medium">
-              {item.smallBlind}/{item.bigBlind}
-            </AppText>
-            <AppText variant="caption" color={item.ante > 0 ? colors.warning : colors.textMuted}>
-              {item.ante > 0 ? `ante ${item.ante}` : 'no ante'}
-            </AppText>
-            <AppText variant="caption">{item.durationMin} min</AppText>
+          <View key={`level-${item.level}`} style={isCurrent ? { borderRadius: 8, backgroundColor: colors.primaryMuted } : undefined}>
+            <View style={[styles.row, { borderBottomColor: colors.border }]}>
+              <AppText variant="body" weight="semibold" style={styles.level}>
+                {isCurrent ? '▶ ' : ''}L{item.level}
+              </AppText>
+              <AppText variant="body" weight="medium">
+                {formatChips(item.smallBlind)}/{formatChips(item.bigBlind)}
+              </AppText>
+              <AppText variant="caption" color={item.ante > 0 ? colors.warning : colors.textMuted}>
+                {item.ante > 0 ? t('structure.ante', { ante: formatChips(item.ante) }) : t('structure.noAnte')}
+              </AppText>
+              <AppText variant="caption">{t('structure.minutes', { minutes: item.durationMin })}</AppText>
+            </View>
+            {lateRegistrationLevel != null && item.level === lateRegistrationLevel ? (
+              <AppText variant="caption" color={colors.warning} style={styles.marker}>
+                ⛔ {t('structure.registrationClosesAt', { level: item.level })}
+              </AppText>
+            ) : null}
+            {addOnLevel != null && item.level === addOnLevel ? (
+              <AppText variant="caption" color={colors.primary} style={styles.marker}>
+                ➕ {t('structure.addOnEndsAt', { level: item.level })}
+              </AppText>
+            ) : null}
           </View>
         );
       })}
 
       {summary?.finalLevel ? (
         <AppText variant="caption" style={styles.note}>
-          Estimated end: {summary.finalLevel.smallBlind}/{summary.finalLevel.bigBlind} (BB ≈ 5% of stack).
+          {t('structure.estimatedEnd', {
+            smallBlind: formatChips(summary.finalLevel.smallBlind),
+            bigBlind: formatChips(summary.finalLevel.bigBlind),
+          })}
         </AppText>
       ) : null}
     </View>
@@ -111,4 +162,5 @@ const styles = StyleSheet.create({
   level: { width: 36 },
   break: { padding: spacing.sm, borderRadius: 10 },
   note: { marginTop: spacing.xs },
+  marker: { marginLeft: 36, marginBottom: 4 },
 });

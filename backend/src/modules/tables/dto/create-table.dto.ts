@@ -1,5 +1,6 @@
-import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
-import { TableStatus } from '../entities/table.entity';
+import { IsBoolean, IsEnum, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { CURRENCIES } from '../../../common/constants/currencies';
+import { TableMode, TableStatus } from '../entities/table.entity';
 
 export class CreateTableDto {
   @IsString()
@@ -38,6 +39,14 @@ export class CreateTableDto {
   status?: TableStatus;
 
   @IsOptional()
+  @IsEnum(TableMode)
+  mode?: TableMode;
+
+  @IsOptional()
+  @IsIn([...CURRENCIES], { message: 'currency must be one of: USD, VES, EUR' })
+  currency?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(1000)
   notes?: string;
@@ -45,4 +54,9 @@ export class CreateTableDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  clubId?: number;
 }

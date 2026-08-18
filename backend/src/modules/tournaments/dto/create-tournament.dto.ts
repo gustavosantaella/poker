@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -14,7 +15,8 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { TournamentStatus } from '../entities/tournament.entity';
+import { CURRENCIES } from '../../../common/constants/currencies';
+import { TournamentMode, TournamentStatus } from '../entities/tournament.entity';
 import { BlindStructureItemDto, GenerateStructureDto } from './blind-structure.dto';
 
 export class CreateTournamentDto {
@@ -34,6 +36,19 @@ export class CreateTournamentDto {
   @IsEnum(TournamentStatus)
   status?: TournamentStatus;
 
+  @IsOptional()
+  @IsEnum(TournamentMode)
+  mode?: TournamentMode;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  clubId?: number;
+
+  @IsOptional()
+  @IsIn([...CURRENCIES], { message: 'currency must be one of: USD, VES, EUR' })
+  currency?: string;
+
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'buyIn must be a valid number' })
   @Min(0)
   buyIn: number;
@@ -51,7 +66,7 @@ export class CreateTournamentDto {
   @IsInt()
   @Min(2)
   @Max(1000)
-  maxPlayers?: number;
+  maxPlayers?: number | null;
 
   @IsOptional()
   @IsBoolean()
@@ -96,6 +111,36 @@ export class CreateTournamentDto {
   @IsInt()
   @Min(1)
   addOnUntilLevel?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  guaranteedPrize?: number;
+
+  @IsOptional()
+  @IsIn(['percent', 'fixed'])
+  paidPlacesType?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1000)
+  paidPlacesValue?: number;
+
+  @IsOptional()
+  @IsIn(['percent', 'fixed'])
+  adminFeeType?: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  adminFeeValue?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  tableCount?: number;
 
   // Blind structure (auto-generated from blindConfig, or fully manual)
   @IsOptional()

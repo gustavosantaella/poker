@@ -1,7 +1,8 @@
 import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -13,6 +14,9 @@ export interface AuthResult {
     name: string;
     role: string;
     isActive: boolean;
+    address: string | null;
+    phone: string | null;
+    city: string | null;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -26,6 +30,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResult> {
@@ -34,8 +39,22 @@ export class AuthService {
       this.logger.warn(`Register rejected for ${dto.email}: email already registered`);
       throw new ConflictException('Email is already registered');
     }
-    const user = await this.usersService.createWithPassword(dto.email, dto.name, dto.password);
-    this.logger.log(`Registered new user ${dto.email} (id=${user.id})`);
+    // Seguridad: el rol NUNCA viene del cliente. Solo se crea admin si se envía
+    // el código de invitación correcto (ADMIN_INVITE_CODE del backend).
+    const isAdminInvite =
+      !!dto.inviteCode &&
+      dto.inviteCode.trim().length > 0 &&
+      dto.inviteCode.trim() === this.configService.get<string>('auth.adminInviteCode');
+    const role = isAdminInvite ? UserRole.ADMIN : UserRole.PLAYER;
+
+    const user = await this.usersService.createWithPassword(
+      dto.email,
+      dto.name,
+      dto.password,
+      role,
+      dto.alias,
+    );
+    this.logger.log(`Registered new user ${dto.email} (id=${user.id}) role=${role}`);
     return this.buildAuthResult(user);
   }
 

@@ -1,4 +1,5 @@
 ﻿import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { DEFAULT_CURRENCY } from '../../../common/constants/currencies';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { DecimalTransformer } from '../../../common/entities/decimal.transformer';
 import { GameType } from '../../game-types/entities/game-type.entity';
@@ -8,6 +9,11 @@ export enum TableStatus {
   RUNNING = 'running',
   PAUSED = 'paused',
   CLOSED = 'closed',
+}
+
+export enum TableMode {
+  LIVE = 'live',
+  ONLINE = 'online',
 }
 
 @Entity('tables')
@@ -40,9 +46,23 @@ export class PokerTable extends BaseEntity {
   @Column({ type: 'enum', enum: TableStatus, default: TableStatus.OPEN })
   status: TableStatus;
 
+  @Column({ type: 'enum', enum: TableMode, default: TableMode.LIVE })
+  mode: TableMode;
+
+  @Column({ type: 'varchar', length: 3, default: DEFAULT_CURRENCY })
+  currency: string;
+
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
   @Column({ default: true })
   isActive: boolean;
+
+  /** Club al que pertenece la mesa (opcional). */
+  @Column({ name: 'club_id', type: 'int', nullable: true })
+  clubId: number | null;
+
+  /** Usuario que creó la mesa. */
+  @Column({ name: 'created_by_user_id', type: 'int', nullable: true })
+  createdByUserId: number | null;
 }

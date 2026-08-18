@@ -1,4 +1,6 @@
-export type UserRole = 'admin' | 'manager';
+import { Currency } from '@/constants/currencies';
+
+export type UserRole = 'admin' | 'manager' | 'player';
 
 export interface User {
   id: number;
@@ -6,6 +8,40 @@ export interface User {
   name: string;
   role: UserRole;
   isActive: boolean;
+  address: string | null;
+  phone: string | null;
+  city: string | null;
+  alias: string | null;
+  country: string | null;
+  photoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Club {
+  id: number;
+  code: string;
+  name: string;
+  photoUrl: string | null;
+  address: string | null;
+  phone: string | null;
+  adminUserId: number;
+  createdByUserId: number;
+  createdAt: string;
+  updatedAt: string;
+  tablesCount?: number;
+  tournamentsCount?: number;
+  membersCount?: number;
+}
+
+export type ClubMemberStatus = 'pending' | 'accepted' | 'rejected';
+
+export interface ClubMember {
+  id: number;
+  clubId: number;
+  userId: number;
+  user: User;
+  status: ClubMemberStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +71,8 @@ export interface Chip {
 
 export type TableStatus = 'open' | 'running' | 'paused' | 'closed';
 
+export type GameMode = 'live' | 'online';
+
 export interface PokerTable {
   id: number;
   name: string;
@@ -46,8 +84,11 @@ export interface PokerTable {
   maxBuyIn: number;
   seats: number;
   status: TableStatus;
+  mode: GameMode;
+  currency: Currency;
   notes: string | null;
   isActive: boolean;
+  clubId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -97,6 +138,11 @@ export interface BlindConfig {
   anteStartLevel?: number;
   breakEveryLevels?: number;
   breakDurationMin?: number;
+  maxPlayers?: number | null;
+  addOnEnabled?: boolean;
+  addOnStack?: number;
+  reEntryEnabled?: boolean;
+  maxReEntries?: number;
 }
 
 export interface Tournament {
@@ -106,11 +152,17 @@ export interface Tournament {
   gameType: GameType | null;
   startDate: string;
   status: TournamentStatus;
+  mode: GameMode;
+  currency: Currency;
   buyIn: number;
   fee: number;
   startingStack: number;
-  maxPlayers: number;
+  maxPlayers: number | null;
+  /** Total de reservas y jugadores aceptados (calculados a partir de las reservas). */
+  reservedCount?: number;
+  playersCount?: number;
   registrationOpen: boolean;
+  tableCount: number;
   reEntryEnabled: boolean;
   maxReEntries: number | null;
   lateRegistrationEnabled: boolean;
@@ -119,11 +171,22 @@ export interface Tournament {
   addOnAmount: number | null;
   addOnStack: number | null;
   addOnUntilLevel: number | null;
+  guaranteedPrize: number | null;
+  paidPlacesType: 'percent' | 'fixed' | null;
+  paidPlacesValue: number | null;
+  adminFeeType: 'percent' | 'fixed' | null;
+  adminFeeValue: number | null;
   blindStructure: BlindStructureItem[] | null;
   blindConfig: BlindConfig | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  startedAt: string | null;
+  currentLevel: number | null;
+  levelStartedAt: string | null;
+  clubId?: number | null;
+  /** Total de rebuys realizados en el torneo. */
+  currentReEntries: number;
 }
 
 export interface DashboardStats {
@@ -175,8 +238,11 @@ export interface TablePayload {
   maxBuyIn: number;
   seats?: number;
   status?: TableStatus;
+  mode?: GameMode;
+  currency?: Currency;
   notes?: string;
   isActive?: boolean;
+  clubId?: number | null;
 }
 
 export interface TournamentPayload {
@@ -184,18 +250,77 @@ export interface TournamentPayload {
   gameTypeId: number | null;
   startDate: string;
   status?: TournamentStatus;
+  mode?: GameMode;
+  currency?: Currency;
   buyIn: number;
   fee?: number;
   startingStack: number;
-  maxPlayers?: number;
+  maxPlayers?: number | null;
   registrationOpen?: boolean;
+  tableCount?: number;
   reEntryEnabled?: boolean;
-  maxReEntries?: number;
+  maxReEntries?: number | null;
   lateRegistrationEnabled?: boolean;
-  lateRegistrationUntilLevel?: number;
+  lateRegistrationUntilLevel?: number | null;
   addOnEnabled?: boolean;
-  addOnAmount?: number;
-  addOnStack?: number;
-  addOnUntilLevel?: number;
+  addOnAmount?: number | null;
+  addOnStack?: number | null;
+  addOnUntilLevel?: number | null;
+  guaranteedPrize?: number | null;
+  paidPlacesType?: 'percent' | 'fixed';
+  paidPlacesValue?: number | null;
+  adminFeeType?: 'percent' | 'fixed';
+  adminFeeValue?: number | null;
+  clubId?: number | null;
   blindConfig: BlindConfig;
+  /** Estructura manual (si el usuario la genero/edito en el formulario). Si se omite, el backend la regenera desde blindConfig. */
+  blindStructure?: BlindStructureItem[] | null;
+}
+
+export type ReservationStatus = 'pending' | 'accepted' | 'rejected' | 'stood_up' | 'eliminated';
+
+export interface TournamentReservation {
+  id: number;
+  tournamentId: number;
+  userId: number;
+  user: User;
+  status: ReservationStatus;
+  /** Stack inicial del jugador (fichas). Null = usa el startingStack del torneo. */
+  stack: number | null;
+  /** Cantidad de rebuys (re-entradas) realizados por el jugador. */
+  reEntries: number;
+  /** Mesa asignada (1..tableCount) y asiento (1..9). Null = sin asignar. */
+  tableNumber: number | null;
+  seatNumber: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TableReservation {
+  id: number;
+  tableId: number;
+  userId: number;
+  user: User;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TournamentChip {
+  id: number;
+  tournamentId: number;
+  chipId: number;
+  chip: Chip;
+  discardLevel: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TournamentPrize {
+  id: number;
+  tournamentId: number;
+  place: number;
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
 }

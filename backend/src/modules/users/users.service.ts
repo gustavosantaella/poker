@@ -1,10 +1,10 @@
-﻿import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { CrudService } from '../../common/services/crud.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 
 @Injectable()
 export class UsersService extends CrudService<User> {
@@ -16,14 +16,26 @@ export class UsersService extends CrudService<User> {
     return this.repository.findOne({
       where: { email: email.toLowerCase() },
       select: withPassword
-        ? ['id', 'email', 'name', 'password', 'role', 'isActive', 'createdAt', 'updatedAt']
+        ? ['id', 'email', 'name', 'password', 'role', 'isActive', 'address', 'phone', 'city', 'alias', 'country', 'photoUrl', 'createdAt', 'updatedAt']
         : undefined,
     });
   }
 
-  async createWithPassword(email: string, name: string, password: string): Promise<User> {
+  async createWithPassword(
+    email: string,
+    name: string,
+    password: string,
+    role = UserRole.ADMIN,
+    alias?: string,
+  ): Promise<User> {
     const hashed = await bcrypt.hash(password, 10);
-    return this.create({ email: email.toLowerCase(), name, password: hashed });
+    return this.create({
+      email: email.toLowerCase(),
+      name,
+      password: hashed,
+      role,
+      alias: alias ?? null,
+    });
   }
 
   async update(id: number, data: UpdateUserDto): Promise<User> {
@@ -40,8 +52,22 @@ export class UsersService extends CrudService<User> {
       name: user.name,
       role: user.role,
       isActive: user.isActive,
+      address: user.address ?? null,
+      phone: user.phone ?? null,
+      city: user.city ?? null,
+      alias: user.alias ?? null,
+      country: user.country ?? null,
+      photoUrl: user.photoUrl ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  async getAdminProfile() {
+    const admin = await this.repository.findOne({
+      where: { role: UserRole.ADMIN },
+      order: { id: 'ASC' }
+    });
+    return admin ? this.toSafeUser(admin) : null;
   }
 }
