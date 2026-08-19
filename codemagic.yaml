@@ -33,7 +33,6 @@ workflows:
       branch_patterns:
         - pattern: main
           include: true
-          source: push
 
     cache:
       cache_paths:
