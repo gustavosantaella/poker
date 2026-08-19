@@ -43,12 +43,12 @@
     "experiments": {
       "reactCompiler": true
     },
+    "owner": "gustavosant",
     "extra": {
       "router": {},
       "eas": {
         "projectId": "fd36c178-a6ee-477d-a1d5-dc03ff98ca44"
       }
-    },
-    "owner": "gustavosant"
+    }
   }
 }
