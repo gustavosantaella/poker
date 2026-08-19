@@ -22,7 +22,7 @@ workflows:
     environment:
       node: 22
       groups:
-        - expo_credentials            # Contiene EXPO_TOKEN (ver comentario arriba)
+        - EXPO            # Contiene EXPO_TOKEN (ver comentario arriba)
       vars:
         EAS_PROJECT_ID: fd36c178-a6ee-477d-a1d5-dc03ff98ca44
         EAS_BUILD_PROFILE: production
