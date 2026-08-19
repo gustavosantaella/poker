@@ -9,11 +9,11 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pokelap.admin",
+      "bundleIdentifier": "nexosoftware.pokerprosmanagement.ve",
       "icon": "./assets/expo.icon"
     },
     "android": {
-      "package": "com.pokelap.admin",
+      "package": "nexosoftware.pokerprosmanagement.ve",
       "adaptiveIcon": {
         "backgroundColor": "#0F1115",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
