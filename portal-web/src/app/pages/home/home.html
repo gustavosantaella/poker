@@ -1,0 +1,234 @@
+<!-- HERO -->
+<section class="relative overflow-hidden">
+  <div class="glow-gold animate-pulse-glow pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full"></div>
+  <div class="glow-felt pointer-events-none absolute -left-48 top-1/3 h-96 w-96 rounded-full"></div>
+  <div class="bg-grid pointer-events-none absolute inset-0 opacity-50"></div>
+
+  <div class="relative mx-auto grid max-w-7xl gap-16 px-4 pb-24 pt-32 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8 lg:pt-40">
+    <div>
+      <app-badge tone="gold" class="animate-fade-in-up">Plataforma de gestión de salas de póker</app-badge>
+      <h1 class="animate-fade-in-up mt-6 font-display text-5xl font-extrabold leading-[1.06] text-ivory md:text-6xl" style="animation-delay: 80ms">
+        Gestiona tu sala de póker
+        <span class="text-gradient-gold">como un profesional</span>
+      </h1>
+      <p class="animate-fade-in-up mt-6 max-w-xl text-lg leading-relaxed text-ivory-dim" style="animation-delay: 160ms">
+        Mesas cash, torneos con premios garantizados, clubs privados y reservas al instante.
+        Todo en una sola plataforma, lista para tu sala.
+      </p>
+      <div class="animate-fade-in-up mt-8 flex flex-wrap gap-4" style="animation-delay: 240ms">
+        <app-button [routerLink]="'/planes'" [size]="'lg'">Ver planes</app-button>
+        <app-button [routerLink]="'/contacto'" [variant]="'outline'" [size]="'lg'">Contáctanos</app-button>
+      </div>
+      <div class="animate-fade-in-up mt-12 flex flex-wrap gap-x-12 gap-y-8" style="animation-delay: 320ms">
+        @for (s of stats; track s.label) {
+          <app-stat [value]="s.value" [label]="s.label" />
+        }
+      </div>
+    </div>
+
+    <!-- Mockup de la app -->
+    <div class="animate-fade-in-up relative mx-auto w-full max-w-md" style="animation-delay: 300ms">
+      <div class="absolute -inset-8 rounded-[3rem] bg-gradient-to-tr from-gold-500/15 via-transparent to-felt-400/20 blur-2xl"></div>
+      <div class="relative rounded-3xl border border-white/10 bg-velvet-800/90 p-6 shadow-2xl backdrop-blur">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-wider text-ivory-muted">Torneo en vivo</p>
+            <p class="font-display text-xl font-bold text-ivory">Sunday Deepstack</p>
+          </div>
+          <span class="flex items-center gap-1.5 rounded-full bg-naipe-500/15 px-3 py-1 text-xs font-bold text-naipe-400">
+            <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-naipe-400"></span> LIVE
+          </span>
+        </div>
+
+        <div class="mt-5 space-y-3">
+          <div class="flex items-center justify-between rounded-xl bg-velvet-700/60 px-4 py-3.5">
+            <div class="flex items-center gap-3">
+              <span class="grid h-9 w-9 place-items-center rounded-full bg-felt-500/20 text-sm text-felt-300">♠</span>
+              <div>
+                <p class="text-sm font-semibold text-ivory">Mesa 3 · NLHE</p>
+                <p class="text-xs text-ivory-muted">Blinds 200/400 · 8/9 asientos</p>
+              </div>
+            </div>
+            <app-badge tone="felt">Abierta</app-badge>
+          </div>
+
+          <div class="flex items-center justify-between rounded-xl bg-velvet-700/60 px-4 py-3.5">
+            <div class="flex items-center gap-3">
+              <span class="grid h-9 w-9 place-items-center rounded-full bg-gold-400/15 text-sm text-gold-400">♣</span>
+              <div>
+                <p class="text-sm font-semibold text-ivory">Mesa 7 · PLO</p>
+                <p class="text-xs text-ivory-muted">Buy-in 50–200 · 6 asientos</p>
+              </div>
+            </div>
+            <app-badge tone="gold">1 reserva</app-badge>
+          </div>
+        </div>
+
+        <div class="mt-5 rounded-xl border border-gold-400/20 bg-gold-400/5 px-4 py-3.5">
+          <div class="flex items-center justify-between text-xs text-ivory-muted">
+            <span>Premio garantizado</span>
+            <span class="font-display text-sm font-bold text-gold-300">$ 5.000</span>
+          </div>
+          <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-velvet-600">
+            <div class="h-full w-3/4 rounded-full bg-gradient-to-r from-gold-400 to-gold-500"></div>
+          </div>
+          <p class="mt-2 text-xs text-ivory-dim">128 / 200 jugadores registrados</p>
+        </div>
+      </div>
+
+      <div class="animate-float absolute -left-10 -top-8 grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-gold-300 to-gold-600 shadow-xl shadow-gold-500/30">
+        <span class="absolute inset-1.5 rounded-full border-2 border-dashed border-velvet-900/40"></span>
+      </div>
+      <div class="animate-float-slow absolute -bottom-6 -right-6 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-felt-300 to-felt-600 shadow-xl shadow-felt-500/30">
+        <span class="absolute inset-1 rounded-full border-2 border-dashed border-white/30"></span>
+      </div>
+      <div class="animate-bounce-soft absolute -right-8 top-10 grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-naipe-400 to-naipe-600 shadow-lg">
+        <span class="absolute inset-1 rounded-full border-2 border-dashed border-white/30"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FUNCIONALIDADES -->
+<section id="funcionalidades" class="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+  <div appReveal class="flex justify-center">
+    <app-section-title
+      eyebrow="Funcionalidades"
+      title="Todo lo que tu sala necesita"
+      subtitle="Del registro de jugadores al cobro de la última mano: herramientas pensadas para administradores de salas reales."
+    />
+  </div>
+
+  <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    @for (feature of features; track feature.title; let i = $index) {
+      <div appReveal [revealDelay]="(i % 4) * 90">
+        <app-feature-card [icon]="feature.icon" [title]="feature.title" [description]="feature.description" />
+      </div>
+    }
+  </div>
+</section>
+
+<!-- MODOS LIVE / ONLINE -->
+<section class="relative overflow-hidden border-y border-white/5 bg-velvet-900">
+  <div class="glow-felt pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full"></div>
+  <div class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+    <div appReveal class="flex justify-center">
+      <app-section-title
+        eyebrow="Dos formas de jugar"
+        title="Live y Online"
+        subtitle="Tu sala decide. Gestiona partidas presenciales en el local o sesiones en línea, con el mismo panel y los mismos datos."
+      />
+    </div>
+
+    <div class="mt-14 grid gap-6 md:grid-cols-2">
+      <div appReveal class="group relative overflow-hidden rounded-3xl border border-felt-400/25 bg-gradient-to-br from-felt-600/40 to-velvet-800 p-9 transition-transform duration-300 hover:-translate-y-1">
+        <span class="absolute -right-6 -top-6 h-28 w-28 rounded-full border border-felt-400/20 chip-ring"></span>
+        <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-felt-500/25 text-felt-300">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18M12 3v18M7.8 7.8 16.2 16.2M16.2 7.8 7.8 16.2"/></svg>
+        </span>
+        <h3 class="mt-5 font-display text-2xl font-bold text-ivory">Modo Live</h3>
+        <p class="mt-2.5 text-sm leading-relaxed text-ivory-dim">
+          Perfecto para casinos y clubs con mesas físicas: reservas de asiento, blinds en vivo y seguimiento de torneos presenciales.
+        </p>
+      </div>
+
+      <div appReveal [revealDelay]="120" class="group relative overflow-hidden rounded-3xl border border-gold-400/25 bg-gradient-to-br from-gold-400/10 to-velvet-800 p-9 transition-transform duration-300 hover:-translate-y-1">
+        <span class="absolute -right-6 -top-6 h-28 w-28 rounded-full border border-gold-400/20 chip-ring"></span>
+        <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gold-400/15 text-gold-400">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </span>
+        <h3 class="mt-5 font-display text-2xl font-bold text-ivory">Modo Online</h3>
+        <p class="mt-2.5 text-sm leading-relaxed text-ivory-dim">
+          Organiza sesiones remotas con tus jugadores: torneos en línea, mesas virtuales y reservas desde cualquier lugar.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CÓMO FUNCIONA -->
+<section class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+  <div appReveal class="flex justify-center">
+    <app-section-title
+      eyebrow="Cómo funciona"
+      title="Empieza en tres pasos"
+      subtitle="No necesitas conocimientos técnicos. Crea tu cuenta y en minutos tu sala está en línea."
+    />
+  </div>
+
+  <div class="mt-14 grid gap-6 md:grid-cols-3">
+    @for (step of steps; track step.number; let i = $index) {
+      <div appReveal [revealDelay]="i * 120" class="relative rounded-2xl border border-white/8 bg-velvet-800/60 p-8">
+        <span class="font-display text-6xl font-extrabold text-gradient-gold opacity-25">{{ step.number }}</span>
+        <h3 class="mt-4 font-display text-xl font-bold text-ivory">{{ step.title }}</h3>
+        <p class="mt-2.5 text-sm leading-relaxed text-ivory-dim">{{ step.description }}</p>
+        @if (i < steps.length - 1) {
+          <span class="absolute -right-4 top-1/2 hidden h-px w-8 bg-gradient-to-r from-gold-400/50 to-transparent md:block"></span>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- PLANES -->
+<section class="relative overflow-hidden border-y border-white/5 bg-velvet-900">
+  <div class="glow-gold pointer-events-none absolute -left-32 top-1/3 h-80 w-80 rounded-full opacity-60"></div>
+  <div class="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+    <div appReveal class="flex justify-center">
+      <app-section-title
+        eyebrow="Planes"
+        title="Precios simples, sin sorpresas"
+        subtitle="Empieza gratis y escala cuando tu sala lo necesite. Sin permanencia y sin costos ocultos."
+      />
+    </div>
+
+    <div class="mx-auto mt-16 grid max-w-4xl gap-8 md:grid-cols-2">
+      <div appReveal>
+        <app-pricing-card
+          name="Gratis"
+          price="$0"
+          period="/mes"
+          description="Perfecto para probar y empezar a gestionar tu sala."
+          [features]="freeFeatures"
+          ctaLabel="Empezar gratis"
+          ctaRouterLink="/contacto"
+        />
+      </div>
+      <div appReveal [revealDelay]="140">
+        <app-pricing-card
+          name="Premium"
+          price="$70"
+          period="/mes"
+          description="Para salas que quieren crecer sin límites."
+          [features]="premiumFeatures"
+          [highlighted]="true"
+          ctaLabel="Ir a Premium"
+          ctaRouterLink="/contacto"
+        />
+      </div>
+    </div>
+
+    <div appReveal class="mt-10 text-center">
+      <a routerLink="/planes" class="text-sm font-semibold text-gold-400 underline-offset-4 transition-colors hover:text-gold-300 hover:underline">
+        Comparar planes en detalle →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+  <div appReveal class="relative overflow-hidden rounded-3xl border border-gold-400/25 bg-gradient-to-br from-velvet-800 via-velvet-900 to-felt-700 p-10 text-center md:p-16">
+    <div class="glow-gold animate-pulse-glow pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full"></div>
+    <h2 class="relative font-display text-3xl font-extrabold text-ivory md:text-5xl">
+      Listo para llevar tu sala <span class="text-gradient-gold">al siguiente nivel</span>
+    </h2>
+    <p class="relative mx-auto mt-5 max-w-xl text-ivory-dim">
+      Únete hoy gratis y empieza a gestionar tus mesas y torneos con PokerPros Management.
+    </p>
+    <div class="relative mt-9 flex flex-wrap justify-center gap-4">
+      <app-button [routerLink]="'/contacto'" [size]="'lg'">Empezar gratis</app-button>
+      <app-button [routerLink]="'/planes'" [variant]="'outline'" [size]="'lg'">Ver planes</app-button>
+    </div>
+  </div>
+</section>

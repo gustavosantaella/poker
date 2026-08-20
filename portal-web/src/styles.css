@@ -1,0 +1,168 @@
+@import 'tailwindcss';
+
+/* Detección explícita de contenido (Tailwind v4 resuelve @source contra el
+   directorio de trabajo del proceso de build, es decir la raíz de portal-web). */
+@source "src/app";
+@source "src/index.html";
+
+/* ══════════════════════════════════════════════════════════════
+   PokerPros Management — Tema casino
+   Paleta extraída de la app mobile-player (theme/colors.ts)
+   Dorado casino · Verde fieltro · Negro terciopelo · Marfil
+   ══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* Tipografías */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Playfair Display', ui-serif, Georgia, serif;
+
+  /* Negro terciopelo (fondos) */
+  --color-velvet-950: #06080b;
+  --color-velvet-900: #0a0c10;
+  --color-velvet-800: #14181f;
+  --color-velvet-700: #20262f;
+  --color-velvet-600: #2c3630;
+  --color-velvet-500: #3a4640;
+
+  /* Dorado casino (primario) */
+  --color-gold-100: #fff9e8;
+  --color-gold-200: #fbf3dd;
+  --color-gold-300: #f2dc9b;
+  --color-gold-400: #e3b341;
+  --color-gold-500: #c79a2e;
+  --color-gold-600: #a67c1e;
+  --color-gold-700: #7a5a14;
+  --color-gold-800: #4a360c;
+
+  /* Verde fieltro (acento) */
+  --color-felt-300: #3e9e6f;
+  --color-felt-400: #1e7a4c;
+  --color-felt-500: #0f5132;
+  --color-felt-600: #0a3d27;
+  --color-felt-700: #07301f;
+
+  /* Marfil (texto) */
+  --color-ivory: #f3ede0;
+  --color-ivory-dim: #a9a294;
+  --color-ivory-muted: #6f6a5e;
+
+  /* Rojo naipe + éxito */
+  --color-naipe-400: #f06a7d;
+  --color-naipe-500: #e5455b;
+  --color-naipe-600: #b92c40;
+  --color-success: #38c172;
+
+  /* Animaciones */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-slow: float 9s ease-in-out infinite;
+  --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pulse-glow: pulse-glow 4s ease-in-out infinite;
+  --animate-spin-slow: spin 24s linear infinite;
+  --animate-shimmer: shimmer 3s linear infinite;
+  --animate-bounce-soft: bounce-soft 2.4s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-14px) rotate(4deg); }
+  }
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 0.9; }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes bounce-soft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-velvet-950 text-ivory font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    @apply bg-gold-400/30 text-ivory;
+  }
+
+  /* Scrollbar sutil acorde a la temática */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-velvet-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-velvet-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gold-500;
+  }
+}
+
+@layer utilities {
+  /* Texto con degradado dorado */
+  .text-gradient-gold {
+    background: linear-gradient(120deg, #f2dc9b 0%, #e3b341 40%, #c79a2e 70%, #f2dc9b 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Fondo con resplandor dorado / fieltro */
+  .glow-gold {
+    background: radial-gradient(circle at center, rgba(227, 179, 65, 0.18) 0%, transparent 60%);
+  }
+  .glow-felt {
+    background: radial-gradient(circle at center, rgba(15, 81, 50, 0.35) 0%, transparent 60%);
+  }
+
+  /* Fondo cuadriculado sutil (patrón de mesa) */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(243, 237, 224, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(243, 237, 224, 0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  /* Anillos concéntricos tipo ficha de póker */
+  .chip-ring {
+    border: 2px dashed rgba(227, 179, 65, 0.25);
+    border-radius: 9999px;
+  }
+}
+
+/* ── Animación de aparición al hacer scroll (directiva appReveal) ── */
+.reveal-hidden {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-hidden {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
