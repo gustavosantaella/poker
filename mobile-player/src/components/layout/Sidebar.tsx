@@ -127,7 +127,7 @@ export function Sidebar({ visible, onClose }: { visible: boolean; onClose: () =>
                 </AppText>
               </View>
               <AppText variant="title" color={colors.primary}>
-                PokeLAP
+                PokerPros
               </AppText>
             </View>
 

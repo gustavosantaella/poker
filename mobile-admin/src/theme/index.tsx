@@ -13,7 +13,7 @@ export interface Theme {
   toggle: () => void;
 }
 
-const STORAGE_KEY = 'pokelap.themeMode';
+const STORAGE_KEY = 'PokerPros.themeMode';
 const ThemeContext = createContext<Theme | null>(null);
 
 /**

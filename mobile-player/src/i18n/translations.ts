@@ -29,7 +29,7 @@ export const en = {
   'status.open': 'Open',
   'status.closed': 'Closed',
 
-  'auth.welcome': 'Welcome to PokeLAP',
+  'auth.welcome': 'Welcome to PokerPros',
   'auth.subtitle': 'Reserve your seat at cash tables and tournaments',
   'auth.email': 'Email',
   'auth.password': 'Password',
@@ -237,7 +237,7 @@ export const es: Record<TranslationKey, string> = {
   'status.open': 'Abierta',
   'status.closed': 'Cerrada',
 
-  'auth.welcome': 'Bienvenido a PokeLAP',
+  'auth.welcome': 'Bienvenido a PokerPros',
   'auth.subtitle': 'Reserva tu asiento en mesas cash y torneos',
   'auth.email': 'Correo',
   'auth.password': 'Contraseña',

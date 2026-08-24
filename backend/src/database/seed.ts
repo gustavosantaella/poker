@@ -95,17 +95,17 @@ async function run(): Promise<void> {
 
   // ---- Admin user ----
   const userRepo = dataSource.getRepository(User);
-  const existingAdmin = await userRepo.findOne({ where: { email: 'admin@pokelap.com' } });
+  const existingAdmin = await userRepo.findOne({ where: { email: 'admin@PokerPros.com' } });
   if (!existingAdmin) {
     await userRepo.save(
       userRepo.create({
-        email: 'admin@pokelap.com',
+        email: 'admin@PokerPros.com',
         name: 'Poker Pros',
         password: await bcrypt.hash('Admin123!', 10),
         role: UserRole.ADMIN,
       }),
     );
-    console.log('Seed: admin user created (admin@pokelap.com / Admin123!)');
+    console.log('Seed: admin user created (admin@PokerPros.com / Admin123!)');
   }
 
   // ---- Jugadores (usuarios con rol player) ----
@@ -122,7 +122,7 @@ async function run(): Promise<void> {
     'Isabella Medina',
   ];
   for (let i = 0; i < playerNames.length; i++) {
-    const email = `player${i + 1}@pokelap.com`;
+    const email = `player${i + 1}@PokerPros.com`;
     const existing = await userRepo.findOne({ where: { email } });
     if (!existing) {
       await userRepo.save(

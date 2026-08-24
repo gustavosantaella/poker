@@ -67,7 +67,7 @@ export default function LoginScreen() {
             >
               <Ionicons name="diamond" size={38} color={colors.primary} />
             </View>
-            <AppText variant="h1" style={{ color: colors.textPrimary, letterSpacing: 0.5, fontWeight: '700' }}>PokeLAP Admin</AppText>
+            <AppText variant="h1" style={{ color: colors.textPrimary, letterSpacing: 0.5, fontWeight: '700' }}>PokerPros Admin</AppText>
             <AppText variant="caption" style={{ color: colors.textSecondary, marginTop: 4 }}>{t('auth.loginSubtitle')}</AppText>
           </View>
 

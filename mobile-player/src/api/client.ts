@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from './config';
 
-export const TOKEN_STORAGE_KEY = 'pokelapPlayer.authToken';
+export const TOKEN_STORAGE_KEY = 'PokerProsPlayer.authToken';
 
 export const apiClient = axios.create({
   baseURL: API_URL,

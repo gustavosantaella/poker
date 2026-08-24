@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "PokeLAP Player",
-    "slug": "pokelap-player",
+    "name": "PokerPros Player",
+    "slug": "PokerPros-player",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "scheme": "pokelapplayer",
+    "scheme": "PokerProsplayer",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pokelap.player",
+      "bundleIdentifier": "com.PokerPros.player",
       "infoPlist": {
         "NSCameraUsageDescription": "Esta app usa la cámara para tomar tu foto de perfil.",
         "NSPhotoLibraryUsageDescription": "Esta app accede a tu galería para elegir tu foto de perfil.",
@@ -16,7 +16,7 @@
       }
     },
     "android": {
-      "package": "com.pokelap.player",
+      "package": "com.PokerPros.player",
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "INTERNET",
@@ -38,8 +38,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Permite a PokeLAP Player acceder a tus fotos para elegir tu foto de perfil.",
-          "cameraPermission": "Permite a PokeLAP Player usar la cámara para tomar tu foto de perfil.",
+          "photosPermission": "Permite a PokerPros Player acceder a tus fotos para elegir tu foto de perfil.",
+          "cameraPermission": "Permite a PokerPros Player usar la cámara para tomar tu foto de perfil.",
           "microphonePermission": false
         }
       ]

@@ -1,7 +1,7 @@
 {
-  "name": "pokelap-backend",
+  "name": "PokerPros-backend",
   "version": "1.0.0",
-  "description": "PokeLAP Admin API - NestJS + MySQL",
+  "description": "PokerPros Admin API - NestJS + MySQL",
   "private": true,
   "license": "MIT",
   "scripts": {

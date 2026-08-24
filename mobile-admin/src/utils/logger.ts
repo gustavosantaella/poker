@@ -7,7 +7,7 @@ declare const __DEV__: boolean;
 const ENABLED =
   (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.EXPO_PUBLIC_ENABLE_API_LOGS === 'true';
 
-const PREFIX = '[PokeLAP]';
+const PREFIX = '[PokerPros]';
 
 export const log = {
   info: (...args: unknown[]) => {

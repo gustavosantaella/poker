@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API_URL } from './config';
 import { log } from '@/utils/logger';
 
-export const TOKEN_STORAGE_KEY = 'pokelap.authToken';
+export const TOKEN_STORAGE_KEY = 'PokerPros.authToken';
 
 /** Cliente axios compartido (baseURL /api). */
 export const apiClient = axios.create({

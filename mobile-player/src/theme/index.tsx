@@ -12,7 +12,7 @@ export interface Theme {
   setMode: (mode: ThemeMode) => void;
 }
 
-const STORAGE_KEY = 'pokelapPlayer.themeMode';
+const STORAGE_KEY = 'PokerProsPlayer.themeMode';
 const ThemeContext = createContext<Theme | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

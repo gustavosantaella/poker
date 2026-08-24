@@ -51,7 +51,7 @@ export default function RegisterScreen() {
           <View style={[styles.logo, { backgroundColor: colors.primary }]}>
             <Ionicons name="diamond" size={36} color={colors.onPrimary} />
           </View>
-          <AppText variant="title">PokeLAP Admin</AppText>
+          <AppText variant="title">PokerPros Admin</AppText>
           <AppText variant="caption">{t('auth.registerSubtitle')}</AppText>
         </View>
 
