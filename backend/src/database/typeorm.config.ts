@@ -5,7 +5,7 @@ dotenv.config();
 
 // DataSource para scripts CLI (seed). Crea las tablas en desarrollo vía synchronize.
 export default new DataSource({
-  type: 'mysql',
+  type: (process.env.DB_TYPE || 'mysql') as 'mysql' | 'postgres',
   host: process.env.DB_HOST ?? 'localhost',
   port: parseInt(process.env.DB_PORT ?? '3306', 10),
   username: process.env.DB_USERNAME ?? 'root',
