@@ -100,7 +100,7 @@ async function run(): Promise<void> {
     await userRepo.save(
       userRepo.create({
         email: 'admin@pokelap.com',
-        name: 'PokeLAP Admin',
+        name: 'Poker Pros',
         password: await bcrypt.hash('Admin123!', 10),
         role: UserRole.ADMIN,
       }),
