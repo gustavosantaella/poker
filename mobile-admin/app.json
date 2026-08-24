@@ -12,7 +12,10 @@
       "bundleIdentifier": "nexosoftware.pokerprosmanagement.ve",
       "icon": "./assets/images/icon.png",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Esta app usa la cámara para tomar la foto de perfil de jugadores y del club.",
+        "NSPhotoLibraryUsageDescription": "Esta app accede a tu galería para elegir la foto de perfil de jugadores y del club.",
+        "NSLocalNetworkUsageDescription": "Esta app se conecta a la red local (WiFi) para consultar las mesas y torneos del club."
       }
     },
     "android": {
@@ -21,7 +24,17 @@
         "backgroundColor": "#3EA1FF",
         "foregroundImage": "./assets/images/icon.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "CHANGE_WIFI_STATE",
+        "CHANGE_NETWORK_STATE",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -36,6 +49,14 @@
           "image": "./assets/images/spl.png",
           "imageWidth": 658,
           "resizeMode": "cover"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a PokeLAP Admin acceder a tus fotos para elegir la imagen de perfil de jugadores y del club.",
+          "cameraPermission": "Permite a PokeLAP Admin usar la cámara para tomar la foto de perfil de jugadores y del club.",
+          "microphonePermission": false
         }
       ],
       "@react-native-community/datetimepicker",

@@ -8,11 +8,26 @@
     "scheme": "pokelapplayer",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pokelap.player"
+      "bundleIdentifier": "com.pokelap.player",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta app usa la cámara para tomar tu foto de perfil.",
+        "NSPhotoLibraryUsageDescription": "Esta app accede a tu galería para elegir tu foto de perfil.",
+        "NSLocalNetworkUsageDescription": "Esta app se conecta a la red local (WiFi) para consultar las mesas y torneos del club."
+      }
     },
     "android": {
       "package": "com.pokelap.player",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "CHANGE_WIFI_STATE",
+        "CHANGE_NETWORK_STATE",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static"
@@ -23,7 +38,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow PokeLAP Player to access your photos to set your profile picture."
+          "photosPermission": "Permite a PokeLAP Player acceder a tus fotos para elegir tu foto de perfil.",
+          "cameraPermission": "Permite a PokeLAP Player usar la cámara para tomar tu foto de perfil.",
+          "microphonePermission": false
         }
       ]
     ],
