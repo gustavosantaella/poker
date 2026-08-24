@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import { AppController } from './app.controller';
+import { AccountModule } from './modules/account/account.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AuthModule } from './modules/auth/auth.module';
@@ -55,6 +56,7 @@ import configuration from './config/configuration';
     }),
     UsersModule,
     AuthModule,
+    AccountModule,
     UploadsModule,
     GameTypesModule,
     ChipsModule,

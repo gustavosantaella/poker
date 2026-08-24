@@ -48,3 +48,8 @@ export async function uploadAvatar(localUri: string): Promise<string> {
   });
   return (res.data.data as { url: string }).url;
 }
+
+/** Elimina la cuenta actual y todos sus datos asociados (el cliente debe confirmar antes). */
+export async function deleteAccount(): Promise<void> {
+  await apiClient.delete('/account/delete');
+}

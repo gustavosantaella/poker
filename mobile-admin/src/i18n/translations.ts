@@ -110,6 +110,10 @@ export const en = {
   'settings.session': 'Session',
   'settings.signOut': 'Sign out',
   'settings.version': 'PokeLAP Admin v1.0.0',
+  'settings.deleteAccount': 'Delete account',
+  'settings.deleteAccountWarning':
+    'This will permanently delete your account, your reservations, your club memberships and the clubs you manage. This action cannot be undone.',
+  'settings.deleteAccountConfirm': 'Delete permanently',
   'settings.editProfile': 'Edit profile',
   'settings.uploadPhoto': 'Upload Photo',
   'settings.name': 'Name',
@@ -504,6 +508,10 @@ export const es: Record<TranslationKey, string> = {
   'settings.session': 'Sesión',
   'settings.signOut': 'Cerrar sesión',
   'settings.version': 'PokeLAP Admin v1.0.0',
+  'settings.deleteAccount': 'Eliminar cuenta',
+  'settings.deleteAccountWarning':
+    'Esto eliminará permanentemente tu cuenta, tus reservas, tus membresías de clubes y los clubes que administras. Esta acción no se puede deshacer.',
+  'settings.deleteAccountConfirm': 'Eliminar definitivamente',
   'settings.editProfile': 'Editar perfil',
   'settings.uploadPhoto': 'Subir foto',
   'settings.name': 'Nombre',

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View, Image, Pressable } from 'react-native';
 import { z } from 'zod';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadAvatar } from '@/api/auth';
+import { uploadAvatar, deleteAccount } from '@/api/auth';
 import { API_URL } from '@/api/config';
 import { Club } from '@/api/types';
 import { AppForm } from '@/components/forms/AppForm';
@@ -60,6 +60,9 @@ export default function SettingsScreen() {
   const { data: gameTypes } = useAllGameTypes();
   const [profileOpen, setProfileOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [photoLocalUri, setPhotoLocalUri] = useState<string | null>(null);
   const { data: clubs } = useClubs();
@@ -122,6 +125,19 @@ export default function SettingsScreen() {
   const handleLogout = async () => {
     await logout();
     router.replace('/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      await logout();
+      router.replace('/login');
+    } catch (error) {
+      setDeleteError(getErrorMessage(error));
+      setDeleting(false);
+    }
   };
 
   // ---- Clubs ----
@@ -298,6 +314,14 @@ export default function SettingsScreen() {
         icon="log-out-outline"
         fullWidth
         onPress={() => setConfirmLogout(true)}
+      />
+      <AppButton
+        title={t('settings.deleteAccount')}
+        variant="danger"
+        icon="trash-outline"
+        fullWidth
+        style={styles.deleteAccountBtn}
+        onPress={() => setConfirmDeleteAccount(true)}
       />
 
       <AppText variant="caption" center style={styles.version}>
@@ -501,6 +525,22 @@ export default function SettingsScreen() {
         onConfirm={handleLogout}
         onCancel={() => setConfirmLogout(false)}
       />
+
+      <ConfirmModal
+        visible={confirmDeleteAccount}
+        title={t('settings.deleteAccount')}
+        message={t('settings.deleteAccountWarning')}
+        confirmLabel={t('settings.deleteAccountConfirm')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        loading={deleting}
+        error={deleteError}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => {
+          setConfirmDeleteAccount(false);
+          setDeleteError(null);
+        }}
+      />
     </AppScreen>
   );
 }
@@ -509,6 +549,7 @@ const styles = StyleSheet.create({
   role: { marginLeft: 12, marginTop: -4 },
   cardBody: { padding: 16 },
   version: { marginTop: 24 },
+  deleteAccountBtn: { marginTop: 8 },
   noClubs: { padding: 16 },
   clubError: { marginBottom: 12 },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },

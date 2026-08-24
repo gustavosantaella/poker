@@ -12,6 +12,7 @@ export interface ConfirmModalProps {
   cancelLabel?: string;
   destructive?: boolean;
   loading?: boolean;
+  error?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -25,6 +26,7 @@ export function ConfirmModal({
   cancelLabel = translate('common.cancel'),
   destructive = false,
   loading = false,
+  error = null,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
@@ -57,6 +59,11 @@ export function ConfirmModal({
       <AppText variant="body" color={colors.textSecondary}>
         {message}
       </AppText>
+      {error ? (
+        <AppText variant="caption" color={colors.danger} style={{ marginTop: 8 }}>
+          {error}
+        </AppText>
+      ) : null}
     </AppModal>
   );
 }

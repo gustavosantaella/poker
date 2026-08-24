@@ -173,6 +173,10 @@ export const en = {
   'profile.removeReservation': 'Remove reservation',
   'profile.removeReservationConfirm': 'Remove your reservation at {name}?',
   'reserve.removed': 'Reservation removed',
+  'profile.deleteAccount': 'Delete account',
+  'profile.deleteAccountWarning':
+    'This will permanently delete your account, your reservations and all your data. This action cannot be undone.',
+  'profile.deleteAccountConfirm': 'Delete permanently',
 
   'table.cancelReserve': 'Cancel reservation',
   'table.cancelReserveConfirmTitle': 'Cancel Reservation',
@@ -377,6 +381,10 @@ export const es: Record<TranslationKey, string> = {
   'profile.removeReservation': 'Quitar reserva',
   'profile.removeReservationConfirm': '¿Quitar tu reserva en {name}?',
   'reserve.removed': 'Reserva eliminada',
+  'profile.deleteAccount': 'Eliminar cuenta',
+  'profile.deleteAccountWarning':
+    'Esto eliminará permanentemente tu cuenta, tus reservas y todos tus datos. Esta acción no se puede deshacer.',
+  'profile.deleteAccountConfirm': 'Eliminar definitivamente',
 
   'table.cancelReserve': 'Cancelar reserva',
   'table.cancelReserveConfirmTitle': 'Cancelar reserva',

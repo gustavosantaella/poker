@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
-import { uploadAvatar } from '@/api/auth';
+import { uploadAvatar, deleteAccount } from '@/api/auth';
 import { API_URL } from '@/api/config';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppHeader } from '@/components/ui/AppHeader';
@@ -40,6 +40,9 @@ export default function ProfileScreen() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [alias, setAlias] = useState('');
   const [name, setName] = useState('');
   const [country, setCountry] = useState('');
@@ -163,6 +166,19 @@ export default function ProfileScreen() {
     router.replace('/login');
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      await logout();
+      router.replace('/login');
+    } catch (e) {
+      setDeleteError(getErrorMessage(e));
+      setDeleting(false);
+    }
+  };
+
   const displayName = user?.alias ?? user?.name ?? '';
 
   return (
@@ -246,6 +262,14 @@ export default function ProfileScreen() {
         fullWidth
         style={styles.logoutBtn}
       />
+      <AppButton
+        title={t('profile.deleteAccount')}
+        icon="trash-outline"
+        variant="danger"
+        onPress={() => setConfirmDeleteAccount(true)}
+        fullWidth
+        style={styles.deleteAccountBtn}
+      />
 
       <AppModal
         visible={editOpen}
@@ -317,6 +341,22 @@ export default function ProfileScreen() {
         onConfirm={handleLogout}
         onCancel={() => setConfirmLogout(false)}
       />
+
+      <ConfirmModal
+        visible={confirmDeleteAccount}
+        title={t('profile.deleteAccount')}
+        message={t('profile.deleteAccountWarning')}
+        confirmLabel={t('profile.deleteAccountConfirm')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        loading={deleting}
+        error={deleteError}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => {
+          setConfirmDeleteAccount(false);
+          setDeleteError(null);
+        }}
+      />
     </AppScreen>
   );
 }
@@ -347,6 +387,7 @@ const styles = StyleSheet.create({
   infoValue: { flex: 1 },
   editBtn: { marginTop: 16 },
   logoutBtn: { marginTop: 8 },
+  deleteAccountBtn: { marginTop: 8 },
   sectionTitle: { marginTop: 20, marginBottom: 8 },
   reservationsCard: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 16 },
   emptyReservations: { paddingVertical: 16 },
