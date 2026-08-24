@@ -9,11 +9,14 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pokelap.admin",
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "nexosoftware.pokerprosmanagement.ve",
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.pokelap.admin",
+      "package": "nexosoftware.pokerprosmanagement.ve",
       "adaptiveIcon": {
         "backgroundColor": "#0F1115",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,12 +46,12 @@
     "experiments": {
       "reactCompiler": true
     },
+    "owner": "gustavosant",
     "extra": {
       "router": {},
       "eas": {
         "projectId": "fd36c178-a6ee-477d-a1d5-dc03ff98ca44"
       }
-    },
-    "owner": "gustavosant"
+    }
   }
 }

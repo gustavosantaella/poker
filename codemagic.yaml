@@ -1,0 +1,79 @@
+# ══════════════════════════════════════════════════════════════════════════
+# Codemagic workflow — PokerPro Management
+# App: mobile-admin (Expo SDK 54) · Plataforma: iOS · Perfil: production
+#
+# El build real lo ejecuta EAS Build (https://expo.dev). Codemagic dispara
+# el build, espera a que termine y descarga el .ipa como artefacto.
+#
+# REQUISITOS EN CODEMAGIC (App → Environment variables):
+#   1. Crea el grupo "expo_credentials" con la variable:
+#        EXPO_TOKEN = <token personal de Expo>
+#      Genera el token en: https://expo.dev/settings/access-tokens
+#   2. El bundle identifier nexosoftware.pokerprosmanagement.ve debe tener
+#      credenciales iOS configuradas en EAS (eas credentials -p ios).
+# ══════════════════════════════════════════════════════════════════════════
+
+workflows:
+  mobile-admin-ios:
+    name: mobile-admin iOS (production)
+    max_build_duration: 120
+    instance_type: linux_x2
+
+    environment:
+      node: 22
+      groups:
+        - EXPO            # Contiene EXPO_TOKEN (ver comentario arriba)
+      vars:
+        EAS_PROJECT_ID: fd36c178-a6ee-477d-a1d5-dc03ff98ca44
+        EAS_BUILD_PROFILE: production
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+
+    cache:
+      cache_paths:
+        - ~/.npm
+        - ~/.cache
+
+    scripts:
+      - name: Instalar dependencias (mobile-admin)
+        script: |
+          cd mobile-admin
+          npm install --no-audit --no-fund
+
+      - name: Build iOS con EAS (perfil production)
+        script: |
+          cd mobile-admin
+          npx --yes eas-cli@latest build \
+            --platform ios \
+            --profile "$EAS_BUILD_PROFILE" \
+            --non-interactive \
+            --wait \
+            --json > /tmp/eas_build.json
+
+      - name: Descargar el .ipa generado por EAS
+        script: |
+          set -e
+          node -e "const d=require('/tmp/eas_build.json'); const a=(d[0]&&d[0].artifacts)||{}; console.log(a.buildUrl || a.applicationArchiveUrl || '')" > /tmp/ipa_url.txt
+          IPA_URL=$(cat /tmp/ipa_url.txt)
+          if [ -z "$IPA_URL" ]; then
+            echo "No se encontro la URL del artefacto en el JSON de EAS."
+            exit 1
+          fi
+          echo "Descargando artefacto: $IPA_URL"
+          curl -fL -o mobile-admin.ipa "$IPA_URL"
+
+    artifacts:
+      - mobile-admin.ipa
+
+    publishing:
+      email:
+        recipients:
+          - gasantaella@gmail.com
+        notify:
+          success: true
+          failure: true

@@ -1,0 +1,36 @@
+<section class="relative overflow-hidden">
+  <div class="glow-gold pointer-events-none absolute -top-40 left-1/2 h-[360px] w-[700px] -translate-x-1/2 rounded-full opacity-60"></div>
+
+  <div class="relative mx-auto max-w-4xl px-4 pb-24 pt-32 sm:px-6 lg:px-8 lg:pt-40">
+    <div appReveal>
+      <app-section-title
+        eyebrow="Legal"
+        title="Políticas y privacidad"
+        subtitle="Actualizado el {{ updatedAt }}"
+        align="left"
+      />
+    </div>
+
+    <div class="mt-14 space-y-10">
+      @for (section of sections; track section.title) {
+        <div appReveal class="rounded-2xl border border-white/8 bg-velvet-800/50 p-7">
+          <h2 class="font-display text-xl font-bold text-gold-400">{{ section.title }}</h2>
+          @for (paragraph of section.paragraphs; track paragraph) {
+            <p class="mt-3 text-sm leading-relaxed text-ivory-dim">{{ paragraph }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    <div appReveal class="mt-12 rounded-2xl border border-gold-400/20 bg-gold-400/5 p-7">
+      <h2 class="font-display text-lg font-bold text-ivory">¿Tienes alguna pregunta?</h2>
+      <p class="mt-2 text-sm text-ivory-dim">
+        Escríbenos a
+        <a [href]="'mailto:' + env.contact.email" class="font-medium text-gold-400 underline-offset-4 hover:underline">
+          {{ env.contact.email }}
+        </a>
+        y con gusto te ayudamos.
+      </p>
+    </div>
+  </div>
+</section>

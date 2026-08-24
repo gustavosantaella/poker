@@ -1,0 +1,83 @@
+<section class="relative overflow-hidden">
+  <div class="glow-gold animate-pulse-glow pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[800px] -translate-x-1/2 rounded-full"></div>
+  <div class="bg-grid pointer-events-none absolute inset-0 opacity-40"></div>
+
+  <div class="relative mx-auto max-w-7xl px-4 pb-24 pt-32 sm:px-6 lg:px-8 lg:pt-40">
+    <div appReveal class="flex justify-center">
+      <app-section-title
+        eyebrow="Planes y precios"
+        title="Elige el plan ideal para tu sala"
+        subtitle="Empieza gratis y activa Premium cuando quieras crecer sin límites."
+      />
+    </div>
+
+    <div class="mx-auto mt-16 grid max-w-5xl gap-8 md:grid-cols-2">
+      <div appReveal>
+        <app-pricing-card
+          name="Gratis"
+          price="$0"
+          period="/mes"
+          description="Para probar la plataforma y empezar a gestionar tu sala."
+          [features]="freeFeatures"
+          ctaLabel="Empezar gratis"
+          ctaRouterLink="/contacto"
+        />
+      </div>
+
+      <div appReveal [revealDelay]="140">
+        <app-pricing-card
+          name="Premium"
+          price="$70"
+          period="/mes"
+          description="Todo desbloqueado: usa la plataforma a tu gusto."
+          [features]="premiumFeatures"
+          [highlighted]="true"
+          ctaLabel="Contratar Premium"
+          ctaRouterLink="/contacto"
+        />
+      </div>
+    </div>
+
+    <div appReveal class="mx-auto mt-12 max-w-3xl rounded-2xl border border-white/8 bg-velvet-800/50 p-6 text-center">
+      <p class="text-sm text-ivory-dim">
+        💡 Los planes se muestran solo a nivel informativo. La activación de suscripciones
+        y el procesamiento de pagos estarán disponibles próximamente.
+      </p>
+    </div>
+
+    <div appReveal class="mx-auto mt-16 max-w-4xl">
+      <h3 class="text-center font-display text-2xl font-bold text-ivory">Comparación rápida</h3>
+      <div class="mt-8 overflow-hidden rounded-2xl border border-white/10">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-velvet-800">
+            <tr>
+              <th class="px-6 py-4 font-semibold text-ivory">Funcionalidad</th>
+              <th class="px-6 py-4 text-center font-semibold text-ivory-dim">Gratis</th>
+              <th class="px-6 py-4 text-center font-semibold text-gold-400">Premium</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            @for (row of [
+              ['Torneos por mes', '3', 'Ilimitados'],
+              ['Mesas cash', '1', 'Ilimitadas'],
+              ['Clubs', 'No', 'Sí'],
+              ['Reservas de asientos', 'Sí', 'Sí'],
+              ['Calendario', 'Sí', 'Sí'],
+              ['Soporte', 'Estándar', 'Prioritario']
+            ]; track row[0]) {
+              <tr class="bg-velvet-900/60">
+                <td class="px-6 py-3.5 text-ivory-dim">{{ row[0] }}</td>
+                <td class="px-6 py-3.5 text-center text-ivory-muted">{{ row[1] }}</td>
+                <td class="px-6 py-3.5 text-center font-medium text-gold-300">{{ row[2] }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div appReveal class="mt-16 flex justify-center">
+      <app-button [routerLink]="'/contacto'" [size]="'lg'">¿Dudas? Contáctanos</app-button>
+    </div>
+  </div>
+</section>
