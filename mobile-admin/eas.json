@@ -14,13 +14,14 @@
     "production": {
       "autoIncrement": true,
       "ios": {
-        "credentialsSource": "remote",
-        "appleTeamId": "N88FGS5XKL",
-        "ascAppId": "6803154772"
+        "credentialsSource": "remote"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "appleTeamId": "N88FGS5XKL",
+      "ascAppId": "6803154772"
+    }
   }
 }
