@@ -14,7 +14,9 @@
     "production": {
       "autoIncrement": true,
       "ios": {
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "appleTeamId": "N88FGS5XKL",
+        "ascAppId": "6803154772"
       }
     }
   },
