@@ -24,8 +24,10 @@ import configuration from './config/configuration';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
-    // Throttling global: 100 requests/min por IP. Auth tiene un límite más estricto.
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 100 }]),
+    // Throttling global: 300 requests/min por IP. Las apps móviles hacen varios
+    // fetch por pantalla (listado + detalle + reservas), y el tiempo real va por
+    // SSE. Auth tiene un límite más estricto.
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
     // Cron para el avance automático de niveles de torneos en vivo.
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
