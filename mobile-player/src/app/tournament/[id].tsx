@@ -313,6 +313,12 @@ export default function TournamentDetailScreen() {
             <DetailRow label={t('tournament.paidPlaces')} value={formatNumber(tournament.paidPlacesValue)} />
           ) : null}
           <DetailRow label={t('tournament.reEntry')} value={reEntryLabel} />
+          {tournament.reEntryEnabled && tournament.reEntryUntilLevel != null ? (
+            <DetailRow
+              label={t('tournament.reEntryUntil')}
+              value={t('structure.reEntryEndsAt', { level: tournament.reEntryUntilLevel })}
+            />
+          ) : null}
           <DetailRow label={t('tournament.addOn')} value={addOnLabel} last />
         </AppCard>
         </>
@@ -389,6 +395,11 @@ export default function TournamentDetailScreen() {
                   tournament.addOnEnabled && tournament.addOnUntilLevel != null ? tournament.addOnUntilLevel : null
                 }
                 reEntryUnlimited={tournament.reEntryEnabled && tournament.maxReEntries === 0}
+                reEntryLevel={
+                  tournament.reEntryEnabled && tournament.reEntryUntilLevel != null
+                    ? tournament.reEntryUntilLevel
+                    : null
+                }
                 currentIndex={tournament.currentLevel}
               />
             ) : (

@@ -40,6 +40,7 @@ interface SeedTournament {
       | 'reservedPlayers'
       | 'reEntryEnabled'
       | 'maxReEntries'
+      | 'reEntryUntilLevel'
       | 'lateRegistrationEnabled'
       | 'lateRegistrationUntilLevel'
       | 'addOnEnabled'
@@ -267,6 +268,7 @@ async function run(): Promise<void> {
         reservedPlayers: 7,
         reEntryEnabled: true,
         maxReEntries: 1,
+        reEntryUntilLevel: 6,
         lateRegistrationEnabled: true,
         lateRegistrationUntilLevel: 6,
         addOnEnabled: true,
@@ -313,6 +315,7 @@ async function run(): Promise<void> {
         reservedPlayers: 10,
         reEntryEnabled: true,
         maxReEntries: 2,
+        reEntryUntilLevel: 4,
         lateRegistrationEnabled: true,
         lateRegistrationUntilLevel: 4,
         guaranteedPrize: 2000,
@@ -356,6 +359,7 @@ async function run(): Promise<void> {
         reservedPlayers: 9,
         reEntryEnabled: true,
         maxReEntries: 1,
+        reEntryUntilLevel: 8,
         guaranteedPrize: 1500,
         paidPlacesType: 'fixed',
         paidPlacesValue: 5,
@@ -432,6 +436,7 @@ async function run(): Promise<void> {
           registrationOpen: spec.options?.registrationOpen ?? spec.status === TournamentStatus.REGISTERING,
           reEntryEnabled: spec.options?.reEntryEnabled ?? false,
           maxReEntries: spec.options?.maxReEntries ?? null,
+          reEntryUntilLevel: spec.options?.reEntryUntilLevel ?? null,
           lateRegistrationEnabled: spec.options?.lateRegistrationEnabled ?? false,
           lateRegistrationUntilLevel: spec.options?.lateRegistrationUntilLevel ?? null,
           addOnEnabled: spec.options?.addOnEnabled ?? false,

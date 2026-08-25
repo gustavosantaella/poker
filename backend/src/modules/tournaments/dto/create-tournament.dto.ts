@@ -82,6 +82,11 @@ export class CreateTournamentDto {
   @Min(0)
   maxReEntries?: number;
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  reEntryUntilLevel?: number;
+
   // Late registration
   @IsOptional()
   @IsBoolean()

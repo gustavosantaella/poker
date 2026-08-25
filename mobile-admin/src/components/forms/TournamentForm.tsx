@@ -69,6 +69,21 @@ function MaxReEntriesField() {
   return <FormNumberField name="maxReEntries" label={t('tournament.maxReEntries')} />;
 }
 
+/** Campo de fin de re-compra: se oculta si la re-entrada no aplica o es ilimitada. */
+function ReEntryUntilLevelField() {
+  const { t } = useI18n();
+  const enabled = useWatch({ name: 'reEntryEnabled' });
+  const unlimited = useWatch({ name: 'reEntryUnlimited' });
+  if (!enabled || unlimited) return null;
+  return (
+    <FormNumberField
+      name="reEntryUntilLevel"
+      label={t('tournament.reEntryUntilLevel')}
+      helper={t('tournament.reEntryUntilLevelHelper')}
+    />
+  );
+}
+
 /** Campo de jugadores premiados: cambia el label segun sea % o cantidad fija. */
 function PaidPlacesValueField() {
   const { t } = useI18n();
@@ -126,6 +141,7 @@ function ReEntryFields() {
         description={t('tournament.reEntryUnlimitedDesc')}
       />
       <MaxReEntriesField />
+      <ReEntryUntilLevelField />
     </>
   );
 }
@@ -213,6 +229,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         reEntryEnabled: tournament.reEntryEnabled,
         reEntryUnlimited: tournament.maxReEntries === 0,
         maxReEntries: tournament.maxReEntries ?? undefined,
+        reEntryUntilLevel: tournament.reEntryUntilLevel ?? undefined,
         lateRegistrationEnabled: tournament.lateRegistrationEnabled,
         lateRegistrationUntilLevel: tournament.lateRegistrationUntilLevel ?? undefined,
         addOnEnabled: tournament.addOnEnabled,
@@ -251,6 +268,7 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
         reEntryEnabled: true,
         reEntryUnlimited: false,
         maxReEntries: 2,
+        reEntryUntilLevel: 6,
         lateRegistrationEnabled: true,
         lateRegistrationUntilLevel: 6,
         addOnEnabled: true,
@@ -294,6 +312,10 @@ export function TournamentForm({ tournamentId }: TournamentFormProps) {
             ? Number(values.maxReEntries)
             : null
         : null,
+      reEntryUntilLevel:
+        values.reEntryEnabled && values.reEntryUntilLevel != null
+          ? Number(values.reEntryUntilLevel)
+          : null,
       lateRegistrationEnabled: values.lateRegistrationEnabled,
       lateRegistrationUntilLevel:
         values.lateRegistrationEnabled && values.lateRegistrationUntilLevel != null

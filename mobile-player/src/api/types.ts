@@ -122,6 +122,7 @@ export interface Tournament {
   currentReEntries: number;
   reEntryEnabled: boolean;
   maxReEntries: number | null;
+  reEntryUntilLevel: number | null;
   lateRegistrationEnabled: boolean;
   lateRegistrationUntilLevel: number | null;
   addOnEnabled: boolean;

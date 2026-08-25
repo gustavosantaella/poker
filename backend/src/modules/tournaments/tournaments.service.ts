@@ -595,6 +595,15 @@ export class TournamentsService extends CrudService<Tournament> {
       if (tournament.maxReEntries !== null && tournament.maxReEntries >= 0 && current >= tournament.maxReEntries) {
         throw new BadRequestException('Max re-entries reached for this player');
       }
+      // Ventana de re-compra: si se definió un nivel límite y el torneo ya lo alcanzó,
+      // la re-compra ya no está disponible (mismo criterio que el late registration).
+      if (
+        tournament.reEntryUntilLevel !== null &&
+        tournament.currentLevel !== null &&
+        tournament.currentLevel >= tournament.reEntryUntilLevel
+      ) {
+        throw new BadRequestException('Re-entry window has ended for this tournament');
+      }
       // Re-activa al jugador como activo (vuelve a entrar al torneo).
       reservation.status = ReservationStatus.ACCEPTED;
       reservation.reEntries = current + 1;

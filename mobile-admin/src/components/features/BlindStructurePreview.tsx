@@ -15,6 +15,7 @@ export interface BlindStructurePreviewProps {
   error?: string;
   lateRegistrationLevel?: number | null;
   addOnLevel?: number | null;
+  reEntryLevel?: number | null;
   reEntryUnlimited?: boolean;
   currentIndex?: number | null;
 }
@@ -27,6 +28,7 @@ export function BlindStructurePreview({
   error,
   lateRegistrationLevel = null,
   addOnLevel = null,
+  reEntryLevel = null,
   reEntryUnlimited = false,
   currentIndex = null,
 }: BlindStructurePreviewProps) {
@@ -82,6 +84,11 @@ export function BlindStructurePreview({
               ➕ {t('structure.addOnEndsAt', { level: addOnLevel })}
             </AppText>
           ) : null}
+          {reEntryLevel != null ? (
+            <AppText variant="caption" color={colors.primary}>
+              🔄 {t('structure.reEntryEndsAt', { level: reEntryLevel })}
+            </AppText>
+          ) : null}
           {reEntryUnlimited ? (
             <AppText variant="caption" color={colors.primary}>
               🔄 {t('structure.reEntryUnlimited')}
@@ -131,6 +138,11 @@ export function BlindStructurePreview({
             {addOnLevel != null && item.level === addOnLevel ? (
               <AppText variant="caption" color={colors.primary} style={styles.marker}>
                 ➕ {t('structure.addOnEndsAt', { level: item.level })}
+              </AppText>
+            ) : null}
+            {reEntryLevel != null && item.level === reEntryLevel ? (
+              <AppText variant="caption" color={colors.primary} style={styles.marker}>
+                🔄 {t('structure.reEntryEndsAt', { level: item.level })}
               </AppText>
             ) : null}
           </View>

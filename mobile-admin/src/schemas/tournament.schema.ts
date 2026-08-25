@@ -51,6 +51,7 @@ export const createTournamentSchema = (t: TFunction) =>
       reEntryEnabled: z.boolean(),
       reEntryUnlimited: z.boolean(),
       maxReEntries: optionalInt(0),
+      reEntryUntilLevel: optionalInt(1),
       lateRegistrationEnabled: z.boolean(),
       lateRegistrationUntilLevel: optionalInt(1),
       addOnEnabled: z.boolean(),
@@ -81,6 +82,17 @@ export const createTournamentSchema = (t: TFunction) =>
           code: ZodIssueCode.custom,
           path: ['maxReEntries'],
           message: t('validation.maxReEntriesRequired'),
+        });
+      }
+      if (
+        data.reEntryEnabled &&
+        !data.reEntryUnlimited &&
+        (data.reEntryUntilLevel === undefined || data.reEntryUntilLevel < 1)
+      ) {
+        ctx.addIssue({
+          code: ZodIssueCode.custom,
+          path: ['reEntryUntilLevel'],
+          message: t('validation.reEntryUntilLevelRequired'),
         });
       }
       if (

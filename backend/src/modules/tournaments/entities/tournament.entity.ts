@@ -80,6 +80,10 @@ export class Tournament extends BaseEntity {
   @Column({ type: 'int', nullable: true })
   maxReEntries: number | null;
 
+  /** Nivel hasta el que se permite la re-compra (null = hasta el cierre de inscripción). */
+  @Column({ type: 'int', nullable: true })
+  reEntryUntilLevel: number | null;
+
   // Late registration
   @Column({ default: false })
   lateRegistrationEnabled: boolean;

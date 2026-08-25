@@ -262,6 +262,11 @@ function StructureView({
           tournament.addOnEnabled && tournament.addOnUntilLevel != null ? tournament.addOnUntilLevel : null
         }
         reEntryUnlimited={tournament.reEntryEnabled && tournament.maxReEntries === 0}
+        reEntryLevel={
+          tournament.reEntryEnabled && tournament.reEntryUntilLevel != null
+            ? tournament.reEntryUntilLevel
+            : null
+        }
         currentIndex={tournament.currentLevel}
       />
     </View>
