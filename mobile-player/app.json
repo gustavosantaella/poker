@@ -24,9 +24,7 @@
         "ACCESS_WIFI_STATE",
         "CHANGE_WIFI_STATE",
         "CHANGE_NETWORK_STATE",
-        "CAMERA",
-        "READ_MEDIA_IMAGES",
-        "READ_EXTERNAL_STORAGE"
+        "CAMERA"
       ]
     },
     "web": {
