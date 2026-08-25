@@ -35,7 +35,7 @@ export const en = {
   'ante.bb_ante': 'BB ante',
 
   'auth.email': 'Email',
-  'auth.emailPlaceholder': 'you@pokelap.com',
+  'auth.emailPlaceholder': 'you@PokerPros.com',
   'auth.password': 'Password',
   'auth.passwordPlaceholder': 'Your password',
   'auth.name': 'Name',
@@ -109,7 +109,7 @@ export const en = {
   'settings.gameTypes': 'Game types',
   'settings.session': 'Session',
   'settings.signOut': 'Sign out',
-  'settings.version': 'PokeLAP Admin v1.0.0',
+  'settings.version': 'PokerPros Admin v1.0.0',
   'settings.deleteAccount': 'Delete account',
   'settings.deleteAccountWarning':
     'This will permanently delete your account, your reservations, your club memberships and the clubs you manage. This action cannot be undone.',
@@ -433,7 +433,7 @@ export const es: Record<TranslationKey, string> = {
   'ante.bb_ante': 'Ante BB',
 
   'auth.email': 'Correo',
-  'auth.emailPlaceholder': 'you@pokelap.com',
+  'auth.emailPlaceholder': 'you@PokerPros.com',
   'auth.password': 'Contraseña',
   'auth.passwordPlaceholder': 'Tu contraseña',
   'auth.name': 'Nombre',
@@ -507,7 +507,7 @@ export const es: Record<TranslationKey, string> = {
   'settings.gameTypes': 'Tipos de juego',
   'settings.session': 'Sesión',
   'settings.signOut': 'Cerrar sesión',
-  'settings.version': 'PokeLAP Admin v1.0.0',
+  'settings.version': 'PokerPros Admin v1.0.0',
   'settings.deleteAccount': 'Eliminar cuenta',
   'settings.deleteAccountWarning':
     'Esto eliminará permanentemente tu cuenta, tus reservas, tus membresías de clubes y los clubes que administras. Esta acción no se puede deshacer.',

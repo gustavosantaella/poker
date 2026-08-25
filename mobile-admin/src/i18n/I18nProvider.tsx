@@ -3,7 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { setCurrentLanguage, translate, TFunction } from './index';
 import { Language } from './translations';
 
-const STORAGE_KEY = 'pokelap.language';
+const STORAGE_KEY = 'PokerPros.language';
 
 interface I18nContextValue {
   language: Language;

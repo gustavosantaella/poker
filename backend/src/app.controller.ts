@@ -6,6 +6,6 @@ export class AppController {
   @Public()
   @Get('health')
   health() {
-    return { status: 'ok', service: 'pokelap-api', time: new Date().toISOString() };
+    return { status: 'ok', service: 'PokerPros-api', time: new Date().toISOString() };
   }
 }

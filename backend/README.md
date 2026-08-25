@@ -1,6 +1,6 @@
-# PokeLAP Admin API
+# PokerPros Admin API
 
-NestJS + TypeORM + MySQL backend for the PokeLAP Admin app.
+NestJS + TypeORM + MySQL backend for the PokerPros Admin app.
 
 ## Structure
 
@@ -19,7 +19,7 @@ src/
 
 ## Setup
 
-1. Create a MySQL database named `pokelap`.
+1. Create a MySQL database named `PokerPros`.
 2. Copy `.env.example` to `.env` and adjust credentials.
 3. `npm install`
 4. `npm run seed` (creates admin user + sample data)
@@ -33,7 +33,7 @@ src/
 
 ## Seed admin
 
-email: `admin@pokelap.com` / password: `Admin123!`
+email: `admin@PokerPros.com` / password: `Admin123!`
 
 ## Logging
 

@@ -34,7 +34,7 @@ async function createServerlessApp(): Promise<NestExpressApplication> {
 
   // Seguridad: en producción no se permite el secret por defecto.
   const isProduction = config.get<string>('nodeEnv') === 'production';
-  if (isProduction && (config.get<string>('jwt.secret') === 'pokelap-dev-secret' || !config.get<string>('jwt.secret'))) {
+  if (isProduction && (config.get<string>('jwt.secret') === 'PokerPros-dev-secret' || !config.get<string>('jwt.secret'))) {
     throw new Error('JWT_SECRET must be configured in production');
   }
 

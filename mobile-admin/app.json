@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "PokeLAP Admin",
+    "name": "PokerPros Admin",
     "slug": "pokerpro-admin",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "pokelapadmin",
+    "scheme": "PokerProsadmin",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
@@ -52,8 +52,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Permite a PokeLAP Admin acceder a tus fotos para elegir la imagen de perfil de jugadores y del club.",
-          "cameraPermission": "Permite a PokeLAP Admin usar la cámara para tomar la foto de perfil de jugadores y del club.",
+          "photosPermission": "Permite a PokerPros Admin acceder a tus fotos para elegir la imagen de perfil de jugadores y del club.",
+          "cameraPermission": "Permite a PokerPros Admin usar la cámara para tomar la foto de perfil de jugadores y del club.",
           "microphonePermission": false
         }
       ],

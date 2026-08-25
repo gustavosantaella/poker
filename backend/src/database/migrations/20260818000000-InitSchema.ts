@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Migración inicial del esquema PokeLAP (MySQL 8).
+ * Migración inicial del esquema PokerPros (MySQL 8).
  * Generada a partir de las entidades. En producción se ejecuta automáticamente
  * al arrancar (migrationsRun). Para cambios futuros: npm run migration:generate.
  */

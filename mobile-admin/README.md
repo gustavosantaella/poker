@@ -1,4 +1,4 @@
-# PokeLAP Admin (Expo)
+# PokerPros Admin (Expo)
 
 App de administracion para gestionar mesas cash y torneos de poker
 (login/registro con email y contrasena).
@@ -38,4 +38,4 @@ Los mensajes de error en pantalla incluyen la URL configurada cuando el fallo es
 
 ## Seed admin
 
-email: `admin@pokelap.com` / password: `Admin123!`
+email: `admin@PokerPros.com` / password: `Admin123!`

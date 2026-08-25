@@ -17,7 +17,7 @@ async function bootstrap() {
 
   // Seguridad: en producción no se permite el secret por defecto ni la ausencia de CORS explícito.
   const isProduction = config.get<string>('nodeEnv') === 'production';
-  if (isProduction && (config.get<string>('jwt.secret') === 'pokelap-dev-secret' || !config.get<string>('jwt.secret'))) {
+  if (isProduction && (config.get<string>('jwt.secret') === 'PokerPros-dev-secret' || !config.get<string>('jwt.secret'))) {
     throw new Error('JWT_SECRET must be configured in production');
   }
 
@@ -48,7 +48,7 @@ async function bootstrap() {
   const port = config.get<number>('port') ?? 3000;
   await app.listen(port);
 
-  logger.log(`PokeLAP API running at http://localhost:${port}/api`);
+  logger.log(`PokerPros API running at http://localhost:${port}/api`);
 
   // Lista las IPs LAN para que la app (Expo Go en telefono/emulador) pueda apuntar al backend.
   const nets = networkInterfaces();
