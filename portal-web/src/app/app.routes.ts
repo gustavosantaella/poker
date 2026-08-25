@@ -3,6 +3,7 @@ import { HomeComponent } from './pages/home/home.component';
 import { PricingComponent } from './pages/pricing/pricing.component';
 import { PrivacyComponent } from './pages/privacy/privacy.component';
 import { ContactComponent } from './pages/contact/contact.component';
+import { DeleteDataComponent } from './pages/delete-data/delete-data.component';
 
 export const routes: Routes = [
   {
@@ -26,6 +27,12 @@ export const routes: Routes = [
     component: ContactComponent,
     title: 'Contáctanos | PokerPros Management',
   },
+  {
+    path: 'eliminacion-de-datos',
+    component: DeleteDataComponent,
+    title: 'Eliminación de cuenta y datos | PokerPros Management',
+  },
   { path: '**', redirectTo: '' },
 ];
+
 

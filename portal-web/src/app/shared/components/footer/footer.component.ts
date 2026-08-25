@@ -38,6 +38,7 @@ import { environment } from '../../../../environments/environment';
             <h4 class="font-display text-sm font-bold uppercase tracking-wider text-ivory">Legal</h4>
             <ul class="mt-4 space-y-2.5 text-sm">
               <li><a routerLink="/politicas-de-privacidad" class="text-ivory-dim transition-colors hover:text-gold-400">Políticas y privacidad</a></li>
+              <li><a routerLink="/eliminacion-de-datos" class="text-ivory-dim transition-colors hover:text-gold-400">Eliminación de datos</a></li>
               <li><span class="text-ivory-muted">Términos y condiciones</span></li>
             </ul>
           </div>

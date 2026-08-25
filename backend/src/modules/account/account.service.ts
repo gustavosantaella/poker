@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DataSource, EntityManager } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { del } from '@vercel/blob';
 import { User } from '../users/entities/user.entity';
 import { Club } from '../clubs/entities/club.entity';
@@ -8,8 +10,14 @@ import { ClubMember } from '../clubs/entities/club-member.entity';
 import { TournamentReservation, ReservationStatus } from '../tournaments/entities/tournament-reservation.entity';
 import { Tournament } from '../tournaments/entities/tournament.entity';
 import { TableReservation } from '../tables/entities/table-reservation.entity';
+import { AccountEvent } from './entities/event.entity';
+import { RequestDeletionDto } from './dto/request-deletion.dto';
 
 const BLOB_HOST_SUFFIX = '.blob.vercel-storage.com';
+
+/** Tipo de evento usado para registrar solicitudes de borrado de cuenta/datos. */
+export const EVENT_TYPE_REQUEST_DELETE = 'request-delete';
+
 
 /**
  * Elimina la cuenta del usuario autenticado y TODOS sus datos asociados, de
@@ -30,7 +38,50 @@ export class AccountService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
+    @InjectRepository(AccountEvent) private readonly eventsRepo: Repository<AccountEvent>,
+    private readonly jwtService: JwtService,
   ) {}
+
+  /**
+   * Registra en `events` una solicitud de borrado de cuenta/datos
+   * (`type='request-delete'`). El endpoint es público: si llega un JWT válido
+   * en el header Authorization se guarda el `user_id` (y el email del token);
+   * si no hay sesión, `user_id` queda en null.
+   */
+  async requestDeletion(
+    authorization: string | undefined,
+    dto: RequestDeletionDto,
+  ): Promise<{ message: string }> {
+    let userId: number | null = null;
+    let tokenEmail: string | null = null;
+
+    if (authorization?.startsWith('Bearer ')) {
+      const token = authorization.slice('Bearer '.length).trim();
+      try {
+        const payload = await this.jwtService.verifyAsync<{ sub?: number; email?: string }>(token);
+        userId = typeof payload.sub === 'number' ? payload.sub : null;
+        tokenEmail = typeof payload.email === 'string' ? payload.email : null;
+      } catch {
+        // Token inválido o expirado: se registra la solicitud como anónima.
+        this.logger.warn('request-delete called with an invalid/expired token; recorded as anonymous');
+      }
+    }
+
+    const event = this.eventsRepo.create({
+      type: EVENT_TYPE_REQUEST_DELETE,
+      json: JSON.stringify({
+        email: dto.email?.trim() || tokenEmail || null,
+        reason: dto.reason?.trim() || null,
+      }),
+      userId,
+    });
+    const saved = await this.eventsRepo.save(event);
+
+    this.logger.log(
+      `Account deletion requested (event id=${saved.id}, userId=${userId ?? 'null'})`,
+    );
+    return { message: 'Account deletion request received' };
+  }
 
   async deleteAccount(user: User): Promise<{ message: string }> {
     await this.deleteAvatarBlob(user.photoUrl);

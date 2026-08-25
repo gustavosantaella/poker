@@ -6,6 +6,12 @@
 export const environment = {
   production: true,
   appName: 'PokerPros Management',
+  /** Nombre del desarrollador tal como aparece en la ficha de Google Play Store. */
+  developer: 'NexoSoftware',
+  /** Nombres de las apps tal como aparecen en la ficha de Google Play Store. */
+  playStoreApps: ['PokeLAP Player', 'PokeLAP Admin'],
+  /** URL base de la API del backend (prefijo global /api incluido). */
+  apiUrl: 'https://poker-three-sage.vercel.app/api',
   tagline: 'Gestiona tu sala de póker: mesas cash, torneos y clubs.',
   domain: 'nexosoftware.ve',
   contact: {
