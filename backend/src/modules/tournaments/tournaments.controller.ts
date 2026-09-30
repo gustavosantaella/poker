@@ -131,8 +131,12 @@ export class TournamentsController {
     @Param('id', ParseIntPipe) id: number,
     @Param('reservationId', ParseIntPipe) reservationId: number,
     @Body() dto: UpdateReservationDto,
+    @CurrentUser() user: User,
   ) {
-    return this.service.updateReservation(id, reservationId, dto);
+    return this.service.updateReservation(id, reservationId, dto, {
+      userId: user.id,
+      role: user.role,
+    });
   }
 
   /** Rebuy: el player solo sobre su propia reserva; el admin sobre cualquiera. */

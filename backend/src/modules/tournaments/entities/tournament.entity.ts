@@ -134,11 +134,28 @@ export class Tournament extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true })
   levelStartedAt: Date | null;
 
-  /** Total de reservas (calculado a partir de tournament_reservations, no persistido). */
+  /**
+   * Reservas sin aceptar: pidieron plaza y todavía no han entrado (no pagaron).
+   * Calculado a partir de tournament_reservations, no persistido.
+   */
   reservedCount?: number;
 
-  /** Total de jugadores aceptados (calculado a partir de tournament_reservations, no persistido). */
+  /**
+   * Jugadores que entraron al torneo (jugando, levantados o eliminados).
+   * Calculado a partir de tournament_reservations, no persistido.
+   */
   playersCount?: number;
+
+  /** Jugadores que siguen en juego ahora mismo (calculado, no persistido). */
+  playingCount?: number;
+
+  /**
+   * Dinero de los add-ons del torneo (calculado, no persistido).
+   *
+   * Los add-ons no viven en las reservas: se cobran como movimiento de caja
+   * (`add_on`), así que el importe sale del libro de caja y excluye los anulados.
+   */
+  addOnsAmount?: number;
 
   @Column({ type: 'int', default: 1 })
   tableCount: number = 1;

@@ -15,6 +15,12 @@ export enum ClubAuditAction {
   INVITATION_REVOKED = 'invitation.revoked',
   INVITATION_ACCEPTED = 'invitation.accepted',
   INVITATION_EXPIRED = 'invitation.expired',
+  // Caja y recaudación
+  CASH_MOVEMENT_CREATED = 'cash.movement_created',
+  CASH_MOVEMENT_UPDATED = 'cash.movement_updated',
+  CASH_MOVEMENT_DELETED = 'cash.movement_deleted',
+  CASH_COLLECTED = 'cash.collected',
+  CASH_PAYOUT_REGISTERED = 'cash.payout_registered',
 }
 
 

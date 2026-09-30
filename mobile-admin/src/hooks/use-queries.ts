@@ -21,6 +21,23 @@ import {
   CreateClubPayload,
 } from '@/api/clubs';
 import {
+  createClubCashMovement,
+  deleteClubCashMovement,
+  fetchClubCashMovements,
+  fetchClubCashPlayer,
+  fetchClubCashPlayers,
+  fetchClubCashSummary,
+  fetchClubCashTournament,
+  fetchClubCashTournaments,
+  ClubCashMovementPayload,
+  ClubCashQuery,
+  ClubCashSettlePayload,
+  registerClubCashPayouts,
+  settleClubCash,
+  syncClubCash,
+  updateClubCashMovement,
+} from '@/api/cash';
+import {
   createChip,
   deleteChip,
   fetchChips,
@@ -69,6 +86,8 @@ import {
 } from '@/api/tournaments';
 import {
   ChipPayload,
+  ClubCashMethod,
+  ClubCashStatus,
   ClubMemberRole,
   GameTypePayload,
   ReservationStatus,
@@ -605,6 +624,134 @@ export function useEliminateReservation(tournamentId: number) {
       void qc.invalidateQueries({ queryKey: ['reservations', tournamentId] });
       void qc.invalidateQueries({ queryKey: ['tournaments'] });
     },
+  });
+}
+
+// ---- Caja y recaudación del club ----
+
+/** Resumen de recaudación (dinero que entra y sale, pendiente, comisión...). */
+export function useClubCashSummary(clubId: number, query: ClubCashQuery = {}) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'cash', 'summary', query],
+    queryFn: () => fetchClubCashSummary(clubId, query),
+    enabled: clubId > 0,
+  });
+}
+
+/** Recaudación por torneo del periodo. */
+export function useClubCashTournaments(clubId: number, query: ClubCashQuery = {}) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'cash', 'tournaments', query],
+    queryFn: () => fetchClubCashTournaments(clubId, query),
+    enabled: clubId > 0,
+  });
+}
+
+/** Detalle de recaudación de un torneo (jugadores, cobros y premios). */
+export function useClubCashTournament(clubId: number, tournamentId: number) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'cash', 'tournament', tournamentId],
+    queryFn: () => fetchClubCashTournament(clubId, tournamentId),
+    enabled: clubId > 0 && tournamentId > 0,
+  });
+}
+
+/** Ranking de jugadores por dinero invertido. */
+export function useClubCashPlayers(clubId: number, query: ClubCashQuery = {}) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'cash', 'players', query],
+    queryFn: () => fetchClubCashPlayers(clubId, query),
+    enabled: clubId > 0,
+  });
+}
+
+/** Detalle de un jugador: total invertido y desglose por torneo. */
+export function useClubCashPlayer(clubId: number, userId: number, query: ClubCashQuery = {}) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'cash', 'player', userId, query],
+    queryFn: () => fetchClubCashPlayer(clubId, userId, query),
+    enabled: clubId > 0 && userId > 0,
+  });
+}
+
+/** Libro de caja paginado. */
+export function useClubCashMovements(clubId: number, query: ClubCashQuery = {}) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'cash', 'movements', query],
+    queryFn: () => fetchClubCashMovements(clubId, query),
+    enabled: clubId > 0,
+  });
+}
+
+/** Invalida todas las consultas de caja del club (tras cobrar, pagar o anotar). */
+function useInvalidateClubCash(clubId: number) {
+  const qc = useQueryClient();
+  return () => {
+    void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'cash'] });
+    void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
+    void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'audit'] });
+  };
+}
+
+/** Sincroniza las reservas con la caja del club. */
+export function useSyncClubCash(clubId: number) {
+  const invalidate = useInvalidateClubCash(clubId);
+  return useMutation({
+    mutationFn: (payload: { tournamentId?: number; method?: ClubCashMethod } = {}) =>
+      syncClubCash(clubId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+/** Cobra o devuelve a pendiente movimientos de caja. */
+export function useSettleClubCash(clubId: number) {
+  const invalidate = useInvalidateClubCash(clubId);
+  return useMutation({
+    mutationFn: (payload: ClubCashSettlePayload) => settleClubCash(clubId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+/** Registra un movimiento manual de caja. */
+export function useCreateClubCashMovement(clubId: number) {
+  const invalidate = useInvalidateClubCash(clubId);
+  return useMutation({
+    mutationFn: (payload: ClubCashMovementPayload) => createClubCashMovement(clubId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+/** Edita un movimiento de caja (estado, forma de pago, nota...). */
+export function useUpdateClubCashMovement(clubId: number) {
+  const invalidate = useInvalidateClubCash(clubId);
+  return useMutation({
+    mutationFn: ({
+      movementId,
+      payload,
+    }: {
+      movementId: number;
+      payload: { status?: ClubCashStatus; method?: ClubCashMethod; note?: string };
+    }) => updateClubCashMovement(clubId, movementId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+/** Elimina un movimiento de caja (solo el admin del club). */
+export function useDeleteClubCashMovement(clubId: number) {
+  const invalidate = useInvalidateClubCash(clubId);
+  return useMutation({
+    mutationFn: (movementId: number) => deleteClubCashMovement(clubId, movementId),
+    onSuccess: invalidate,
+  });
+}
+
+/** Registra los premios pagados de un torneo. */
+export function useRegisterClubCashPayouts(clubId: number, tournamentId: number) {
+  const invalidate = useInvalidateClubCash(clubId);
+  return useMutation({
+    mutationFn: (payouts: { userId: number; place: number; amount: number }[]) =>
+      registerClubCashPayouts(clubId, tournamentId, payouts),
+    onSuccess: invalidate,
   });
 }
 

@@ -27,10 +27,13 @@ export function TournamentListItem({ tournament }: { tournament: Tournament }) {
   const canControl =
     running || paused || tournament.status === 'scheduled' || tournament.status === 'registering';
 
-  // Recaudado aprox.: cada buy-in (los que ya estan jugando) + cada rebuy paga buy-in + fee.
+  // Recaudado aprox.: buy-in + fee por cada jugador que entró al torneo y por
+  // cada rebuy, más los add-ons cobrados en caja (si el torneo los tiene).
+  const entered = tournament.playersCount ?? 0;
+  const maxPlayers = tournament.maxPlayers;
   const collected =
-    (tournament.buyIn + tournament.fee) *
-    ((tournament.playersCount ?? 0) + (tournament.currentReEntries ?? 0));
+    (tournament.buyIn + tournament.fee) * (entered + (tournament.currentReEntries ?? 0)) +
+    (tournament.addOnsAmount ?? 0);
 
   const handleStartPause = () => {
     if (running) void pause.mutateAsync(tournament.id).catch(() => undefined);
@@ -100,7 +103,9 @@ export function TournamentListItem({ tournament }: { tournament: Tournament }) {
               {t('tournament.players')}
             </AppText>
             <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
-              {tournament.maxPlayers == null ? t('tournament.unlimited') : formatNumber(tournament.maxPlayers)}
+              {maxPlayers == null
+                ? formatNumber(entered)
+                : `${formatNumber(entered)} / ${formatNumber(maxPlayers)}`}
             </AppText>
           </View>
         </View>
@@ -119,7 +124,7 @@ export function TournamentListItem({ tournament }: { tournament: Tournament }) {
               {t('tournament.playing')}
             </AppText>
             <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
-              {formatNumber(tournament.playersCount ?? 0)}
+              {formatNumber(tournament.playingCount ?? 0)}
             </AppText>
           </View>
         </View>

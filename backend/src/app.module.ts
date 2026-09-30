@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { ClubRolesGuard } from './common/guards/club-roles.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AuthModule } from './modules/auth/auth.module';
+import { CashModule } from './modules/cash/cash.module';
 import { ChipsModule } from './modules/chips/chips.module';
 import { ClubsModule } from './modules/clubs/clubs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -64,6 +65,7 @@ import configuration from './config/configuration';
     TablesModule,
     TournamentsModule,
     ClubsModule,
+    CashModule,
     DashboardModule,
     RealtimeModule,
     RealtimeControllerModule,

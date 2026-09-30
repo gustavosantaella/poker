@@ -37,6 +37,11 @@ export function useClubEvents(clubId?: number) {
         void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'invitations'] });
         void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'audit'] });
       });
+      // La caja cambia con cada cobro, premio o gasto: refresca la pestaña "Recaudado".
+      source.addEventListener('club:cash', () => {
+        void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'cash'] });
+        void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
+      });
       source.addEventListener('error', () => {
         // La librería reconecta automáticamente.
       });

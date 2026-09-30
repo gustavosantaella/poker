@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CashModule } from '../cash/cash.module';
 import { Chip } from '../chips/entities/chip.entity';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { User } from '../users/entities/user.entity';
@@ -12,7 +13,7 @@ import { TournamentsController } from './tournaments.controller';
 import { TournamentsService } from './tournaments.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tournament, TournamentReservation, TournamentChip, TournamentPrize, Chip, User]), RealtimeModule],
+  imports: [TypeOrmModule.forFeature([Tournament, TournamentReservation, TournamentChip, TournamentPrize, Chip, User]), RealtimeModule, CashModule],
   controllers: [TournamentsController],
   providers: [TournamentsService, TournamentClockService],
   exports: [TournamentsService],

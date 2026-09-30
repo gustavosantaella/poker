@@ -142,6 +142,7 @@ export interface Tournament {
   updatedAt: string;
   reservedCount?: number;
   playersCount?: number;
+  playingCount?: number;
 }
 
 export interface BlindStructureSummary {

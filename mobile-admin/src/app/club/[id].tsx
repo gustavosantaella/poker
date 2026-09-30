@@ -8,6 +8,7 @@ import { uploadImage } from '@/api/auth';
 import { API_URL } from '@/api/config';
 import { ClubAuditAction, ClubMember, ClubMemberRole } from '@/api/types';
 import { StatCard } from '@/components/features/StatCard';
+import { ClubCashPanel } from '@/components/features/ClubCashPanel';
 import { AppBadge } from '@/components/ui/AppBadge';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
@@ -84,12 +85,18 @@ const AUDIT_ACTION_KEYS: Record<ClubAuditAction, TranslationKey> = {
   'invitation.revoked': 'club.audit.invitation.revoked',
   'invitation.accepted': 'club.audit.invitation.accepted',
   'invitation.expired': 'club.audit.invitation.expired',
+  'cash.movement_created': 'club.audit.cash.movement_created',
+  'cash.movement_updated': 'club.audit.cash.movement_updated',
+  'cash.movement_deleted': 'club.audit.cash.movement_deleted',
+  'cash.collected': 'club.audit.cash.collected',
+  'cash.payout_registered': 'club.audit.cash.payout_registered',
 };
 
 /** Icono del historial según el tipo de acción. */
 function auditIcon(action: ClubAuditAction): keyof typeof Ionicons.glyphMap {
   if (action.startsWith('invitation.')) return 'mail-outline';
   if (action.startsWith('collaborator.')) return 'shield-checkmark-outline';
+  if (action.startsWith('cash.')) return 'cash-outline';
   if (action === 'club.ownership_transferred') return 'swap-horizontal-outline';
   if (action === 'club.code_rotated') return 'key-outline';
   if (action === 'member.status_changed') return 'person-add-outline';
@@ -132,6 +139,11 @@ export default function ClubDashboardScreen() {
   useClubEvents(clubId);
   /** Solo el admin del club (o el admin global) gestiona colaboradores y configuración. */
   const canManage = stats?.myRole === 'admin';
+  /**
+   * El equipo del club (admin, operador y cajero) puede ver la recaudación:
+   * cuánto dinero ha entrado y salido y qué falta por cobrar.
+   */
+  const canViewCash = Boolean(stats && stats.myRole !== 'member');
   const { user } = useAuth();
   /** Solo el dueño actual (o un admin global) puede traspasar la propiedad. */
   const isOwner = Boolean(club && user && (user.id === club.adminUserId || user.role === 'admin'));
@@ -222,9 +234,15 @@ export default function ClubDashboardScreen() {
 
   const tabs: Option[] = [
     { label: t('club.metrics'), value: 'metrics' },
-    { label: t('club.team'), value: 'team' },
-    { label: t('club.settings'), value: 'settings' },
-    { label: t('club.activity'), value: 'activity' },
+    ...(canManage
+      ? ([
+          { label: t('club.team'), value: 'team' },
+          { label: t('club.settings'), value: 'settings' },
+          { label: t('club.activity'), value: 'activity' },
+        ] as Option[])
+      : []),
+    // La pestaña "Recaudado" la ve todo el equipo: admin, operadores y cajeros.
+    ...(canViewCash ? ([{ label: t('club.collections'), value: 'cash' }] as Option[]) : []),
   ];
 
   const handlePickPhoto = async () => {
@@ -402,7 +420,7 @@ export default function ClubDashboardScreen() {
     <AppScreen refreshing={refreshing} onRefresh={handleRefresh}>
       <AppHeader title={club.name} subtitle={`#${club.code}`} showBack />
 
-      {canManage ? (
+      {tabs.length > 1 ? (
         <AppSegmentedControl value={tab} options={tabs} onChange={setTab} />
       ) : (
         <AppText variant="caption" color={colors.textSecondary} style={styles.hint}>
@@ -410,7 +428,7 @@ export default function ClubDashboardScreen() {
         </AppText>
       )}
 
-      {tab === 'metrics' || !canManage ? (
+      {tab === 'metrics' ? (
         <>
           <ScrollView
             horizontal
@@ -550,6 +568,11 @@ export default function ClubDashboardScreen() {
             </>
           ) : null}
         </>
+      ) : null}
+
+      {/* Recaudado: dinero que entra y sale, por jugador y por torneo */}
+      {canViewCash && tab === 'cash' ? (
+        <ClubCashPanel clubId={clubId} canDelete={canManage} />
       ) : null}
 
       {canManage && tab === 'team' ? (

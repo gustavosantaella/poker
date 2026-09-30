@@ -303,7 +303,7 @@ export default function TournamentDetailScreen() {
           />
           <DetailRow
             label={t('tournament.playersInPlay')}
-            value={formatNumber(tournament.playersCount ?? 0)}
+            value={formatNumber(tournament.playingCount ?? 0)}
           />
           <DetailRow label={t('tournament.reservedPlayers')} value={formatNumber(tournament.reservedCount ?? 0)} />
           {tournament.guaranteedPrize != null ? (

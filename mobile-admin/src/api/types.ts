@@ -58,7 +58,8 @@ export interface ClubMember {
   updatedAt: string;
 }
 
-export type ClubInvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+export type ClubInvitationStatus =
+  'pending' | 'accepted' | 'revoked' | 'expired';
 
 /** Invitación para unirse al club como colaborador con unos permisos. */
 export interface ClubInvitation {
@@ -157,7 +158,12 @@ export type ClubAuditAction =
   | 'invitation.resent'
   | 'invitation.revoked'
   | 'invitation.accepted'
-  | 'invitation.expired';
+  | 'invitation.expired'
+  | 'cash.movement_created'
+  | 'cash.movement_updated'
+  | 'cash.movement_deleted'
+  | 'cash.collected'
+  | 'cash.payout_registered';
 
 /** Entrada del historial de acciones sensibles del club. */
 export interface ClubAuditLog {
@@ -175,7 +181,6 @@ export interface ClubAuditLog {
   createdAt: string;
   updatedAt: string;
 }
-
 
 export interface GameType {
   id: number;
@@ -289,9 +294,12 @@ export interface Tournament {
   fee: number;
   startingStack: number;
   maxPlayers: number | null;
-  /** Total de reservas y jugadores aceptados (calculados a partir de las reservas). */
+  /** Conteos calculados a partir de las reservas del torneo. */
   reservedCount?: number;
   playersCount?: number;
+  playingCount?: number;
+  /** Dinero de los add-ons del torneo según la caja (0 si no tiene). */
+  addOnsAmount?: number;
   registrationOpen: boolean;
   tableCount: number;
   reEntryEnabled: boolean;
@@ -409,7 +417,8 @@ export interface TournamentPayload {
   blindStructure?: BlindStructureItem[] | null;
 }
 
-export type ReservationStatus = 'pending' | 'accepted' | 'rejected' | 'stood_up' | 'eliminated';
+export type ReservationStatus =
+  'pending' | 'accepted' | 'rejected' | 'stood_up' | 'eliminated';
 
 export interface TournamentReservation {
   id: number;
@@ -455,4 +464,222 @@ export interface TournamentPrize {
   amount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// ---- Caja y recaudación del club ----
+
+/** Tipo de movimiento de caja. */
+export type ClubCashMovementType =
+  | 'entry'
+  | 're_entry'
+  | 'add_on'
+  | 'prize'
+  | 'expense'
+  | 'withdrawal'
+  | 'deposit'
+  | 'adjustment';
+
+/** Dirección del movimiento: dinero que entra o que sale. */
+export type ClubCashDirection = 'in' | 'out';
+
+/** Estado del movimiento: pendiente, cobrado/pagado o anulado. */
+export type ClubCashStatus = 'pending' | 'paid' | 'void';
+
+/** Forma de pago con la que se cobró o pagó. */
+export type ClubCashMethod = 'cash' | 'card' | 'transfer' | 'other';
+
+/** Movimiento del libro de caja del club. */
+export interface ClubCashMovement {
+  id: number;
+  clubId: number;
+  tournamentId: number | null;
+  tournament?: { id: number; name: string; startDate: string } | null;
+  userId: number | null;
+  user?: { id: number; name: string; email: string } | null;
+  reservationId: number | null;
+  type: ClubCashMovementType;
+  direction: ClubCashDirection;
+  status: ClubCashStatus;
+  method: ClubCashMethod;
+  amount: number;
+  /** Comisión del club incluida en el importe. */
+  feeAmount: number | null;
+  currency: string;
+  place: number | null;
+  note: string | null;
+  occurredAt: string;
+  paidAt: string | null;
+  createdByUserId: number | null;
+  settledByUserId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClubCashTypeBreakdown {
+  type: ClubCashMovementType;
+  direction: ClubCashDirection;
+  count: number;
+  amount: number;
+  pending: number;
+}
+
+export interface ClubCashMethodBreakdown {
+  method: ClubCashMethod;
+  count: number;
+  amount: number;
+}
+
+export interface ClubCashDailyPoint {
+  date: string;
+  in: number;
+  out: number;
+  net: number;
+}
+
+/** Resumen de recaudación del club en un periodo. */
+export interface ClubCashSummary {
+  clubId: number;
+  from: string;
+  to: string;
+  periodDays: number;
+  currency: string;
+  /** Saldo histórico de caja (todo lo cobrado menos lo pagado). */
+  balance: number;
+  collected: number;
+  paidOut: number;
+  net: number;
+  pendingIn: number;
+  pendingOut: number;
+  commission: number;
+  prizePot: number;
+  entries: number;
+  reEntries: number;
+  addOns: number;
+  pendingCount: number;
+  paidCount: number;
+  players: number;
+  tournaments: number;
+  averageTicket: number;
+  /** Reservas del periodo todavía sin movimiento de caja. */
+  unregistered: number;
+  byType: ClubCashTypeBreakdown[];
+  byMethod: ClubCashMethodBreakdown[];
+  daily: ClubCashDailyPoint[];
+}
+
+/** Consolidado de caja de un torneo. */
+export interface ClubCashTournament {
+  tournamentId: number;
+  name: string;
+  status: TournamentStatus;
+  startDate: string;
+  currency: string;
+  buyIn: number;
+  fee: number;
+  addOnAmount: number | null;
+  players: number;
+  entries: number;
+  reEntries: number;
+  addOns: number;
+  expected: number;
+  unregistered: number;
+  collected: number;
+  pending: number;
+  /** Dinero por cobrar del torneo (entradas, re-entradas y add-ons pendientes). */
+  pendingIn: number;
+  /** Dinero por pagar del torneo (premios/gastos pendientes de pago). */
+  pendingOut: number;
+  voided: number;
+  prizesPaid: number;
+  expenses: number;
+  net: number;
+  commission: number;
+  prizePot: number;
+  collectedCount: number;
+  pendingCount: number;
+  unpaidPlayers: number;
+}
+
+/** Lo que ha invertido y ganado un jugador en un torneo. */
+export interface ClubCashTournamentPlayer {
+  userId: number;
+  name: string;
+  email: string;
+  reservationStatus: ReservationStatus | null;
+  tableNumber: number | null;
+  seatNumber: number | null;
+  entries: number;
+  reEntries: number;
+  addOns: number;
+  invested: number;
+  paid: number;
+  pending: number;
+  prizes: number;
+  net: number;
+}
+
+export interface ClubCashTournamentDetail {
+  tournament: {
+    id: number;
+    name: string;
+    status: TournamentStatus;
+    startDate: string;
+    currency: string;
+    buyIn: number;
+    fee: number;
+    addOnEnabled: boolean;
+    addOnAmount: number | null;
+    maxPlayers: number | null;
+    tableCount: number;
+  };
+  summary: ClubCashTournament;
+  players: ClubCashTournamentPlayer[];
+  movements: ClubCashMovement[];
+}
+
+/** Ranking de lo que ha invertido un jugador en el club. */
+export interface ClubCashPlayer {
+  userId: number;
+  name: string;
+  email: string;
+  tournaments: number;
+  entries: number;
+  reEntries: number;
+  addOns: number;
+  invested: number;
+  paid: number;
+  pending: number;
+  prizes: number;
+  net: number;
+  lastMovementAt: string | null;
+}
+
+export interface ClubCashPlayerDetail {
+  player: ClubCashPlayer;
+  byTournament: {
+    tournamentId: number;
+    name: string;
+    startDate: string;
+    entries: number;
+    reEntries: number;
+    addOns: number;
+    invested: number;
+    paid: number;
+    pending: number;
+    prizes: number;
+    net: number;
+  }[];
+  movements: ClubCashMovement[];
+}
+
+export interface ClubCashTotals {
+  collected: number;
+  paidOut: number;
+  net: number;
+  pendingIn: number;
+  pendingOut: number;
+}
+
+export interface ClubCashMovementPage extends Paginated<ClubCashMovement> {
+  totals: ClubCashTotals;
 }

@@ -418,6 +418,23 @@ export class ClubsService extends CrudService<Club> implements OnModuleInit {
   }
 
 
+  /**
+   * Registra una acción en el historial del club desde otro módulo (caja,
+   * torneos...) y avisa a los paneles abiertos. Nunca lanza: si el registro
+   * falla, la operación de negocio sigue adelante.
+   */
+  async logClubAction(entry: {
+    clubId: number;
+    action: ClubAuditAction;
+    requester?: User | null;
+    targetType?: string | null;
+    targetId?: number | null;
+    summary?: string | null;
+    metadata?: Record<string, unknown> | null;
+  }): Promise<void> {
+    await this.audit(entry);
+  }
+
   /** Genera el código único que el admin comparte para invitar a un colaborador. */
   private generateInviteToken(): string {
     return randomBytes(16).toString('hex');

@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, DeepPartial, EntityManager, MoreThan, Repository } from 'typeorm';
 import { CrudOptions, CrudService } from '../../common/services/crud.service';
 import { Paginated } from '../../common/types/paginated';
+import { CashService } from '../cash/cash.service';
 import { Chip } from '../chips/entities/chip.entity';
 import { RealtimeService } from '../realtime/realtime.service';
 import { User, UserRole } from '../users/entities/user.entity';
@@ -24,6 +25,28 @@ import { ReservationStatus, TournamentReservation } from './entities/tournament-
 import { TournamentChip } from './entities/tournament-chip.entity';
 import { TournamentPrize } from './entities/tournament-prize.entity';
 import { BlindStructureItem, BuildBlindStructureParams } from './types/blind-structure';
+
+/**
+ * Jugadores que entraron al torneo: contaron entrada aunque después se levanten
+ * (`stood_up`), queden eliminados (`eliminated`) o sigan jugando (`accepted`).
+ * Una reserva solo `pending` todavía no ha entrado (reservó, no pagó) y una
+ * `rejected` nunca entró.
+ */
+const ENTERED_STATUSES = [
+  ReservationStatus.ACCEPTED,
+  ReservationStatus.STOOD_UP,
+  ReservationStatus.ELIMINATED,
+];
+
+/** Conteo de reservas de un torneo (campos calculados, no persistidos). */
+interface ReservationCounts {
+  /** Reservas sin aceptar: pidieron plaza y todavía no han entrado. */
+  reserved: number;
+  /** Jugadores que entraron al torneo (jugando, levantados o eliminados). */
+  players: number;
+  /** Jugadores que siguen en juego ahora mismo. */
+  playing: number;
+}
 
 @Injectable()
 export class TournamentsService extends CrudService<Tournament> {
@@ -41,11 +64,12 @@ export class TournamentsService extends CrudService<Tournament> {
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
     private readonly dataSource: DataSource,
     private readonly realtime: RealtimeService,
+    private readonly cash: CashService,
   ) {
     super(repository);
   }
 
-  /** Listado de torneos enriqueciendo cada item con el conteo de reservas y jugadores aceptados. */
+  /** Listado de torneos enriqueciendo cada item con el conteo de reservas y jugadores. */
   async findAll(options: CrudOptions<Tournament> = {}): Promise<Paginated<Tournament>> {
     const result = await super.findAll(options);
     if (result.items.length === 0) return result;
@@ -57,50 +81,90 @@ export class TournamentsService extends CrudService<Tournament> {
       }
     }
 
+    // Conteos de reservas y add-ons de caja en una sola pasada para toda la página.
     const ids = result.items.map((t) => t.id);
-    const rows = await this.reservationsRepo
-      .createQueryBuilder('r')
-      .select('r.tournament_id', 'tournamentId')
-      .addSelect('COUNT(*)', 'reserved')
-      .addSelect("SUM(CASE WHEN r.status = 'accepted' THEN 1 ELSE 0 END)", 'playing')
-      .where('r.tournament_id IN (:...ids)', { ids })
-      .groupBy('r.tournament_id')
-      .getRawMany();
-    const countsByTournament = new Map<number, { reserved: number; playing: number }>();
-    for (const row of rows) {
-      countsByTournament.set(Number(row.tournamentId), {
-        reserved: Number(row.reserved ?? 0),
-        playing: Number(row.playing ?? 0),
-      });
-    }
-
+    const [counts, addOns] = await Promise.all([
+      this.getReservationCounts(ids),
+      this.cash.addOnsAmountByTournament(ids),
+    ]);
     return {
       ...result,
-      items: result.items.map((t) => {
-        const counts = countsByTournament.get(t.id) ?? { reserved: 0, playing: 0 };
-        return { ...t, reservedCount: counts.reserved, playersCount: counts.playing };
-      }),
+      items: result.items.map((t) => this.withStats(t, counts.get(t.id), addOns.get(t.id))),
     };
   }
 
-  /** Detalle de torneo con los conteos de reservas y jugadores aceptados. */
+  /** Detalle de torneo con los conteos de reservas y jugadores. */
   async findOne(id: number, relations?: string[]): Promise<Tournament> {
     const tournament = await super.findOne(id, relations);
     const synced = await this.syncLiveStatus(tournament);
-    const counts = await this.getReservationCounts(id);
-    return { ...synced, reservedCount: counts.reserved, playersCount: counts.playing };
+    const [counts, addOns] = await Promise.all([
+      this.getReservationCounts([id]),
+      this.cash.addOnsAmountByTournament([id]),
+    ]);
+    return this.withStats(synced, counts.get(id), addOns.get(id));
   }
 
-  private async getReservationCounts(tournamentId: number): Promise<{ reserved: number; playing: number }> {
-    const row = await this.reservationsRepo
+  /**
+   * Conteo de reservas de cada torneo:
+   * - `reserved`: pidieron plaza y todavía no han entrado (reservaron, no pagaron).
+   * - `players`: entraron a jugar, aunque después se levanten (`stood_up`), queden
+   *   eliminados (`eliminated`) o sigan jugando.
+   * - `playing`: siguen en juego ahora mismo.
+   * Las rechazadas nunca entraron, así que no cuentan en ningún conteo.
+   *
+   * Los add-ons no se cuentan aquí: no viven en las reservas, se cobran como
+   * movimiento de caja (ver `CashService.addOnsAmountByTournament`).
+   */
+  private async getReservationCounts(
+    tournamentIds: number[],
+  ): Promise<Map<number, ReservationCounts>> {
+    if (tournamentIds.length === 0) return new Map();
+    const rows = await this.reservationsRepo
       .createQueryBuilder('r')
-      .select('COUNT(*)', 'reserved')
-      .addSelect("SUM(CASE WHEN r.status = 'accepted' THEN 1 ELSE 0 END)", 'playing')
-      .where('r.tournament_id = :id', { id: tournamentId })
-      .getRawOne();
+      .select('r.tournament_id', 'tournamentId')
+      .addSelect('SUM(CASE WHEN r.status = :pending THEN 1 ELSE 0 END)', 'reserved')
+      .addSelect('SUM(CASE WHEN r.status IN (:...entered) THEN 1 ELSE 0 END)', 'players')
+      .addSelect('SUM(CASE WHEN r.status = :playing THEN 1 ELSE 0 END)', 'playing')
+      .where('r.tournament_id IN (:...ids)', { ids: tournamentIds })
+      .setParameters({
+        pending: ReservationStatus.PENDING,
+        playing: ReservationStatus.ACCEPTED,
+        entered: ENTERED_STATUSES,
+      })
+      .groupBy('r.tournament_id')
+      .getRawMany<{
+        tournamentId: number;
+        reserved: string;
+        players: string;
+        playing: string;
+      }>();
+    return new Map(
+      rows.map((row) => [
+        Number(row.tournamentId),
+        {
+          reserved: Number(row.reserved ?? 0),
+          players: Number(row.players ?? 0),
+          playing: Number(row.playing ?? 0),
+        },
+      ]),
+    );
+  }
+
+  /**
+   * Añade al torneo los campos calculados (no persistidos): los conteos de
+   * reservas y el dinero de add-ons cobrado en caja.
+   */
+  private withStats(
+    tournament: Tournament,
+    counts?: ReservationCounts,
+    addOnsAmount?: number,
+  ): Tournament {
     return {
-      reserved: Number(row?.reserved ?? 0),
-      playing: Number(row?.playing ?? 0),
+      ...tournament,
+      reservedCount: counts?.reserved ?? 0,
+      playersCount: counts?.players ?? 0,
+      playingCount: counts?.playing ?? 0,
+      addOnsAmount: addOnsAmount ?? 0,
     };
   }
 
@@ -505,8 +569,13 @@ export class TournamentsService extends CrudService<Tournament> {
     });
   }
 
-  async updateReservation(tournamentId: number, reservationId: number, dto: UpdateReservationDto) {
-    return this.dataSource.transaction(async (manager) => {
+  async updateReservation(
+    tournamentId: number,
+    reservationId: number,
+    dto: UpdateReservationDto,
+    actor?: { userId: number; role: string },
+  ) {
+    const updated = await this.dataSource.transaction(async (manager) => {
       // Bloquea la fila del torneo para serializar la asignación de asientos
       // entre admins concurrentes (evita doble asignación).
       const tournament = await manager.findOne(Tournament, {
@@ -559,6 +628,10 @@ export class TournamentsService extends CrudService<Tournament> {
       this.realtime.emit(tournamentId, 'reservation:updated', { tournamentId, reservation: updated });
       return updated;
     });
+    // Aceptar, rechazar o devolver a pendiente mueve dinero: la inscripción de un
+    // jugador se cobra al entrar y se anula si deja el torneo.
+    await this.reconcileCash(tournamentId, actor);
+    return updated;
   }
 
   /** Registra un rebuy (re-entrada): stack nuevo + incrementa contadores por jugador y del torneo. */
@@ -568,7 +641,7 @@ export class TournamentsService extends CrudService<Tournament> {
     dto: RebuyDto,
     actor?: { userId: number; role: string },
   ) {
-    return this.dataSource.transaction(async (manager) => {
+    const updated = await this.dataSource.transaction(async (manager) => {
       const tournament = await manager.findOne(Tournament, {
         where: { id: tournamentId },
         lock: { mode: 'pessimistic_write' },
@@ -626,6 +699,9 @@ export class TournamentsService extends CrudService<Tournament> {
       this.realtime.emit(tournamentId, 'reservation:updated', { tournamentId, reservation: updated });
       return updated;
     });
+    // La re-entrada es dinero que entra en la caja del torneo: se cobra sola.
+    await this.reconcileCash(tournamentId, actor);
+    return updated;
   }
 
   /** "Get up": el jugador se levanta de la mesa. Queda como eliminado del torneo
@@ -688,7 +764,7 @@ export class TournamentsService extends CrudService<Tournament> {
     reservationId: number,
     actor?: { userId: number; role: string },
   ) {
-    return this.dataSource.transaction(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const reservation = await manager.findOne(TournamentReservation, {
         where: { id: reservationId, tournamentId },
       });
@@ -700,6 +776,34 @@ export class TournamentsService extends CrudService<Tournament> {
       await this.refreshCounters(manager, tournamentId);
       this.realtime.emit(tournamentId, 'reservation:removed', { tournamentId, reservationId });
     });
+    // Sin reserva no hay inscripción: el cobro pendiente se retira y el ya cobrado
+    // se anula (devolución).
+    await this.reconcileCash(tournamentId, actor);
+  }
+
+  /**
+   * Reajusta la caja del torneo tras un cambio de reservas, para que el dinero de
+   * una entrada o re-entrada entre **cobrado** sin que nadie pulse "sincronizar".
+   * Nunca interrumpe la operación de reservas: si la caja falla se registra el
+   * error y la reconciliación queda disponible con el botón de sincronizar.
+   */
+  private async reconcileCash(
+    tournamentId: number,
+    actor?: { userId: number; role: string },
+  ): Promise<void> {
+    try {
+      const tournament = await this.repository.findOne({ where: { id: tournamentId } });
+      if (!tournament?.clubId) return;
+      const actorId = actor?.userId ?? tournament.createdByUserId ?? null;
+      if (!actorId) return;
+      await this.cash.reconcileTournament(tournament.clubId, tournament.id, actorId);
+    } catch (error) {
+      this.logger.error(
+        `No se pudo reconciliar la caja del torneo ${tournamentId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   /** Un player solo puede operar sobre sus propias reservas. */
