@@ -29,6 +29,28 @@ export class RealtimeController {
     return this.stream(id);
   }
 
+  /**
+   * SSE del panel de un club: avisa cuando el equipo, las invitaciones, los torneos
+   * o las mesas cambian, para que el dashboard se refresque en vivo.
+   */
+  @Public()
+  @UseGuards(SseAuthGuard)
+  @Sse('clubs/:id/events')
+  clubEvents(@Param('id', ParseIntPipe) id: number): Observable<MessageEvent> {
+    return new Observable<MessageEvent>((subscriber) => {
+      const send = (event: RealtimeEvent) =>
+        subscriber.next({ type: event.type, data: JSON.stringify(event.data) } as MessageEvent);
+      const unsubscribe = this.realtime.subscribeClub(id, send);
+      const heartbeat = setInterval(() => {
+        subscriber.next({ type: 'heartbeat', data: JSON.stringify({ ts: Date.now() }) } as MessageEvent);
+      }, 25_000);
+      return () => {
+        clearInterval(heartbeat);
+        unsubscribe();
+      };
+    });
+  }
+
   private stream(tournamentId: number | null): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
       const send = (event: RealtimeEvent) =>

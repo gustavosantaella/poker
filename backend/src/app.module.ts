@@ -8,6 +8,7 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AccountModule } from './modules/account/account.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { ClubRolesGuard } from './common/guards/club-roles.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { ChipsModule } from './modules/chips/chips.module';
@@ -69,7 +70,7 @@ import configuration from './config/configuration';
   ],
   controllers: [AppController],
   providers: [
-    // Orden: primero autenticación, luego roles, luego throttling.
+    // Orden: autenticación → roles globales → permisos por club → throttling.
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
@@ -77,6 +78,10 @@ import configuration from './config/configuration';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ClubRolesGuard,
     },
     {
       provide: APP_GUARD,

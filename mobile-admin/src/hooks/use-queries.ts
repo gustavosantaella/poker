@@ -3,6 +3,7 @@ import {
   createClub,
   createClubInvitation,
   fetchClub,
+  fetchClubAuditLog,
   fetchClubCollaborators,
   fetchClubInvitations,
   fetchClubMembers,
@@ -10,7 +11,10 @@ import {
   fetchClubStats,
   fetchUsers,
   removeClubMember,
+  resendClubInvitation,
   revokeClubInvitation,
+  rotateClubCode,
+  transferClubOwnership,
   updateClub,
   updateClubCollaborator,
   updateClubMember,
@@ -204,6 +208,60 @@ export function useRevokeClubInvitation(clubId: number) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'invitations'] });
       void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'audit'] });
+    },
+  });
+}
+
+/** Reenvía una invitación caducada o sin correo entregado (rota el código). */
+export function useResendClubInvitation(clubId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (invitationId: number) => resendClubInvitation(clubId, invitationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'invitations'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'collaborators'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'audit'] });
+    },
+  });
+}
+
+// ---- Auditoría, propiedad y código del club ----
+
+/** Historial de acciones sensibles del club (solo el admin del club). */
+export function useClubAuditLog(clubId: number, limit = 50) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'audit', limit],
+    queryFn: () => fetchClubAuditLog(clubId, limit),
+    enabled: clubId > 0,
+  });
+}
+
+/** Traspasa la propiedad del club a otro usuario (el anterior queda como operador). */
+export function useTransferClubOwnership(clubId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => transferClubOwnership(clubId, userId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'collaborators'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'members'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'audit'] });
+      void qc.invalidateQueries({ queryKey: ['clubs'] });
+    },
+  });
+}
+
+/** Regenera el código de invitación del club (invalida el anterior). */
+export function useRotateClubCode(clubId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => rotateClubCode(clubId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'audit'] });
     },
   });
 }

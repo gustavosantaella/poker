@@ -1,0 +1,45 @@
+<!-- Aviso de traspaso de la propiedad de un club. -->
+<h1 style="margin:0 0 8px 0;font-size:24px;line-height:32px;color:#ffffff;">
+  {{isNewOwnerTitle}}
+</h1>
+<p style="margin:0 0 24px 0;font-size:15px;line-height:24px;color:#a7b6ce;">
+  {{message}}
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0d1523;border:1px solid #1e2a42;border-radius:14px;margin-bottom:24px;">
+  <tr>
+    <td style="padding:18px 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size:13px;color:#7d8fae;padding-bottom:6px;">Club</td>
+          <td align="right" style="font-size:13px;color:#e6edf7;padding-bottom:6px;">{{clubName}}</td>
+        </tr>
+        <tr>
+          <td style="font-size:13px;color:#7d8fae;padding-bottom:6px;">Anterior propietario</td>
+          <td align="right" style="font-size:13px;color:#e6edf7;padding-bottom:6px;">{{previousOwner}}</td>
+        </tr>
+        <tr>
+          <td style="font-size:13px;color:#7d8fae;">Nuevo propietario</td>
+          <td align="right" style="font-size:13px;color:#f5c451;">{{newOwner}}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+{{#if showAdminButton}}
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 22px auto;">
+  <tr>
+    <td align="center" style="border-radius:12px;background:linear-gradient(135deg,#16a34a 0%,#22c55e 100%);">
+      <a href="{{deepLink}}" style="display:inline-block;padding:15px 30px;font-size:16px;font-weight:700;color:#04140b;text-decoration:none;">
+        Abrir el panel del club
+      </a>
+    </td>
+  </tr>
+</table>
+{{/if}}
+
+<p style="margin:0;font-size:13px;line-height:20px;color:#8ea2c0;">
+  El propietario tiene permisos totales y no puede ser retirado del club; para cambiar
+  de propietario basta con repetir el traspaso desde la configuración del club.
+</p>

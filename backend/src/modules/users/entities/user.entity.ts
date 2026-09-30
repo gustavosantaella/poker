@@ -5,6 +5,9 @@ export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
   DEALER = 'dealer',
+  COLLABORATOR = 'collaborator',
+  OPERATOR = 'operator',
+  CASHIER = 'cashier',
   PLAYER = 'player',
 }
 

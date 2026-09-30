@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
@@ -5,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { uploadImage } from '@/api/auth';
 import { API_URL } from '@/api/config';
-import { ClubMember, ClubMemberRole } from '@/api/types';
+import { ClubAuditAction, ClubMember, ClubMemberRole } from '@/api/types';
 import { StatCard } from '@/components/features/StatCard';
 import { AppBadge } from '@/components/ui/AppBadge';
 import { AppButton } from '@/components/ui/AppButton';
@@ -22,14 +23,20 @@ import { ListItem } from '@/components/ui/ListItem';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Option } from '@/constants';
+import { useAuth } from '@/hooks/use-auth';
+import { useClubEvents } from '@/hooks/use-club-events';
 import {
   useClub,
+  useClubAuditLog,
   useClubCollaborators,
   useClubInvitations,
   useClubStats,
   useCreateClubInvitation,
   useRemoveClubMember,
+  useResendClubInvitation,
   useRevokeClubInvitation,
+  useRotateClubCode,
+  useTransferClubOwnership,
   useUpdateClub,
   useUpdateClubCollaborator,
 } from '@/hooks/use-queries';
@@ -64,6 +71,51 @@ function roleLabelKey(role: ClubMemberRole): TranslationKey {
   return `club.role.${role}` as TranslationKey;
 }
 
+/** Clave i18n del título de cada acción del historial del club. */
+const AUDIT_ACTION_KEYS: Record<ClubAuditAction, TranslationKey> = {
+  'club.updated': 'club.audit.club.updated',
+  'club.code_rotated': 'club.audit.club.code_rotated',
+  'club.ownership_transferred': 'club.audit.club.ownership_transferred',
+  'collaborator.role_changed': 'club.audit.collaborator.role_changed',
+  'collaborator.removed': 'club.audit.collaborator.removed',
+  'member.status_changed': 'club.audit.member.status_changed',
+  'invitation.created': 'club.audit.invitation.created',
+  'invitation.resent': 'club.audit.invitation.resent',
+  'invitation.revoked': 'club.audit.invitation.revoked',
+  'invitation.accepted': 'club.audit.invitation.accepted',
+  'invitation.expired': 'club.audit.invitation.expired',
+};
+
+/** Icono del historial según el tipo de acción. */
+function auditIcon(action: ClubAuditAction): keyof typeof Ionicons.glyphMap {
+  if (action.startsWith('invitation.')) return 'mail-outline';
+  if (action.startsWith('collaborator.')) return 'shield-checkmark-outline';
+  if (action === 'club.ownership_transferred') return 'swap-horizontal-outline';
+  if (action === 'club.code_rotated') return 'key-outline';
+  if (action === 'member.status_changed') return 'person-add-outline';
+  return 'settings-outline';
+}
+
+/** Importe con separador de miles y hasta dos decimales. */
+function formatAmount(value: number): string {
+  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+/** Fecha y hora cortas para el historial de actividad. */
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/** Fecha corta (día/mes) para la caducidad de una invitación. */
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' });
+}
+
 /**
  * Dashboard único del club: métricas, colaboradores (invitaciones y permisos) y
  * configuración (nombre, foto, ubicación y redes sociales).
@@ -76,16 +128,26 @@ export default function ClubDashboardScreen() {
 
   const { data: club, isLoading } = useClub(clubId);
   const { data: stats, refetch: refetchStats } = useClubStats(clubId);
+  // El dashboard se refresca solo cuando el equipo cambia algo (SSE del club).
+  useClubEvents(clubId);
   /** Solo el admin del club (o el admin global) gestiona colaboradores y configuración. */
   const canManage = stats?.myRole === 'admin';
+  const { user } = useAuth();
+  /** Solo el dueño actual (o un admin global) puede traspasar la propiedad. */
+  const isOwner = Boolean(club && user && (user.id === club.adminUserId || user.role === 'admin'));
 
   const { data: collaborators } = useClubCollaborators(canManage ? clubId : 0);
   const { data: invitations } = useClubInvitations(canManage ? clubId : 0);
+  // El historial de actividad solo lo ve el equipo con permiso de administrador.
+  const { data: auditLog } = useClubAuditLog(canManage ? clubId : 0, 30);
   const updateClub = useUpdateClub();
   const createInvitation = useCreateClubInvitation(clubId);
+  const resendInvitation = useResendClubInvitation(clubId);
   const revokeInvitation = useRevokeClubInvitation(clubId);
   const updateCollaborator = useUpdateClubCollaborator(clubId);
   const removeMember = useRemoveClubMember(clubId);
+  const rotateCode = useRotateClubCode(clubId);
+  const transferOwnership = useTransferClubOwnership(clubId);
 
   const [tab, setTab] = useState('metrics');
   const [refreshing, setRefreshing] = useState(false);
@@ -106,6 +168,10 @@ export default function ClubDashboardScreen() {
   const [memberEditing, setMemberEditing] = useState<ClubMember | null>(null);
   const [memberRole, setMemberRole] = useState<ClubMemberRole>('operator');
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [confirmTransfer, setConfirmTransfer] = useState(false);
+
+  // ---- Código de invitación del club ----
+  const [confirmRotate, setConfirmRotate] = useState(false);
 
   // ---- Configuración del club ----
   const [seededId, setSeededId] = useState<number | null>(null);
@@ -158,6 +224,7 @@ export default function ClubDashboardScreen() {
     { label: t('club.metrics'), value: 'metrics' },
     { label: t('club.team'), value: 'team' },
     { label: t('club.settings'), value: 'settings' },
+    { label: t('club.activity'), value: 'activity' },
   ];
 
   const handlePickPhoto = async () => {
@@ -291,6 +358,30 @@ export default function ClubDashboardScreen() {
     }
   };
 
+  /** Regenera el código del club: el anterior deja de valer al instante. */
+  const handleRotateCode = async () => {
+    try {
+      await rotateCode.mutateAsync();
+      setConfirmRotate(false);
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+      setConfirmRotate(false);
+    }
+  };
+
+  /** Traspasa la propiedad del club al colaborador seleccionado (el dueño pasa a operador). */
+  const handleTransferOwnership = async () => {
+    if (!memberEditing) return;
+    try {
+      await transferOwnership.mutateAsync(memberEditing.userId);
+      setConfirmTransfer(false);
+      setMemberEditing(null);
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+      setConfirmTransfer(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <AppScreen>
@@ -344,6 +435,18 @@ export default function ClubDashboardScreen() {
             <StatCard label={t('club.tournaments')} value={stats?.tournaments ?? 0} icon="calendar" tone="accent" />
             <StatCard label={t('club.pendingRequests')} value={stats?.pendingMembers ?? 0} icon="person-add" tone="muted" />
             <StatCard label={t('club.pendingInvitations')} value={stats?.pendingInvitations ?? 0} icon="mail" tone="info" />
+            <StatCard
+              label={t('club.upcomingTournaments')}
+              value={stats?.upcomingTournaments ?? 0}
+              icon="time-outline"
+              tone="accent"
+            />
+            <StatCard
+              label={t('club.expiredInvitations')}
+              value={stats?.expiredInvitations ?? 0}
+              icon="alert-circle-outline"
+              tone="muted"
+            />
           </ScrollView>
 
           <SectionHeader title={t('club.code')} />
@@ -362,7 +465,90 @@ export default function ClubDashboardScreen() {
                 />
               }
             />
+            {canManage ? (
+              <ListItem
+                title={t('club.rotateCode')}
+                subtitle={t('club.rotateCodeMessage')}
+                icon="refresh-outline"
+                onPress={() => setConfirmRotate(true)}
+              />
+            ) : null}
           </AppCard>
+
+          {stats ? (
+            <>
+              <SectionHeader title={t('club.business')} />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={230}
+                decelerationRate="fast"
+                contentContainerStyle={styles.statsRow}
+              >
+                <StatCard
+                  label={t('club.revenue')}
+                  value={formatAmount(stats.revenue)}
+                  icon="cash-outline"
+                  tone="success"
+                />
+                <StatCard
+                  label={t('club.rake')}
+                  value={formatAmount(stats.rake)}
+                  icon="receipt-outline"
+                  tone="warning"
+                />
+                <StatCard
+                  label={t('club.prizePool')}
+                  value={formatAmount(stats.prizePool)}
+                  icon="trophy-outline"
+                  tone="accent"
+                />
+                <StatCard
+                  label={t('club.averageTicket')}
+                  value={formatAmount(stats.averageTicket)}
+                  icon="pricetag-outline"
+                  tone="info"
+                />
+                <StatCard
+                  label={t('club.averageOccupancy')}
+                  value={`${stats.averageOccupancy}%`}
+                  icon="people-outline"
+                  tone="primary"
+                />
+              </ScrollView>
+              <AppText variant="caption" color={colors.textSecondary} style={styles.hint}>
+                {`${t('club.businessPeriod', { days: stats.periodDays })} · ${t('club.entriesSummary', {
+                  entries: stats.totalEntries,
+                  reEntries: stats.reEntries,
+                  players: stats.totalPlayers,
+                })}`}
+              </AppText>
+              <AppText variant="caption" color={colors.textSecondary} style={styles.hint}>
+                {t('club.currencyNote')}
+              </AppText>
+
+              <SectionHeader title={t('club.topPlayers')} />
+              <AppCard padded={false}>
+                {stats.topPlayers.length === 0 ? (
+                  <AppText variant="caption" color={colors.textSecondary} style={styles.empty}>
+                    {t('club.topPlayersEmpty')}
+                  </AppText>
+                ) : (
+                  stats.topPlayers.map((player, index) => (
+                    <ListItem
+                      key={player.userId}
+                      title={`${index + 1}. ${player.name}`}
+                      subtitle={t('club.topPlayerStats', {
+                        tournaments: player.tournaments,
+                        reEntries: player.reEntries,
+                      })}
+                      icon="person-outline"
+                    />
+                  ))
+                )}
+              </AppCard>
+            </>
+          ) : null}
         </>
       ) : null}
 
@@ -405,24 +591,57 @@ export default function ClubDashboardScreen() {
                 {t('club.invitationsEmpty')}
               </AppText>
             ) : (
-              (invitations ?? []).map((invitation) => (
-                <ListItem
-                  key={invitation.id}
-                  title={invitation.email}
-                  subtitle={t(roleLabelKey(invitation.role))}
-                  icon="mail-outline"
-                  right={
-                    invitation.status === 'pending' ? (
-                      <AppButton
-                        title={t('club.invitationRevoke')}
-                        size="sm"
-                        variant="ghost"
-                        onPress={() => void revokeInvitation.mutateAsync(invitation.id)}
-                      />
-                    ) : null
-                  }
-                />
-              ))
+              (invitations ?? []).map((invitation) => {
+                const statusLabel =
+                  invitation.status === 'expired'
+                    ? t('club.invitationExpired')
+                    : invitation.status === 'accepted'
+                      ? t('club.invitationAccepted')
+                      : invitation.status === 'revoked'
+                        ? t('club.invitationRevoked')
+                        : invitation.expiresAt
+                          ? t('club.invitationExpiresOn', {
+                              date: formatDate(invitation.expiresAt),
+                            })
+                          : null;
+                const canResend =
+                  invitation.status === 'pending' || invitation.status === 'expired';
+
+                return (
+                  <ListItem
+                    key={invitation.id}
+                    title={invitation.email}
+                    subtitle={[t(roleLabelKey(invitation.role)), statusLabel]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    icon="mail-outline"
+                    right={
+                      canResend ? (
+                        <View style={styles.invitationActions}>
+                          <AppButton
+                            title={t('club.invitationResend')}
+                            size="sm"
+                            variant="secondary"
+                            loading={resendInvitation.isPending}
+                            onPress={() => void resendInvitation.mutateAsync(invitation.id)}
+                          />
+                          {invitation.status === 'pending' ? (
+                            <AppButton
+                              title={t('club.invitationRevoke')}
+                              size="sm"
+                              variant="ghost"
+                              loading={revokeInvitation.isPending}
+                              onPress={() => void revokeInvitation.mutateAsync(invitation.id)}
+                            />
+                          ) : null}
+                        </View>
+                      ) : (
+                        <AppBadge label={statusLabel ?? ''} tone="muted" />
+                      )
+                    }
+                  />
+                );
+              })
             )}
           </AppCard>
         </>
@@ -533,6 +752,32 @@ export default function ClubDashboardScreen() {
         </>
       ) : null}
 
+      {canManage && tab === 'activity' ? (
+        <>
+          <SectionHeader title={t('club.activity')} />
+          <AppText variant="caption" color={colors.textSecondary} style={styles.hint}>
+            {t('club.activityHint')}
+          </AppText>
+          <AppCard padded={false}>
+            {(auditLog ?? []).length === 0 ? (
+              <AppText variant="caption" color={colors.textSecondary} style={styles.empty}>
+                {t('club.activityEmpty')}
+              </AppText>
+            ) : (
+              (auditLog ?? []).map((entry) => (
+                <ListItem
+                  key={entry.id}
+                  title={t(AUDIT_ACTION_KEYS[entry.action])}
+                  subtitle={entry.summary ?? entry.actorName ?? ''}
+                  icon={auditIcon(entry.action)}
+                  right={<AppBadge label={formatDateTime(entry.createdAt)} tone="muted" />}
+                />
+              ))
+            )}
+          </AppCard>
+        </>
+      ) : null}
+
       {/* Invitar a un colaborador: se asigna su permiso y se comparte el código */}
       <AppModal
         visible={inviteOpen}
@@ -621,14 +866,26 @@ export default function ClubDashboardScreen() {
                 {t('club.owner')}
               </AppText>
             ) : (
-              <AppButton
-                title={t('club.removeCollaborator')}
-                variant="danger"
-                icon="trash-outline"
-                fullWidth
-                style={styles.modalAction}
-                onPress={() => setConfirmRemove(true)}
-              />
+              <>
+                {isOwner ? (
+                  <AppButton
+                    title={t('club.transferOwnership')}
+                    variant="secondary"
+                    icon="swap-horizontal-outline"
+                    fullWidth
+                    style={styles.modalAction}
+                    onPress={() => setConfirmTransfer(true)}
+                  />
+                ) : null}
+                <AppButton
+                  title={t('club.removeCollaborator')}
+                  variant="danger"
+                  icon="trash-outline"
+                  fullWidth
+                  style={styles.modalAction}
+                  onPress={() => setConfirmRemove(true)}
+                />
+              </>
             )}
           </View>
         ) : null}
@@ -647,6 +904,33 @@ export default function ClubDashboardScreen() {
         onConfirm={handleRemoveMember}
         onCancel={() => setConfirmRemove(false)}
       />
+
+      {/* Regenerar el código del club: invalida el anterior */}
+      <ConfirmModal
+        visible={confirmRotate}
+        title={t('club.rotateCodeTitle')}
+        message={t('club.rotateCodeMessage')}
+        confirmLabel={t('club.rotateCode')}
+        cancelLabel={t('common.cancel')}
+        loading={rotateCode.isPending}
+        onConfirm={handleRotateCode}
+        onCancel={() => setConfirmRotate(false)}
+      />
+
+      {/* Traspaso de propiedad: el nuevo dueño pasa a admin y el anterior a operador */}
+      <ConfirmModal
+        visible={confirmTransfer}
+        title={t('club.transferOwnershipTitle')}
+        message={t('club.transferOwnershipMessage', {
+          name: memberEditing?.user?.name ?? memberEditing?.user?.email ?? '',
+        })}
+        confirmLabel={t('club.transferOwnership')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        loading={transferOwnership.isPending}
+        onConfirm={handleTransferOwnership}
+        onCancel={() => setConfirmTransfer(false)}
+      />
     </AppScreen>
   );
 }
@@ -657,6 +941,7 @@ const styles = StyleSheet.create({
   empty: { padding: 16 },
   code: { letterSpacing: 1, marginVertical: 8 },
   modalAction: { marginTop: 8 },
+  invitationActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   photoContainer: { alignItems: 'center', marginBottom: 20 },
   photoButton: {
     width: 100,

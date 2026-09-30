@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <title>{{subject}}</title>
+</head>
+<!--
+    Layout base de los correos de PokerPros. Pensado para clientes de correo:
+    tablas + estilos en línea, ancho máximo 600px, sin dependencias externas.
+  -->
+
+<body
+  style="margin:0;padding:0;background:#080d17;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e6edf7;">
+  <div
+    style="display:none;font-size:1px;color:#080d17;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    {{subject}}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#080d17;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+          style="width:600px;max-width:100%;background:#111a2b;border:1px solid #1e2a42;border-radius:18px;overflow:hidden;">
+          <!-- Cabecera -->
+          <tr>
+            <td
+              style="background:linear-gradient(135deg,#0f1729 0%,#132b23 55%,#0f1729 100%);padding:28px 32px 22px 32px;border-bottom:1px solid #1e2a42;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size:20px;font-weight:700;letter-spacing:1px;color:#ffffff;">
+                    <span style="color:#22c55e;">&#9824;</span>
+                    <span style="color:#ef4444;">&#9829;</span>
+                    <span style="color:#22c55e;">&#9830;</span>
+                    <span style="color:#e6edf7;">&#9827;</span>
+                    &nbsp;PokerPros
+                  </td>
+                  <td align="right" style="font-size:12px;color:#8ea2c0;letter-spacing:2px;text-transform:uppercase;">
+                    {{eyebrow}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Contenido de la plantilla -->
+          <tr>
+            <td style="padding:32px;">
+              {{content}}
+            </td>
+          </tr>
+          <!-- Pie -->
+          <tr>
+            <td style="padding:22px 32px 28px 32px;border-top:1px solid #1e2a42;background:#0d1523;">
+              <p style="margin:0 0 8px 0;font-size:12px;line-height:18px;color:#7d8fae;">
+                Recibes este correo porque tienes una cuenta o una invitación en PokerPros.
+              </p>
+              <p style="margin:0;font-size:12px;line-height:18px;color:#5f7191;">
+                &copy; {{year}} PokerPros · Gestión de clubes, torneos y mesas de póker.
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0 0;font-size:11px;color:#41516b;">
+          Mensaje automático, no respondas a este correo.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

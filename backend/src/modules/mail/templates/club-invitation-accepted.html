@@ -1,0 +1,45 @@
+<!-- Aviso al equipo del club: alguien ha aceptado la invitación y ya es colaborador. -->
+<h1 style="margin:0 0 8px 0;font-size:24px;line-height:32px;color:#ffffff;">
+  Nuevo colaborador en {{clubName}}
+</h1>
+<p style="margin:0 0 24px 0;font-size:15px;line-height:24px;color:#a7b6ce;">
+  <strong style="color:#e6edf7;">{{collaboratorName}}</strong> ({{collaboratorEmail}}) ha aceptado la
+  invitación y ya forma parte del equipo con el rol de
+  <strong style="color:#f5c451;">{{roleLabel}}</strong>.
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0d1523;border:1px solid #1e2a42;border-radius:14px;margin-bottom:24px;">
+  <tr>
+    <td style="padding:18px 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size:13px;color:#7d8fae;padding-bottom:6px;">Club</td>
+          <td align="right" style="font-size:13px;color:#e6edf7;padding-bottom:6px;">{{clubName}}</td>
+        </tr>
+        <tr>
+          <td style="font-size:13px;color:#7d8fae;padding-bottom:6px;">Rol asignado</td>
+          <td align="right" style="font-size:13px;color:#f5c451;padding-bottom:6px;">{{roleLabel}}</td>
+        </tr>
+        <tr>
+          <td style="font-size:13px;color:#7d8fae;">Equipo actual</td>
+          <td align="right" style="font-size:13px;color:#e6edf7;">{{collaborators}} colaboradores</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 22px auto;">
+  <tr>
+    <td align="center" style="border-radius:12px;background:linear-gradient(135deg,#16a34a 0%,#22c55e 100%);">
+      <a href="{{deepLink}}" style="display:inline-block;padding:15px 30px;font-size:16px;font-weight:700;color:#04140b;text-decoration:none;">
+        Gestionar el equipo
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:0;font-size:13px;line-height:20px;color:#8ea2c0;">
+  Puedes cambiar sus permisos o retirarlo del club en cualquier momento desde
+  <strong style="color:#cbd7e8;">Colaboradores</strong>.
+</p>

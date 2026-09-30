@@ -8,6 +8,8 @@ export enum ClubInvitationStatus {
   PENDING = 'pending',
   ACCEPTED = 'accepted',
   REVOKED = 'revoked',
+  /** Caducada por fecha: hay que reenviarla para reactivarla. */
+  EXPIRED = 'expired',
 }
 
 /**
@@ -26,6 +28,7 @@ export class ClubInvitation extends BaseEntity {
   clubId: number;
 
   /** Correo invitado (siempre en minúsculas). */
+  @Index()
   @Column({ type: 'varchar', length: 255 })
   email: string;
 
@@ -51,4 +54,26 @@ export class ClubInvitation extends BaseEntity {
 
   @Column({ name: 'accepted_at', type: 'datetime', nullable: true })
   acceptedAt: Date | null;
+
+  /** Caducidad de la invitación (a partir de aquí deja de poder aceptarse). */
+  @Column({ name: 'expires_at', type: 'datetime', nullable: true })
+  expiresAt: Date | null;
+
+  /** Último envío por correo y cuántas veces se ha enviado. */
+  @Column({ name: 'last_sent_at', type: 'datetime', nullable: true })
+  lastSentAt: Date | null;
+
+  @Column({ name: 'send_count', type: 'int', default: 0 })
+  sendCount: number;
+
+  /** ¿Sigue siendo válida (pendiente y sin caducar)? */
+  isUsable(now: Date = new Date()): boolean {
+    if (this.status !== ClubInvitationStatus.PENDING) return false;
+    return !this.expiresAt || this.expiresAt.getTime() > now.getTime();
+  }
+
+  /** ¿Ha caducado sin aceptarse? */
+  isExpired(now: Date = new Date()): boolean {
+    return this.status === ClubInvitationStatus.PENDING && !!this.expiresAt && this.expiresAt.getTime() <= now.getTime();
+  }
 }

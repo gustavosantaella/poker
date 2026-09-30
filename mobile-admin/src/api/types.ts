@@ -58,7 +58,7 @@ export interface ClubMember {
   updatedAt: string;
 }
 
-export type ClubInvitationStatus = 'pending' | 'accepted' | 'revoked';
+export type ClubInvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 
 /** Invitación para unirse al club como colaborador con unos permisos. */
 export interface ClubInvitation {
@@ -72,13 +72,62 @@ export interface ClubInvitation {
   invitedByUserId: number | null;
   acceptedByUserId: number | null;
   acceptedAt: string | null;
+  /** Caducidad de la invitación (a partir de aquí hay que reenviarla). */
+  expiresAt: string | null;
+  /** Último envío por correo y número total de envíos. */
+  lastSentAt: string | null;
+  sendCount: number;
   club?: Club;
   createdAt: string;
   updatedAt: string;
 }
 
+/** Punto de la serie diaria del dashboard (últimos 7 días). */
+export interface ClubDailyMetric {
+  /** Fecha en formato `YYYY-MM-DD`. */
+  date: string;
+  tournaments: number;
+  players: number;
+  revenue: number;
+}
+
+/** Jugador destacado del periodo. */
+export interface ClubTopPlayer {
+  userId: number;
+  name: string;
+  email: string;
+  tournaments: number;
+  reEntries: number;
+}
+
+/** Métricas de negocio del club calculadas de las reservas de torneo. */
+export interface ClubBusinessMetrics {
+  /** Días cubiertos por las métricas de negocio. */
+  periodDays: number;
+  /** Entradas cobradas (buy-in + re-entradas) en el periodo. */
+  revenue: number;
+  /** Comisión del club (fee por jugador + adminFee) en el periodo. */
+  rake: number;
+  /** Dinero destinado a premios (revenue - rake). */
+  prizePool: number;
+  /** Entrada media por jugador. */
+  averageTicket: number;
+  /** Jugadores distintos en el periodo. */
+  totalPlayers: number;
+  /** Entradas totales (jugadores + re-entradas). */
+  totalEntries: number;
+  /** Re-entradas realizadas en el periodo. */
+  reEntries: number;
+  /** Ocupación media de los torneos del periodo (%). */
+  averageOccupancy: number;
+  /** Serie de los últimos 7 días para el gráfico. */
+  daily: ClubDailyMetric[];
+  /** Mejores jugadores del periodo. */
+  topPlayers: ClubTopPlayer[];
+}
+
 /** Métricas del dashboard del club. */
-export interface ClubStats {
+export interface ClubStats extends ClubBusinessMetrics {
   clubId: number;
   /** Rol del usuario autenticado dentro del club. */
   myRole: ClubMemberRole;
@@ -86,11 +135,47 @@ export interface ClubStats {
   collaborators: number;
   pendingMembers: number;
   pendingInvitations: number;
+  /** Invitaciones pendientes ya caducadas. */
+  expiredInvitations: number;
   tournaments: number;
   activeTournaments: number;
+  /** Torneos programados en los próximos 7 días. */
+  upcomingTournaments: number;
   tables: number;
   openTables: number;
 }
+
+/** Acciones auditables dentro de un club. */
+export type ClubAuditAction =
+  | 'club.updated'
+  | 'club.code_rotated'
+  | 'club.ownership_transferred'
+  | 'collaborator.role_changed'
+  | 'collaborator.removed'
+  | 'member.status_changed'
+  | 'invitation.created'
+  | 'invitation.resent'
+  | 'invitation.revoked'
+  | 'invitation.accepted'
+  | 'invitation.expired';
+
+/** Entrada del historial de acciones sensibles del club. */
+export interface ClubAuditLog {
+  id: number;
+  clubId: number;
+  actorUserId: number | null;
+  /** Nombre del actor en el momento de la acción (`Sistema` si fue automático). */
+  actorName: string | null;
+  action: ClubAuditAction;
+  targetType: string | null;
+  targetId: number | null;
+  /** Frase lista para mostrar en el historial. */
+  summary: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 export interface GameType {
   id: number;
