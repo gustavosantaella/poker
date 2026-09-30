@@ -45,3 +45,6 @@ example
 
 credentials.json
 credentials
+*.lock
+package-lock.json
+

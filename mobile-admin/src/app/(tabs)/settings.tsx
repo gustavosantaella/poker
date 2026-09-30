@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View, Image, Pressable } from 'react-native';
 import { z } from 'zod';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadAvatar, deleteAccount } from '@/api/auth';
+import { uploadAvatar, uploadImage, deleteAccount } from '@/api/auth';
 import { API_URL } from '@/api/config';
 import { Club } from '@/api/types';
 import { AppForm } from '@/components/forms/AppForm';
@@ -19,7 +19,7 @@ import { AppTextField } from '@/components/ui/AppTextField';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { ListItem } from '@/components/ui/ListItem';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { useAllGameTypes, useClubs, useClubMembers, useCreateClub, useRemoveClubMember, useUpdateClub, useUpdateClubMember } from '@/hooks/use-queries';
+import { useAllGameTypes, useClubs, useClubMembers, useCreateClub, useRemoveClubMember, useUpdateClubMember } from '@/hooks/use-queries';
 import { useAuth } from '@/hooks/use-auth';
 import { Language } from '@/i18n';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -67,13 +67,11 @@ export default function SettingsScreen() {
   const [photoLocalUri, setPhotoLocalUri] = useState<string | null>(null);
   const { data: clubs } = useClubs();
   const createClubMut = useCreateClub();
-  const updateClubMut = useUpdateClub();
   const [membersClub, setMembersClub] = useState<Club | null>(null);
   const { data: membersData } = useClubMembers(membersClub?.id ?? 0);
   const updateMemberMut = useUpdateClubMember(membersClub?.id ?? 0);
   const removeMemberMut = useRemoveClubMember(membersClub?.id ?? 0);
   const [clubOpen, setClubOpen] = useState(false);
-  const [clubEditing, setClubEditing] = useState<Club | null>(null);
   const [clubError, setClubError] = useState<string | null>(null);
   const [clubName, setClubName] = useState('');
   const [clubAddress, setClubAddress] = useState('');
@@ -144,7 +142,6 @@ export default function SettingsScreen() {
 
   const openCreateClub = () => {
     setClubError(null);
-    setClubEditing(null);
     setClubName('');
     setClubAddress('');
     setClubPhone('');
@@ -152,14 +149,9 @@ export default function SettingsScreen() {
     setClubOpen(true);
   };
 
-  const openEditClub = (club: Club) => {
-    setClubError(null);
-    setClubEditing(club);
-    setClubName(club.name);
-    setClubAddress(club.address ?? '');
-    setClubPhone(club.phone ?? '');
-    setClubPhotoUri(null);
-    setClubOpen(true);
+  /** Abre el dashboard del club: métricas, colaboradores y configuración. */
+  const openClubDashboard = (club: Club) => {
+    router.push(`/club/${club.id}`);
   };
 
   const handlePickClubImage = async () => {
@@ -181,30 +173,18 @@ export default function SettingsScreen() {
       return;
     }
     try {
+      // La foto del club se sube aparte (carpeta `clubs`, sin tocar el avatar del usuario).
       let photoUrl: string | undefined = undefined;
       if (clubPhotoUri) {
-        photoUrl = await uploadAvatar(clubPhotoUri);
+        photoUrl = await uploadImage(clubPhotoUri, 'clubs');
       }
-      if (clubEditing) {
-        await updateClubMut.mutateAsync({
-          id: clubEditing.id,
-          payload: {
-            name: clubName.trim(),
-            photoUrl,
-            address: clubAddress.trim() || null,
-            phone: clubPhone.trim() || null,
-          },
-        });
-      } else {
-        await createClubMut.mutateAsync({
-          name: clubName.trim(),
-          photoUrl,
-          address: clubAddress.trim() || null,
-          phone: clubPhone.trim() || null,
-        });
-      }
+      await createClubMut.mutateAsync({
+        name: clubName.trim(),
+        photoUrl,
+        address: clubAddress.trim() || null,
+        phone: clubPhone.trim() || null,
+      });
       setClubOpen(false);
-      setClubEditing(null);
       setClubName('');
       setClubAddress('');
       setClubPhone('');
@@ -259,7 +239,7 @@ export default function SettingsScreen() {
                   onPress={() => setMembersClub(club)}
                 />
               }
-              onPress={() => openEditClub(club)}
+              onPress={() => openClubDashboard(club)}
             />
           ))
         )}
@@ -390,7 +370,7 @@ export default function SettingsScreen() {
 
       <AppModal
         visible={clubOpen}
-        title={clubEditing ? t('settings.editClub') : t('settings.createClub')}
+        title={t('settings.createClub')}
         onClose={() => setClubOpen(false)}
       >
         {clubOpen ? (
@@ -428,9 +408,9 @@ export default function SettingsScreen() {
               </AppText>
             ) : null}
             <AppButton
-              title={clubEditing ? t('common.saveChanges') : t('settings.createClub')}
+              title={t('settings.createClub')}
               onPress={handleSaveClub}
-              loading={createClubMut.isPending || updateClubMut.isPending}
+              loading={createClubMut.isPending}
               fullWidth
             />
           </View>

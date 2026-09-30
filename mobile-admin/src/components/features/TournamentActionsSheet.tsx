@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Tournament, TournamentReservation } from '@/api/types';
 import { BlindStructurePreview } from '@/components/features/BlindStructurePreview';
+import { PokerTableSeat, PokerTableView } from '@/components/features/PokerTableView';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppCard } from '@/components/ui/AppCard';
 import { AppModal } from '@/components/ui/AppModal';
+import { AppSegmentedControl } from '@/components/ui/AppSegmentedControl';
 import { AppSelect } from '@/components/ui/AppSelect';
 import { AppText } from '@/components/ui/AppText';
 import { AppTextField } from '@/components/ui/AppTextField';
@@ -56,6 +58,8 @@ export function TournamentActionsSheet({
   const [section, setSection] = useState<Section>('main');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Mesa abierta dentro de la seccion de jugadores/mesas (null = listado de mesas). */
+  const [openTable, setOpenTable] = useState<number | null>(null);
 
   const start = useStartTournament();
   const pause = usePauseTournament();
@@ -67,7 +71,17 @@ export function TournamentActionsSheet({
     setSection('main');
     setConfirmDelete(false);
     setError(null);
+    setOpenTable(null);
     onClose();
+  };
+
+  /** Atras: desde el detalle de una mesa vuelve al listado de mesas; si no, al menu principal. */
+  const handleBack = () => {
+    if (section === 'players' && openTable != null) {
+      setOpenTable(null);
+      return;
+    }
+    setSection('main');
   };
 
   const handleStartPause = async () => {
@@ -109,14 +123,16 @@ export function TournamentActionsSheet({
             : section === 'chips'
               ? t('chips.title')
               : section === 'players'
-                ? t('tournament.players')
+                ? openTable != null
+                  ? `${t('tournament.tableLabel')} ${openTable}`
+                  : t('tournament.playersTables')
                 : t('tournament.prizes');
 
   return (
     <>
       <BottomSheet visible={visible} title={title} onClose={handleClose}>
         {section !== 'main' ? (
-          <Pressable onPress={() => setSection('main')} style={styles.backRow} hitSlop={8}>
+          <Pressable onPress={handleBack} style={styles.backRow} hitSlop={8}>
             <Ionicons name="chevron-back" size={20} color={colors.primary} />
             <AppText variant="body" weight="semibold" color={colors.primary}>
               {t('common.back')}
@@ -168,7 +184,12 @@ export function TournamentActionsSheet({
         ) : section === 'chips' ? (
           <ChipsView tournamentId={tournament.id} onError={setError} />
         ) : section === 'players' ? (
-          <PlayersView tournament={tournament} onError={setError} />
+          <PlayersView
+            tournament={tournament}
+            openTable={openTable}
+            onOpenTable={setOpenTable}
+            onError={setError}
+          />
         ) : (
           <PrizesView tournament={tournament} onError={setError} />
         )}
@@ -212,10 +233,10 @@ function MainOptions({
         onPress={onStartPause}
       />
       <ListItem title={t('tournament.viewStructure')} icon="list" chevron onPress={() => onOpen('structure')} />
-      <ListItem title={t('tournament.editStructure')} icon="create-outline" chevron onPress={onEdit} />
+      <ListItem title={t('tournament.edit')} icon="create-outline" chevron onPress={onEdit} />
       <ListItem title={t('tournament.reservations')} icon="people-outline" chevron onPress={() => onOpen('reservations')} />
       <ListItem title={t('chips.title')} icon="albums-outline" chevron onPress={() => onOpen('chips')} />
-      <ListItem title={t('tournament.players')} icon="person-outline" chevron onPress={() => onOpen('players')} />
+      <ListItem title={t('tournament.playersTables')} icon="person-outline" chevron onPress={() => onOpen('players')} />
       <ListItem title={t('tournament.prizes')} icon="trophy-outline" chevron onPress={() => onOpen('prizes')} />
       <ListItem
         title={t('tournament.deleteTournament')}
@@ -545,7 +566,18 @@ function ChipsView({ tournamentId, onError }: { tournamentId: number; onError: (
     </View>
   );
 }
-function PlayersView({ tournament, onError }: { tournament: Tournament; onError: (m: string) => void }) {
+function PlayersView({
+  tournament,
+  openTable,
+  onOpenTable,
+  onError,
+}: {
+  tournament: Tournament;
+  /** Mesa abierta (null = listado de mesas), controlada por la hoja para compartir el boton Atras. */
+  openTable: number | null;
+  onOpenTable: (tableNumber: number | null) => void;
+  onError: (m: string) => void;
+}) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const { data: reservations, isLoading } = useReservations(tournament.id);
@@ -566,6 +598,8 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
   const [seatTable, setSeatTable] = useState<string | null>(null);
   const [seatSeat, setSeatSeat] = useState<string | null>(null);
   const [seatError, setSeatError] = useState<string | null>(null);
+  /** Pestaña activa: por defecto se muestran los jugadores, y "Mesas" abre el listado de mesas. */
+  const [tab, setTab] = useState<'players' | 'tables'>('players');
 
   const accepted = (reservations ?? []).filter((r) => r.status === 'accepted');
   const stoodUp = (reservations ?? []).filter((r) => r.status === 'stood_up');
@@ -573,8 +607,20 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
   const eliminated = (reservations ?? []).filter((r) => r.status === 'eliminated');
   const players = [...accepted, ...stoodUp, ...eliminated];
 
-  const rebuyTables = Math.max(1, tournament.tableCount ?? 1);
-  const rebuyTableOptions = Array.from({ length: rebuyTables }, (_, i) => ({
+  /** Sillas por mesa (mismo maximo que el asignador de mesa/asiento). */
+  const seatsPerTable = 9;
+  const tableCount = Math.max(1, tournament.tableCount ?? 1);
+  /** Jugadores aceptados agrupados por mesa y ordenados por numero de silla. */
+  const seatedByTable = new Map<number, TournamentReservation[]>();
+  accepted.forEach((r) => {
+    if (r.tableNumber == null || r.seatNumber == null) return;
+    const list = seatedByTable.get(r.tableNumber) ?? [];
+    list.push(r);
+    seatedByTable.set(r.tableNumber, list);
+  });
+  seatedByTable.forEach((list) => list.sort((a, b) => (a.seatNumber ?? 0) - (b.seatNumber ?? 0)));
+
+  const rebuyTableOptions = Array.from({ length: tableCount }, (_, i) => ({
     label: `${t('tournament.tableLabel')} ${i + 1}`,
     value: String(i + 1),
   }));
@@ -745,48 +791,83 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
             />
           </View>
         </View>
-      ) : players.length === 0 ? (
-        <AppText variant="caption" center style={styles.empty}>
-          {t('tournament.noPlayers')}
-        </AppText>
+      ) : openTable != null ? (
+        <TableView
+          tableNumber={openTable}
+          reservations={seatedByTable.get(openTable) ?? []}
+          seatCount={seatsPerTable}
+          startingStack={tournament.startingStack}
+          onSelectPlayer={setActionsTarget}
+        />
       ) : (
-        players.map((r) => (
-          <ListItem
-            key={r.id}
-            title={r.user?.name ?? `#${r.userId}`}
-            subtitle={
-              r.status === 'accepted'
-                ? `${r.user?.email ?? ''} • ${t('tournament.stackLabel')}: ${formatNumber(r.stack ?? tournament.startingStack)} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })} • ${t('tournament.assignedTo', { table: r.tableNumber ?? '-', seat: r.seatNumber ?? '-' })}`
-                : `${r.user?.email ?? ''} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })}`
-            }
-            icon="person"
-            right={
-              <View style={styles.rowActions}>
-                {r.status === 'stood_up' ? (
-                  <View style={[styles.statusBadge, { backgroundColor: colors.warningMuted }]}>
-                    <AppText variant="caption" weight="semibold" color={colors.warning}>
-                      {t('tournament.stoodUp')}
-                    </AppText>
-                  </View>
-                ) : null}
-                {r.status === 'eliminated' ? (
-                  <View style={[styles.statusBadge, { backgroundColor: colors.dangerMuted }]}>
-                    <AppText variant="caption" weight="semibold" color={colors.danger}>
-                      {t('tournament.eliminated')}
-                    </AppText>
-                  </View>
-                ) : null}
-                <AppButton
-                  title=""
-                  size="sm"
-                  variant="ghost"
-                  icon="eye-outline"
-                  onPress={() => setActionsTarget(r)}
-                />
-              </View>
-            }
+        <>
+          <AppSegmentedControl
+            value={tab}
+            options={[
+              { label: t('tournament.players'), value: 'players' },
+              { label: t('tournament.tables'), value: 'tables' },
+            ]}
+            onChange={(value) => setTab(value === 'tables' ? 'tables' : 'players')}
           />
-        ))
+          {tab === 'tables' ? (
+            Array.from({ length: tableCount }, (_, index) => {
+              const tableNumber = index + 1;
+              const seated = seatedByTable.get(tableNumber) ?? [];
+              return (
+                <ListItem
+                  key={tableNumber}
+                  title={`${t('tournament.tableLabel')} ${tableNumber}`}
+                  subtitle={t('tournament.tableSeatsCount', { count: seated.length, total: seatsPerTable })}
+                  icon="grid-outline"
+                  chevron
+                  onPress={() => onOpenTable(tableNumber)}
+                />
+              );
+            })
+          ) : players.length === 0 ? (
+            <AppText variant="caption" center style={styles.empty}>
+              {t('tournament.noPlayers')}
+            </AppText>
+          ) : (
+            players.map((r) => (
+              <ListItem
+                key={r.id}
+                title={r.user?.name ?? `#${r.userId}`}
+                subtitle={
+                  r.status === 'accepted'
+                    ? `${r.user?.email ?? ''} • ${t('tournament.stackLabel')}: ${formatNumber(r.stack ?? tournament.startingStack)} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })} • ${t('tournament.assignedTo', { table: r.tableNumber ?? '-', seat: r.seatNumber ?? '-' })}`
+                    : `${r.user?.email ?? ''} • ${t('tournament.rebuyCount', { count: r.reEntries ?? 0 })}`
+                }
+                icon="person"
+                right={
+                  <View style={styles.rowActions}>
+                    {r.status === 'stood_up' ? (
+                      <View style={[styles.statusBadge, { backgroundColor: colors.warningMuted }]}>
+                        <AppText variant="caption" weight="semibold" color={colors.warning}>
+                          {t('tournament.stoodUp')}
+                        </AppText>
+                      </View>
+                    ) : null}
+                    {r.status === 'eliminated' ? (
+                      <View style={[styles.statusBadge, { backgroundColor: colors.dangerMuted }]}>
+                        <AppText variant="caption" weight="semibold" color={colors.danger}>
+                          {t('tournament.eliminated')}
+                        </AppText>
+                      </View>
+                    ) : null}
+                    <AppButton
+                      title=""
+                      size="sm"
+                      variant="ghost"
+                      icon="eye-outline"
+                      onPress={() => setActionsTarget(r)}
+                    />
+                  </View>
+                }
+              />
+            ))
+          )}
+        </>
       )}
 
       <AppModal
@@ -966,6 +1047,92 @@ function PlayersView({ tournament, onError }: { tournament: Tournament; onError:
   );
 }
 
+/** Detalle de una mesa: jugadores sentados colocados por numero de silla. */
+function TableView({
+  tableNumber,
+  reservations,
+  seatCount,
+  startingStack,
+  onSelectPlayer,
+}: {
+  tableNumber: number;
+  reservations: TournamentReservation[];
+  seatCount: number;
+  startingStack: number;
+  /** Abre las acciones del jugador (levantar, rebuy, cambiar mesa, eliminar...). */
+  onSelectPlayer: (reservation: TournamentReservation) => void;
+}) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const tableLabel = `${t('tournament.tableLabel')} ${tableNumber}`;
+  // Orden por puesto: de la silla 1 a la ultima.
+  const ordered = [...reservations].sort((a, b) => (a.seatNumber ?? 0) - (b.seatNumber ?? 0));
+  const seats: PokerTableSeat[] = ordered.map((r) => ({
+    seatNumber: r.seatNumber ?? 0,
+    name: r.user?.name ?? `#${r.userId}`,
+    stack: r.stack ?? startingStack,
+  }));
+  const bySeatNumber = new Map<number, TournamentReservation>();
+  ordered.forEach((r) => {
+    if (r.seatNumber != null) bySeatNumber.set(r.seatNumber, r);
+  });
+
+  return (
+    <View>
+      <PokerTableView
+        seatCount={seatCount}
+        seats={seats}
+        emptyLabel={t('tournament.seatFree')}
+        feltLabel={tableLabel}
+        onPressSeat={(seatNumber) => {
+          const reservation = bySeatNumber.get(seatNumber);
+          if (reservation) onSelectPlayer(reservation);
+        }}
+      />
+
+      <AppText variant="caption" center style={styles.seatListCount}>
+        {t('tournament.tableSeatsCount', { count: seats.length, total: seatCount })}
+      </AppText>
+
+      {ordered.length === 0 ? (
+        <AppText variant="caption" center style={styles.empty}>
+          {t('tournament.noSeatedPlayers')}
+        </AppText>
+      ) : (
+        <View style={styles.seatList}>
+          <AppText variant="label" weight="semibold" style={styles.seatListTitle}>
+            {t('tournament.seatedPlayers')}
+          </AppText>
+          {ordered.map((r) => {
+            const seatNumber = r.seatNumber ?? 0;
+            return (
+              <Pressable
+                key={r.id}
+                style={styles.seatRow}
+                onPress={() => onSelectPlayer(r)}
+                hitSlop={4}
+              >
+                <View style={[styles.seatIndex, { backgroundColor: colors.primaryMuted }]}>
+                  <AppText variant="caption" weight="semibold" color={colors.primary}>
+                    {seatNumber}
+                  </AppText>
+                </View>
+                <AppText variant="body" numberOfLines={1} style={styles.seatName}>
+                  {r.user?.name ?? `#${r.userId}`}
+                </AppText>
+                <AppText variant="caption" color={colors.textSecondary}>
+                  {formatNumber(r.stack ?? startingStack)}
+                </AppText>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
 /** Cantidad de puestos pagados segun la configuracion del torneo (% del campo de jugadores o cantidad fija). */
 function getPaidPlacesCount(tournament: Tournament): number {
   const value = tournament.paidPlacesValue ?? 0;
@@ -1097,4 +1264,10 @@ const styles = StyleSheet.create({
   deleteMsg: { marginBottom: 16 },
   deleteActions: { flexDirection: 'row', gap: 8 },
   deleteBtn: { flex: 1 },
+  seatListCount: { marginTop: 12 },
+  seatList: { marginTop: 8 },
+  seatListTitle: { marginBottom: 4 },
+  seatRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  seatIndex: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  seatName: { flex: 1 },
 });

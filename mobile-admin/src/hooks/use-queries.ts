@@ -1,11 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createClub,
+  createClubInvitation,
+  fetchClub,
+  fetchClubCollaborators,
+  fetchClubInvitations,
   fetchClubMembers,
   fetchClubs,
+  fetchClubStats,
   fetchUsers,
   removeClubMember,
+  revokeClubInvitation,
   updateClub,
+  updateClubCollaborator,
   updateClubMember,
   CreateClubPayload,
 } from '@/api/clubs';
@@ -58,6 +65,7 @@ import {
 } from '@/api/tournaments';
 import {
   ChipPayload,
+  ClubMemberRole,
   GameTypePayload,
   ReservationStatus,
   TablePayload,
@@ -87,8 +95,10 @@ export function useUpdateClub() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<CreateClubPayload> }) =>
       updateClub(id, payload),
-    onSuccess: () => {
+    onSuccess: (club) => {
       void qc.invalidateQueries({ queryKey: ['clubs'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', club.id] });
+      void qc.invalidateQueries({ queryKey: ['clubs', club.id, 'stats'] });
     },
   });
 }
@@ -119,7 +129,81 @@ export function useRemoveClubMember(clubId: number) {
     mutationFn: (memberId: number) => removeClubMember(clubId, memberId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'members'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'collaborators'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
       void qc.invalidateQueries({ queryKey: ['clubs'] });
+    },
+  });
+}
+
+// ---- Dashboard del club ----
+
+export function useClub(clubId: number) {
+  return useQuery({
+    queryKey: ['clubs', clubId],
+    queryFn: () => fetchClub(clubId),
+    enabled: clubId > 0,
+  });
+}
+
+export function useClubStats(clubId: number) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'stats'],
+    queryFn: () => fetchClubStats(clubId),
+    enabled: clubId > 0,
+  });
+}
+
+export function useClubCollaborators(clubId: number) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'collaborators'],
+    queryFn: () => fetchClubCollaborators(clubId),
+    enabled: clubId > 0,
+  });
+}
+
+/** Cambia los permisos de un colaborador (admin, operador, cajero). */
+export function useUpdateClubCollaborator(clubId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ memberId, role }: { memberId: number; role: ClubMemberRole }) =>
+      updateClubCollaborator(clubId, memberId, role),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'collaborators'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
+    },
+  });
+}
+
+export function useClubInvitations(clubId: number) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'invitations'],
+    queryFn: () => fetchClubInvitations(clubId),
+    enabled: clubId > 0,
+  });
+}
+
+/** Invita a un colaborador por correo con unos permisos. */
+export function useCreateClubInvitation(clubId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ email, role }: { email: string; role: ClubMemberRole }) =>
+      createClubInvitation(clubId, email, role),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'invitations'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'collaborators'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
+    },
+  });
+}
+
+export function useRevokeClubInvitation(clubId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (invitationId: number) => revokeClubInvitation(clubId, invitationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'invitations'] });
+      void qc.invalidateQueries({ queryKey: ['clubs', clubId, 'stats'] });
     },
   });
 }

@@ -58,8 +58,16 @@
         }
       ],
       "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permite a PokerPros Admin usar tu ubicación para guardar la ubicación del club."
+        }
+      ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-image",
+      "expo-status-bar"
     ],
     "experiments": {
       "reactCompiler": true

@@ -12,7 +12,8 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTheme } from '@/theme';
 import { formatCurrency, formatDateTime, formatNumber } from '@/utils/format';
 
-export function TournamentListItem({ tournament, onPress }: { tournament: Tournament; onPress: () => void }) {
+/** Tarjeta de torneo en la lista: al pulsarla se abren las opciones del torneo. */
+export function TournamentListItem({ tournament }: { tournament: Tournament }) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -54,7 +55,7 @@ export function TournamentListItem({ tournament, onPress }: { tournament: Tourna
 
   return (
     <>
-      <AppCard onPress={onPress} style={styles.card} variant={running ? 'gold' : 'metallic'}>
+      <AppCard onPress={() => setActionsOpen(true)} style={styles.card} variant={running ? 'gold' : 'metallic'}>
         <View style={styles.header}>
           <View style={styles.titleWrap}>
             <AppText variant="subtitle" numberOfLines={1} style={titleColor ? { color: titleColor } : undefined}>

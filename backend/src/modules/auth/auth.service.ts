@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { User, UserRole } from '../users/entities/user.entity';
+import { ClubsService } from '../clubs/clubs.service';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -29,6 +30,7 @@ export class AuthService {
 
   constructor(
     private readonly usersService: UsersService,
+    private readonly clubsService: ClubsService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -55,6 +57,7 @@ export class AuthService {
       dto.alias,
     );
     this.logger.log(`Registered new user ${dto.email} (id=${user.id}) role=${role}`);
+    await this.acceptPendingClubInvitations(user);
     return this.buildAuthResult(user);
   }
 
@@ -70,7 +73,28 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
     this.logger.log(`Login success for ${dto.email} (id=${user.id})`);
+    await this.acceptPendingClubInvitations(user);
     return this.buildAuthResult(user);
+  }
+
+  /**
+   * Acepta las invitaciones de colaborador pendientes para el correo del usuario.
+   * Así, quien fue invitado a un club entra como colaborador con sus permisos sin
+   * pasos extra. Nunca bloquea el login/registro si algo falla.
+   */
+  private async acceptPendingClubInvitations(user: User): Promise<void> {
+    try {
+      const accepted = await this.clubsService.syncInvitationsForUser(user);
+      if (accepted > 0) {
+        this.logger.log(`User ${user.email} joined ${accepted} club(s) via invitation`);
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Could not sync club invitations for ${user.email}: ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
+    }
   }
 
   private buildAuthResult(user: User): AuthResult {

@@ -35,11 +35,7 @@ export default function TournamentsScreen() {
           />
         ) : (
           tournaments.map((tournament) => (
-            <TournamentListItem
-              key={tournament.id}
-              tournament={tournament}
-              onPress={() => router.push(`/tournament/${tournament.id}`)}
-            />
+            <TournamentListItem key={tournament.id} tournament={tournament} />
           ))
         )}
       </AppScreen>

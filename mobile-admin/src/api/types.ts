@@ -25,6 +25,14 @@ export interface Club {
   photoUrl: string | null;
   address: string | null;
   phone: string | null;
+  /** Ubicación del club (opcional). */
+  latitude: number | null;
+  longitude: number | null;
+  /** Redes sociales del club (opcionales). */
+  instagram: string | null;
+  facebook: string | null;
+  whatsapp: string | null;
+  website: string | null;
   adminUserId: number;
   createdByUserId: number;
   createdAt: string;
@@ -36,14 +44,52 @@ export interface Club {
 
 export type ClubMemberStatus = 'pending' | 'accepted' | 'rejected';
 
+/** Permisos de un usuario dentro del club. */
+export type ClubMemberRole = 'admin' | 'operator' | 'cashier' | 'member';
+
 export interface ClubMember {
   id: number;
   clubId: number;
   userId: number;
   user: User;
   status: ClubMemberStatus;
+  role: ClubMemberRole;
   createdAt: string;
   updatedAt: string;
+}
+
+export type ClubInvitationStatus = 'pending' | 'accepted' | 'revoked';
+
+/** Invitación para unirse al club como colaborador con unos permisos. */
+export interface ClubInvitation {
+  id: number;
+  clubId: number;
+  email: string;
+  role: ClubMemberRole;
+  /** Código que el admin comparte con la persona invitada. */
+  token: string;
+  status: ClubInvitationStatus;
+  invitedByUserId: number | null;
+  acceptedByUserId: number | null;
+  acceptedAt: string | null;
+  club?: Club;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Métricas del dashboard del club. */
+export interface ClubStats {
+  clubId: number;
+  /** Rol del usuario autenticado dentro del club. */
+  myRole: ClubMemberRole;
+  members: number;
+  collaborators: number;
+  pendingMembers: number;
+  pendingInvitations: number;
+  tournaments: number;
+  activeTournaments: number;
+  tables: number;
+  openTables: number;
 }
 
 export interface GameType {
