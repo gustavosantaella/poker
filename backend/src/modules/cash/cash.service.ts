@@ -906,30 +906,45 @@ export class CashService {
   }
 
   /**
-   * Dinero de add-ons de cada torneo (cruce interno con el módulo de torneos).
+   * Add-ons de cada torneo (cruce interno con el módulo de torneos).
    *
    * Los add-ons no viven en las reservas: se cobran como movimiento de caja, así
    * que el libro de caja es la única fuente fiable. Se descuentan los anulados y
    * se suma el importe real de cada movimiento (no el precio actual del torneo,
    * que puede haber cambiado desde que se cobró).
+   *
+   * `count` es cuántos add-ons se cobraron y `players` cuántas personas distintas
+   * los hicieron: quien repite add-on no infla el conteo de personas. Todo add-on
+   * lleva jugador asignado, ver `createMovement`.
    */
-  async addOnsAmountByTournament(
+  async addOnsStatsByTournament(
     tournamentIds: number[],
-  ): Promise<Map<number, number>> {
+  ): Promise<Map<number, { amount: number; count: number; players: number }>> {
     if (tournamentIds.length === 0) return new Map();
     const rows = await this.movementsRepo
       .createQueryBuilder('m')
       .select('m.tournament_id', 'tournamentId')
       .addSelect('COALESCE(SUM(m.amount), 0)', 'amount')
+      .addSelect('COUNT(*)', 'count')
+      .addSelect('COUNT(DISTINCT m.user_id)', 'players')
       .where('m.tournament_id IN (:...ids)', { ids: tournamentIds })
       .andWhere('m.type = :type', { type: ClubCashMovementType.ADD_ON })
       .andWhere('m.status <> :void', { void: ClubCashMovementStatus.VOID })
       .groupBy('m.tournament_id')
-      .getRawMany<{ tournamentId: number; amount: string }>();
+      .getRawMany<{
+        tournamentId: number;
+        amount: string;
+        count: string;
+        players: string;
+      }>();
     return new Map(
       rows.map((row) => [
         Number(row.tournamentId),
-        this.round2(Number(row.amount ?? 0)),
+        {
+          amount: this.round2(Number(row.amount ?? 0)),
+          count: Number(row.count ?? 0),
+          players: Number(row.players ?? 0),
+        },
       ]),
     );
   }

@@ -157,6 +157,18 @@ export class Tournament extends BaseEntity {
    */
   addOnsAmount?: number;
 
+  /**
+   * Add-ons cobrados en el torneo, contando todos los movimientos de caja
+   * (calculado, no persistido). Si un jugador repite, suma más de uno.
+   */
+  addOnsCount?: number;
+
+  /**
+   * Jugadores distintos que hicieron add-on en el torneo (calculado, no
+   * persistido). Quien repite add-on cuenta una sola vez.
+   */
+  addOnsPlayersCount?: number;
+
   @Column({ type: 'int', default: 1 })
   tableCount: number = 1;
 

@@ -85,7 +85,7 @@ export class TournamentsService extends CrudService<Tournament> {
     const ids = result.items.map((t) => t.id);
     const [counts, addOns] = await Promise.all([
       this.getReservationCounts(ids),
-      this.cash.addOnsAmountByTournament(ids),
+      this.cash.addOnsStatsByTournament(ids),
     ]);
     return {
       ...result,
@@ -99,7 +99,7 @@ export class TournamentsService extends CrudService<Tournament> {
     const synced = await this.syncLiveStatus(tournament);
     const [counts, addOns] = await Promise.all([
       this.getReservationCounts([id]),
-      this.cash.addOnsAmountByTournament([id]),
+      this.cash.addOnsStatsByTournament([id]),
     ]);
     return this.withStats(synced, counts.get(id), addOns.get(id));
   }
@@ -113,7 +113,7 @@ export class TournamentsService extends CrudService<Tournament> {
    * Las rechazadas nunca entraron, así que no cuentan en ningún conteo.
    *
    * Los add-ons no se cuentan aquí: no viven en las reservas, se cobran como
-   * movimiento de caja (ver `CashService.addOnsAmountByTournament`).
+   * movimiento de caja (ver `CashService.addOnsStatsByTournament`).
    */
   private async getReservationCounts(
     tournamentIds: number[],
@@ -152,19 +152,22 @@ export class TournamentsService extends CrudService<Tournament> {
 
   /**
    * Añade al torneo los campos calculados (no persistidos): los conteos de
-   * reservas y el dinero de add-ons cobrado en caja.
+   * reservas y los add-ons cobrados en caja (importe, cuántos y cuántos
+   * jugadores distintos).
    */
   private withStats(
     tournament: Tournament,
     counts?: ReservationCounts,
-    addOnsAmount?: number,
+    addOns?: { amount: number; count: number; players: number },
   ): Tournament {
     return {
       ...tournament,
       reservedCount: counts?.reserved ?? 0,
       playersCount: counts?.players ?? 0,
       playingCount: counts?.playing ?? 0,
-      addOnsAmount: addOnsAmount ?? 0,
+      addOnsAmount: addOns?.amount ?? 0,
+      addOnsCount: addOns?.count ?? 0,
+      addOnsPlayersCount: addOns?.players ?? 0,
     };
   }
 

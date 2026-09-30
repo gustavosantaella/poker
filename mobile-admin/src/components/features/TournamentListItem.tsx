@@ -31,9 +31,14 @@ export function TournamentListItem({ tournament }: { tournament: Tournament }) {
   // cada rebuy, más los add-ons cobrados en caja (si el torneo los tiene).
   const entered = tournament.playersCount ?? 0;
   const maxPlayers = tournament.maxPlayers;
-  const collected =
-    (tournament.buyIn + tournament.fee) * (entered + (tournament.currentReEntries ?? 0)) +
-    (tournament.addOnsAmount ?? 0);
+  const reEntries = tournament.currentReEntries ?? 0;
+  // Los add-ons no se guardan como reserva: se cobran como movimiento de caja,
+  // así que van aparte el importe cobrado en el club, cuántos add-ons se
+  // vendieron y cuántos jugadores distintos los hicieron.
+  const addOnsAmount = tournament.addOnsAmount ?? 0;
+  const addOnsCount = tournament.addOnsCount ?? 0;
+  const addOnsPlayers = tournament.addOnsPlayersCount ?? 0;
+  const collected = (tournament.buyIn + tournament.fee) * (entered + reEntries) + addOnsAmount;
 
   const handleStartPause = () => {
     if (running) void pause.mutateAsync(tournament.id).catch(() => undefined);
@@ -148,6 +153,37 @@ export function TournamentListItem({ tournament }: { tournament: Tournament }) {
           </View>
         </View>
 
+        {addOnsAmount > 0 ? (
+          <AppText variant="caption" style={[styles.breakdown, { color: subtextColor }]}>
+            {t('tournament.collectedBreakdown', {
+              entries: formatNumber(entered),
+              reEntries: formatNumber(reEntries),
+              addOnsAmount: formatCurrency(addOnsAmount, tournament.currency),
+            })}
+          </AppText>
+        ) : null}
+
+        {addOnsAmount > 0 ? (
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <AppText variant="caption" style={{ color: subtextColor }}>
+                {t('tournament.addOns')}
+              </AppText>
+              <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
+                {formatNumber(addOnsCount)}
+              </AppText>
+            </View>
+            <View style={styles.metaItem}>
+              <AppText variant="caption" style={{ color: subtextColor }}>
+                {t('tournament.addOnPlayers')}
+              </AppText>
+              <AppText variant="body" weight="semibold" numberOfLines={1} style={bodyTextColor ? { color: bodyTextColor } : undefined}>
+                {formatNumber(addOnsPlayers)}
+              </AppText>
+            </View>
+          </View>
+        ) : null}
+
         {tournament.guaranteedPrize != null ? (
           <View style={[styles.footerRow, { borderTopColor: dividerColor }]}>
             <AppText variant="caption" style={{ color: subtextColor }}>
@@ -195,6 +231,7 @@ const styles = StyleSheet.create({
   meta: { flexDirection: 'row', gap: 12 },
   metaItem: { flex: 1 },
   metaRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  breakdown: { marginTop: 4 },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

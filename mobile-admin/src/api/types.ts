@@ -300,6 +300,10 @@ export interface Tournament {
   playingCount?: number;
   /** Dinero de los add-ons del torneo según la caja (0 si no tiene). */
   addOnsAmount?: number;
+  /** Add-ons cobrados en el torneo (0 si no tiene). */
+  addOnsCount?: number;
+  /** Jugadores distintos que hicieron add-on (0 si no tiene). */
+  addOnsPlayersCount?: number;
   registrationOpen: boolean;
   tableCount: number;
   reEntryEnabled: boolean;
